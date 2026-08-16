@@ -1,0 +1,28 @@
+kode_akun,nama_akun,kategori,sub_kategori,saldo_normal
+1-1000,Kas,ASET,Aset Lancar,DEBIT
+1-1100,Bank,ASET,Aset Lancar,DEBIT
+1-1200,Piutang Usaha,ASET,Aset Lancar,DEBIT
+1-1300,Persediaan Barang Dagang,ASET,Aset Lancar,DEBIT
+1-1400,Perlengkapan,ASET,Aset Lancar,DEBIT
+1-2000,Peralatan,ASET,Aset Tetap,DEBIT
+1-2100,Akumulasi Penyusutan Peralatan,ASET,Aset Tetap,KREDIT
+1-2200,Kendaraan,ASET,Aset Tetap,DEBIT
+1-2300,Akumulasi Penyusutan Kendaraan,ASET,Aset Tetap,KREDIT
+2-1000,Utang Usaha,LIABILITAS,Liabilitas Jangka Pendek,KREDIT
+2-1100,Utang Bank Jangka Pendek,LIABILITAS,Liabilitas Jangka Pendek,KREDIT
+2-1200,Utang Pajak,LIABILITAS,Liabilitas Jangka Pendek,KREDIT
+2-2000,Utang Bank Jangka Panjang,LIABILITAS,Liabilitas Jangka Panjang,KREDIT
+3-1000,Modal Pemilik,MODAL,Ekuitas,KREDIT
+3-2000,Prive,MODAL,Ekuitas,DEBIT
+3-3000,Laba Ditahan,MODAL,Ekuitas,KREDIT
+4-1000,Pendapatan Penjualan,PENDAPATAN,Pendapatan Usaha,KREDIT
+4-2000,Pendapatan Jasa,PENDAPATAN,Pendapatan Usaha,KREDIT
+4-9000,Pendapatan Lain-lain,PENDAPATAN,Pendapatan Lain-lain,KREDIT
+5-1000,Harga Pokok Penjualan,BEBAN,Beban Pokok,DEBIT
+5-2000,Beban Gaji,BEBAN,Beban Operasional,DEBIT
+5-2100,Beban Sewa,BEBAN,Beban Operasional,DEBIT
+5-2200,"Beban Listrik, Air, dan Telepon",BEBAN,Beban Operasional,DEBIT
+5-2300,Beban Perlengkapan,BEBAN,Beban Operasional,DEBIT
+5-2400,Beban Penyusutan,BEBAN,Beban Operasional,DEBIT
+5-2500,Beban Pajak,BEBAN,Beban Operasional,DEBIT
+5-9000,Beban Lain-lain,BEBAN,Beban Lain-lain,DEBIT

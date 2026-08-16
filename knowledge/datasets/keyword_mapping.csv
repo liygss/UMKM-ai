@@ -1,0 +1,39 @@
+kata_kunci,kemungkinan_akun_debit,kemungkinan_akun_kredit,kategori_transaksi
+setoran modal,1-1000,3-1000,modal
+modal awal,1-1000,3-1000,modal
+penjualan,1-1000,4-1000,pendapatan
+jual produk,1-1000,4-1000,pendapatan
+omzet,1-1000,4-1000,pendapatan
+jasa,1-1000,4-2000,pendapatan
+konsultasi,1-1000,4-2000,pendapatan
+servis,1-1000,4-2000,pendapatan
+beli barang dagang,1-1300,1-1000,pembelian
+restock,1-1300,1-1000,pembelian
+stok,1-1300,1-1000,pembelian
+gaji,5-2000,1-1000,beban_operasional
+upah,5-2000,1-1000,beban_operasional
+thr,5-2000,1-1000,beban_operasional
+sewa toko,5-2100,1-1000,beban_operasional
+sewa kantor,5-2100,1-1000,beban_operasional
+sewa gudang,5-2100,1-1000,beban_operasional
+listrik,5-2200,1-1000,beban_operasional
+air,5-2200,1-1000,beban_operasional
+pulsa,5-2200,1-1000,beban_operasional
+internet,5-2200,1-1000,beban_operasional
+telepon,5-2200,1-1000,beban_operasional
+beli perlengkapan,1-1400,1-1000,pembelian_aset
+atk,1-1400,1-1000,pembelian_aset
+kemasan,1-1400,1-1000,pembelian_aset
+beli peralatan,1-2000,1-1000,pembelian_aset
+beli mesin,1-2000,1-1000,pembelian_aset
+beli kendaraan,1-2200,1-1000,pembelian_aset
+bayar utang,2-1000,1-1000,pelunasan_utang
+cicilan supplier,2-1000,1-1000,pelunasan_utang
+pinjaman bank,1-1000,2-1100,pendanaan
+kredit modal kerja,1-1000,2-1100,pendanaan
+prive,3-2000,1-1000,prive
+ambil pribadi,3-2000,1-1000,prive
+tarik tunai pemilik,3-2000,1-1000,prive
+bayar pajak,2-1200,1-1000,pajak
+setor pajak,2-1200,1-1000,pajak
+penyusutan,5-2400,1-2100,penyesuaian

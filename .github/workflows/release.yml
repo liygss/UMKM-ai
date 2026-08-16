@@ -1,0 +1,110 @@
+name: Build Desktop Installers
+
+# Menghasilkan installer desktop untuk macOS (DMG), Windows (EXE), dan Linux (AppImage).
+# Jalankan manual (Actions → Build Desktop Installers → Run workflow) atau otomatis
+# saat push tag versi (v1.0.0, dst.) — installer otomatis di-publish ke GitHub Release.
+#
+# Prasyarat: set secret repo OLLAMA_API_KEY di GitHub (Settings → Secrets and
+# variables → Actions). Tanpa secret, key tidak ter-bundle ke installer.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Platform yang dibangun (windows | linux | macos | windows,linux | all)'
+        required: true
+        default: 'windows,linux'
+        type: choice
+        options:
+          - 'windows,linux'
+          - windows
+          - linux
+          - macos
+          - all
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    # Saat trigger manual, skip platform yang tidak dipilih.
+    # Saat tag push (release), selalu build semua platform.
+    if: |
+      github.event_name == 'push' ||
+      github.event.inputs.target == 'all' ||
+      github.event.inputs.target == matrix.target ||
+      (github.event.inputs.target == 'windows,linux' && (matrix.target == 'windows' || matrix.target == 'linux'))
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            name: macOS (DMG)
+            target: macos
+          - os: windows-latest
+            name: Windows (EXE)
+            target: windows
+          - os: ubuntu-latest
+            name: Linux (AppImage)
+            target: linux
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Backend venv + dependencies
+        shell: bash
+        run: |
+          cd backend
+          python -m venv venv
+          if [ -f venv/Scripts/python.exe ]; then VENV_PY=venv/Scripts/python.exe; else VENV_PY=venv/bin/python; fi
+          "$VENV_PY" -m pip install --upgrade pip
+          "$VENV_PY" -m pip install -r requirements.txt
+
+      - name: Frontend dependencies
+        shell: bash
+        run: npm install
+        working-directory: frontend
+
+      - name: Electron dependencies
+        shell: bash
+        run: npm install
+        working-directory: electron
+
+      - name: Build installer (npm run build)
+        shell: bash
+        env:
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run build
+        working-directory: electron
+
+      - name: Upload installer (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.os }}
+          path: |
+            electron/release/*.dmg
+            electron/release/*.exe
+            electron/release/*.AppImage
+
+      - name: Publish to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            electron/release/*.dmg
+            electron/release/*.exe
+            electron/release/*.AppImage

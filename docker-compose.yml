@@ -1,0 +1,32 @@
+# Docker Compose hanya untuk backend (opsional — untuk dev/web deployment).
+# Aplikasi desktop tidak butuh Docker sama sekali:
+#   - Database: SQLite (built-in)
+#   - Vector store: Qdrant embedded lokal / Qdrant Cloud (lihat backend/.env)
+#   - LLM: Ollama Cloud (ollama.com) / lokal
+#
+# Menjalankan backend lewat Docker:
+#   docker compose up --build
+#
+# Catatan: konfigurasi Qdrant/Ollama tetap dibaca dari backend/.env
+# (QDRANT_HOST, QDRANT_API_KEY, OLLAMA_BASE_URL, OLLAMA_API_KEY, dll).
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      # Simpan data ke volume agar tetap ada walau container dihapus
+      SQLITE_PATH: /app/data/ai_accounting.db
+      QDRANT_LOCAL_PATH: /app/data/qdrant
+      LOG_DIR: /app/data/logs
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend_data:/app/data
+      - ./backend:/app
+
+volumes:
+  backend_data:

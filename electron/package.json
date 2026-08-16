@@ -1,0 +1,65 @@
+{
+  "name": "ai-accounting-rag-desktop",
+  "version": "1.0.0",
+  "description": "AI Accounting RAG — Aplikasi Desktop (Electron + FastAPI)",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "dev": "electron . --dev",
+    "build:credentials": "node scripts/prepare-credentials.js",
+    "build:web": "npm --prefix ../frontend run build",
+    "build:backend": "bash ../backend/packaging/build.sh",
+    "build": "npm run build:credentials && npm run build:web && npm run build:backend && electron-builder",
+    "dist": "npm run build:credentials && electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.aiumkm.accounting",
+    "productName": "AI Accounting RAG",
+    "files": [
+      "main.js",
+      "server.js",
+      "preload.js"
+    ],
+    "extraResources": [
+      {
+        "from": "../backend/dist/backend",
+        "to": "backend"
+      },
+      {
+        "from": "../knowledge",
+        "to": "knowledge"
+      },
+      {
+        "from": "../frontend/dist",
+        "to": "frontend"
+      },
+      {
+        "from": "credentials.json",
+        "to": "credentials.json"
+      }
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "category": "public.app-category.business",
+      "target": ["dmg"],
+      "identity": null
+    },
+    "win": {
+      "target": ["nsis"]
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Office"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

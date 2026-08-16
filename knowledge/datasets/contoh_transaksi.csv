@@ -1,0 +1,13 @@
+tanggal,deskripsi,jumlah,jenis,kategori
+2026-07-01,Setoran modal awal pemilik,10000000,masuk,modal
+2026-07-02,Beli perlengkapan tunai,1000000,keluar,pembelian_aset
+2026-07-05,Penjualan produk ke pelanggan (tunai),3000000,masuk,pendapatan
+2026-07-06,Bayar sewa toko bulan Juli,500000,keluar,beban_operasional
+2026-07-08,Beli barang dagang secara kredit,5000000,keluar,pembelian
+2026-07-10,Penjualan produk ke pelanggan (kredit),1500000,masuk,pendapatan
+2026-07-15,Bayar gaji karyawan,3000000,keluar,beban_operasional
+2026-07-18,Terima pelunasan piutang dari pelanggan,1500000,masuk,pelunasan_piutang
+2026-07-20,Bayar utang usaha ke supplier,2000000,keluar,pelunasan_utang
+2026-07-22,Bayar listrik dan air toko,350000,keluar,beban_operasional
+2026-07-25,Pemilik ambil uang untuk keperluan pribadi,500000,keluar,prive
+2026-07-31,Perlengkapan yang terpakai bulan ini,400000,penyesuaian,penyesuaian

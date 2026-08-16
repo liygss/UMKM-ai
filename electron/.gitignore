@@ -1,0 +1,7 @@
+node_modules/
+release/
+dist/
+build/
+# JANGAN commit key API (Opsi A) — diisi saat build lewat env
+credentials.json
+*.log

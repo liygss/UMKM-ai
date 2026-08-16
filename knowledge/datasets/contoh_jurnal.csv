@@ -1,0 +1,25 @@
+no_bukti,tanggal,deskripsi,kode_akun,nama_akun,debit,kredit
+JU-0001,2026-07-01,Setoran modal awal pemilik,1-1000,Kas,10000000,0
+JU-0001,2026-07-01,Setoran modal awal pemilik,3-1000,Modal Pemilik,0,10000000
+JU-0002,2026-07-02,Beli perlengkapan tunai,1-1400,Perlengkapan,1000000,0
+JU-0002,2026-07-02,Beli perlengkapan tunai,1-1000,Kas,0,1000000
+JU-0003,2026-07-05,Penjualan tunai,1-1000,Kas,3000000,0
+JU-0003,2026-07-05,Penjualan tunai,4-1000,Pendapatan Penjualan,0,3000000
+JU-0004,2026-07-06,Bayar sewa toko bulan Juli,5-2100,Beban Sewa,500000,0
+JU-0004,2026-07-06,Bayar sewa toko bulan Juli,1-1000,Kas,0,500000
+JU-0005,2026-07-08,Beli barang dagang secara kredit,1-1300,Persediaan Barang Dagang,5000000,0
+JU-0005,2026-07-08,Beli barang dagang secara kredit,2-1000,Utang Usaha,0,5000000
+JU-0006,2026-07-10,Penjualan kredit ke pelanggan,1-1200,Piutang Usaha,1500000,0
+JU-0006,2026-07-10,Penjualan kredit ke pelanggan,4-1000,Pendapatan Penjualan,0,1500000
+JU-0007,2026-07-15,Bayar gaji karyawan,5-2000,Beban Gaji,3000000,0
+JU-0007,2026-07-15,Bayar gaji karyawan,1-1000,Kas,0,3000000
+JU-0008,2026-07-18,Terima pelunasan piutang,1-1000,Kas,1500000,0
+JU-0008,2026-07-18,Terima pelunasan piutang,1-1200,Piutang Usaha,0,1500000
+JU-0009,2026-07-20,Bayar utang usaha ke supplier,2-1000,Utang Usaha,2000000,0
+JU-0009,2026-07-20,Bayar utang usaha ke supplier,1-1000,Kas,0,2000000
+JU-0010,2026-07-22,Bayar listrik dan air,5-2200,"Beban Listrik, Air, dan Telepon",350000,0
+JU-0010,2026-07-22,Bayar listrik dan air,1-1000,Kas,0,350000
+JU-0011,2026-07-25,Prive pemilik,3-2000,Prive,500000,0
+JU-0011,2026-07-25,Prive pemilik,1-1000,Kas,0,500000
+JP-0001,2026-07-31,Penyesuaian perlengkapan terpakai,5-2300,Beban Perlengkapan,400000,0
+JP-0001,2026-07-31,Penyesuaian perlengkapan terpakai,1-1400,Perlengkapan,0,400000
