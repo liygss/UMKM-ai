@@ -29,13 +29,6 @@ jobs:
   build:
     name: Build (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
-    # Saat trigger manual, skip platform yang tidak dipilih.
-    # Saat tag push (release), selalu build semua platform.
-    if: |
-      github.event_name == 'push' ||
-      github.event.inputs.target == 'all' ||
-      github.event.inputs.target == matrix.target ||
-      (github.event.inputs.target == 'windows,linux' && (matrix.target == 'windows' || matrix.target == 'linux'))
     strategy:
       fail-fast: false
       matrix:
@@ -51,20 +44,38 @@ jobs:
             target: linux
 
     steps:
+      - name: Should build?
+        id: should
+        shell: bash
+        run: |
+          TARGET="${{ github.event.inputs.target }}"
+          ME="${{ matrix.target }}"
+          if [ -z "$TARGET" ] || [ "$TARGET" = "all" ] || [ "$TARGET" = "$ME" ]; then
+            echo "should=true" >> $GITHUB_OUTPUT
+          elif [ "$TARGET" = "windows,linux" ] && { [ "$ME" = "windows" ] || [ "$ME" = "linux" ]; }; then
+            echo "should=true" >> $GITHUB_OUTPUT
+          else
+            echo "should=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout
+        if: steps.should.outputs.should == 'true'
         uses: actions/checkout@v4
 
       - name: Setup Python 3.12
+        if: steps.should.outputs.should == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Setup Node 20
+        if: steps.should.outputs.should == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Backend venv + dependencies
+        if: steps.should.outputs.should == 'true'
         shell: bash
         run: |
           cd backend
@@ -74,16 +85,19 @@ jobs:
           "$VENV_PY" -m pip install -r requirements.txt
 
       - name: Frontend dependencies
+        if: steps.should.outputs.should == 'true'
         shell: bash
         run: npm install
         working-directory: frontend
 
       - name: Electron dependencies
+        if: steps.should.outputs.should == 'true'
         shell: bash
         run: npm install
         working-directory: electron
 
       - name: Build installer (npm run build)
+        if: steps.should.outputs.should == 'true'
         shell: bash
         env:
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
@@ -92,6 +106,7 @@ jobs:
         working-directory: electron
 
       - name: Upload installer (artifact)
+        if: steps.should.outputs.should == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: installer-${{ matrix.os }}
@@ -101,7 +116,7 @@ jobs:
             electron/release/*.AppImage
 
       - name: Publish to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && steps.should.outputs.should == 'true'
         uses: softprops/action-gh-release@v2
         with:
           files: |
