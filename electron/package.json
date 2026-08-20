@@ -22,6 +22,7 @@
   "build": {
     "appId": "com.aiumkm.accounting",
     "productName": "AI Accounting RAG",
+    "icon": "icon.icns",
     "files": [
       "main.js",
       "server.js",
@@ -55,11 +56,13 @@
       "identity": null
     },
     "win": {
-      "target": ["nsis"]
+      "target": ["nsis"],
+      "icon": "icon.ico"
     },
     "linux": {
       "target": ["AppImage"],
-      "category": "Office"
+      "category": "Office",
+      "icon": "icon.png"
     },
     "nsis": {
       "oneClick": false,
