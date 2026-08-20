@@ -9,11 +9,13 @@
     "build:credentials": "node scripts/prepare-credentials.js",
     "build:web": "npm --prefix ../frontend run build",
     "build:backend": "bash ../backend/packaging/build.sh",
+    "build:backend:win": "cd ../backend && venv\\Scripts\\python.exe -m pip install --quiet pyinstaller && venv\\Scripts\\python.exe -m PyInstaller --clean --noconfirm packaging/accounting.spec",
     "build": "npm run build:credentials && npm run build:web && npm run build:backend && electron-builder",
+    "build:win": "npm run build:credentials && npm run build:web && npm run build:backend:win && electron-builder --win --x64",
+    "build:linux": "npm run build:credentials && npm run build:web && npm run build:backend && electron-builder --linux --x64",
     "dist": "npm run build:credentials && electron-builder",
-    "build:client": "npm run build:credentials && npm run build:web && electron-builder",
-    "build:client:win": "npm run build:credentials && npm run build:web && electron-builder --win --x64",
-    "build:client:linux": "npm run build:credentials && npm run build:web && electron-builder --linux --x64"
+    "dist:win": "npm run build:credentials && electron-builder --win --x64",
+    "dist:linux": "npm run build:credentials && electron-builder --linux --x64"
   },
   "devDependencies": {
     "electron": "^33.0.0",

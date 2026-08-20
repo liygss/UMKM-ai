@@ -291,7 +291,7 @@ async function main() {
       // Tampilkan halaman setup untuk input URL
       const setupPath = isDev
         ? path.join(__dirname, 'remote-setup.html')
-        : path.join(process.resourcesPath, 'remote-setup.html')
+        : path.join(app.getAppPath(), 'remote-setup.html')
       windowUrl = `file://${setupPath}`
     }
   }

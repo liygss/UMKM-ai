@@ -58,9 +58,67 @@ DEFAULT_CHART_OF_ACCOUNTS: list[tuple[str, str, KategoriAkun, str, SaldoNormal]]
 ]
 
 
+def _sqlite_typecompilation(col_type):
+    t = str(col_type).upper()
+    if "STRING" in t or "VARCHAR" in t or "TEXT" in t:
+        return "TEXT"
+    if "BOOLEAN" in t:
+        return "INTEGER"
+    if "DATETIME" in t or "TIMESTAMP" in t:
+        return "TEXT"
+    if "DATE" in t:
+        return "TEXT"
+    if "NUMERIC" in t or "FLOAT" in t or "DOUBLE" in t:
+        return "REAL"
+    return "TEXT"
+
+
+def _safe_default(col):
+    t = str(col.type).upper()
+    if "BOOLEAN" in t:
+        return "0"
+    if "INTEGER" in t or "NUMERIC" in t or "FLOAT" in t or "DOUBLE" in t:
+        return "0"
+    if "DATETIME" in t or "DATE" in t or "TIMESTAMP" in t:
+        if col.nullable:
+            return "NULL"
+        return "''"
+    if col.nullable:
+        return "NULL"
+    return "''"
+
+
+def _auto_migrate() -> None:
+    """Tambah kolom yang hilang pada tabel yang sudah ada (forward-only)."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    migrations_done = 0
+    for table_name, table in Base.metadata.tables.items():
+        if not inspector.has_table(table_name):
+            continue
+        existing = {col["name"] for col in inspector.get_columns(table_name)}
+        for col in table.columns:
+            if col.name not in existing:
+                col_type = _sqlite_typecompilation(col.type)
+                default_val = _safe_default(col)
+                nullable = "" if col.nullable else " NOT NULL"
+                with engine.begin() as conn:
+                    conn.execute(text(
+                        f'ALTER TABLE {table_name} ADD COLUMN {col.name} {col_type} DEFAULT {default_val}{nullable}'
+                    ))
+                logger.info("Migration: added column %s.%s", table_name, col.name)
+                migrations_done += 1
+    if migrations_done:
+        logger.info("Auto-migration selesai: %d kolom ditambahkan.", migrations_done)
+    else:
+        logger.info("Tidak ada kolom yang perlu dimigrasi.")
+
+
 def create_tables() -> None:
     logger.info("Membuat tabel database (jika belum ada)...")
     Base.metadata.create_all(bind=engine)
+    _auto_migrate()
     logger.info("Tabel database siap.")
 
 
