@@ -31,9 +31,9 @@ const GITHUB_REPO = 'liygss/UMKM-ai'
 const GITHUB_RELEASES_API = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`
 
 const PLATFORMS = [
-  { icon: Apple,       os: 'macOS',   note: 'Apple Silicon & Intel',    file: 'AI Accounting RAG-1.0.0-arm64.dmg',  ext: '.dmg'      },
-  { icon: MonitorDown, os: 'Windows', note: 'Windows 10 / 11 (x64)',    file: 'AI Accounting RAG Setup 1.0.0.exe',   ext: '.exe'      },
-  { icon: Laptop,      os: 'Linux',   note: 'AppImage (x64)',            file: 'AI Accounting RAG-1.0.0.AppImage',   ext: '.AppImage' },
+  { icon: Apple,       os: 'macOS',   note: 'Apple Silicon & Intel',    file: 'AI.Accounting.RAG-1.0.0-arm64.dmg',  ext: '.dmg'      },
+  { icon: MonitorDown, os: 'Windows', note: 'Windows 10 / 11 (x64)',    file: 'AI.Accounting.RAG.Setup.1.0.0.exe',   ext: '.exe'      },
+  { icon: Laptop,      os: 'Linux',   note: 'AppImage (x64)',            file: 'AI.Accounting.RAG-1.0.0.AppImage',   ext: '.AppImage' },
 ]
 
 const STATS = [

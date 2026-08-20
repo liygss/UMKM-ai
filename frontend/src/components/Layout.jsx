@@ -41,9 +41,9 @@ export default function Layout() {
     const isMac = platform.includes('mac')
     const isWin = platform.includes('win')
     const ext = isMac ? '.dmg' : isWin ? '.exe' : '.AppImage'
-    const name = isMac ? 'AI Accounting RAG-1.0.0-arm64.dmg'
-      : isWin ? 'AI Accounting RAG Setup 1.0.0.exe'
-      : 'AI Accounting RAG-1.0.0.AppImage'
+    const name = isMac ? 'AI.Accounting.RAG-1.0.0-arm64.dmg'
+      : isWin ? 'AI.Accounting.RAG.Setup.1.0.0.exe'
+      : 'AI.Accounting.RAG-1.0.0.AppImage'
 
     client.get('/downloads')
       .then(r => {

@@ -27,9 +27,9 @@ copy_file() {
   echo "OK:   $dst_name ($(du -h "$DST/$dst_name" | cut -f1))"
 }
 
-copy_file "$SRC/AI Accounting RAG-1.0.0-arm64.dmg"       "AI Accounting RAG-1.0.0-arm64.dmg"
-copy_file "$SRC/AI Accounting RAG Setup 1.0.0.exe"        "AI Accounting RAG Setup 1.0.0.exe"
-copy_file "$SRC/AI Accounting RAG-1.0.0.AppImage"         "AI Accounting RAG-1.0.0.AppImage"
+copy_file "$SRC/AI Accounting RAG-1.0.0-arm64.dmg"       "AI.Accounting.RAG-1.0.0-arm64.dmg"
+copy_file "$SRC/AI Accounting RAG Setup 1.0.0.exe"        "AI.Accounting.RAG.Setup.1.0.0.exe"
+copy_file "$SRC/AI Accounting RAG-1.0.0.AppImage"         "AI.Accounting.RAG-1.0.0.AppImage"
 
 echo
 echo "Isi folder downloads/:"
