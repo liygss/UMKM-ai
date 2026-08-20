@@ -4,7 +4,8 @@ import Sidebar from './Sidebar'
 import FloatingChatbot from './FloatingChatbot'
 import DemoWelcomeModal from './DemoWelcomeModal'
 import NotificationsDropdown from './NotificationsDropdown'
-import { Menu, Search, Landmark } from 'lucide-react'
+import client from '../api/client'
+import { Menu, Search, Landmark, Download } from 'lucide-react'
 
 const PAGE_TITLES = {
   '/dashboard': 'Dashboard',
@@ -21,6 +22,8 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [key, setKey] = useState(0)
   const [showWelcome, setShowWelcome] = useState(false)
+  const [downloadUrl, setDownloadUrl] = useState(null)
+  const [downloadFile, setDownloadFile] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
   const title = PAGE_TITLES[location.pathname] || 'Dashboard'
@@ -31,6 +34,26 @@ export default function Layout() {
 
   useEffect(() => {
     if (!localStorage.getItem('demo_seen')) setShowWelcome(true)
+  }, [])
+
+  useEffect(() => {
+    const platform = navigator.platform.toLowerCase()
+    const isMac = platform.includes('mac')
+    const isWin = platform.includes('win')
+    const ext = isMac ? '.dmg' : isWin ? '.exe' : '.AppImage'
+    const name = isMac ? 'AI Accounting RAG-1.0.0-arm64.dmg'
+      : isWin ? 'AI Accounting RAG Setup 1.0.0.exe'
+      : 'AI Accounting RAG-1.0.0.AppImage'
+
+    client.get('/downloads')
+      .then(r => {
+        const files = Array.isArray(r.data) ? r.data : []
+        if (files.some(f => f.endsWith(ext))) {
+          setDownloadUrl(`/api/downloads/${encodeURIComponent(name)}`)
+          setDownloadFile(name)
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const closeWelcome = (launch) => {
@@ -65,6 +88,24 @@ export default function Layout() {
               <span>Cari...</span>
               <kbd className="ml-auto rounded-lg px-2 py-0.5 text-[10px] font-medium" style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(148, 163, 184, 0.18)', color: '#64748B' }}>⌘K</kbd>
             </div>
+
+            {/* Download Desktop App */}
+            {downloadUrl && (
+              <a
+                href={downloadUrl}
+                download={downloadFile}
+                className="hidden sm:flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all duration-300 hover:shadow-lg hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, #059669, #10B981)',
+                  color: '#fff',
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+                }}
+                title={`Download ${downloadFile}`}
+              >
+                <Download size={14} />
+                <span className="hidden lg:inline">Download App</span>
+              </a>
+            )}
 
             {/* Notification bell */}
             <NotificationsDropdown />
