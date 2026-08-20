@@ -5,7 +5,7 @@ import FloatingChatbot from './FloatingChatbot'
 import DemoWelcomeModal from './DemoWelcomeModal'
 import NotificationsDropdown from './NotificationsDropdown'
 import client from '../api/client'
-import { Menu, Search, Landmark, Download } from 'lucide-react'
+import { Menu, Search, Download } from 'lucide-react'
 
 const PAGE_TITLES = {
   '/dashboard': 'Dashboard',
@@ -75,8 +75,8 @@ export default function Layout() {
 
           {/* Logo - Mobile */}
           <div className="flex lg:hidden items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)', boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)' }}>
-              <Landmark size={18} className="text-white" />
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden" style={{ borderRadius: '0.75rem', boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)' }}>
+              <img src="/logo.png" alt="AI UMKM" className="h-full w-full object-cover" />
             </div>
             <span className="text-sm font-bold" style={{ color: '#F1F5F9' }}>AI UMKM</span>
           </div>

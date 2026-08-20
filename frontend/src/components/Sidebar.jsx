@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   LayoutDashboard, BookOpen, FileText,
-  BarChart3, Upload, Calculator, LogOut, X, Landmark,
+  BarChart3, Upload, Calculator, LogOut, X,
   ChevronsLeft, ChevronsRight, Database, PlayCircle, FileSpreadsheet, Send
 } from 'lucide-react'
 
@@ -76,13 +76,10 @@ export default function Sidebar({ open, onClose }) {
           {/* Logo */}
           <div className={`flex h-18 items-center gap-3 ${collapsed ? 'justify-center px-2' : 'px-6'}`} style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.12)' }}>
             <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 50%, #3B82F6 100%)',
-                boxShadow: '0 4px 18px rgba(59, 130, 246, 0.45)',
-              }}
+              className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden"
+              style={{ borderRadius: '0.75rem', boxShadow: '0 4px 18px rgba(59, 130, 246, 0.45)' }}
             >
-              <Landmark size={20} className="text-white" />
+              <img src="/logo.png" alt="AI UMKM" className="h-full w-full object-cover" />
             </div>
             {!collapsed && (
               <div className="animate-fade-in">

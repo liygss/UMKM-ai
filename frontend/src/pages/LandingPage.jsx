@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Bot, BookOpen, BarChart3, Upload, Shield, Star, HelpCircle, ChevronDown,
-  ArrowRight, Zap, Landmark, TrendingUp, MessageSquare, CheckCircle, Quote, Menu, X, PlayCircle,
+  ArrowRight, Zap, TrendingUp, MessageSquare, CheckCircle, Quote, Menu, X, PlayCircle,
   Apple, Download, MonitorDown, Laptop,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -242,10 +242,10 @@ export default function LandingPage() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
               <div
-                className="relative flex h-11 w-11 items-center justify-center rounded-2xl"
-                style={{ background: 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)', boxShadow: '0 8px 24px rgba(59,130,246,0.4)' }}
+                className="relative flex h-11 w-11 items-center justify-center overflow-hidden"
+                style={{ borderRadius: '1rem', boxShadow: '0 8px 24px rgba(59,130,246,0.4)' }}
               >
-                <Landmark size={22} className="text-white relative z-10" />
+                <img src="/logo.png" alt="AI UMKM" className="h-full w-full object-cover relative z-10" />
                 <div className="absolute inset-0 rounded-2xl opacity-50 animate-pulse" style={{ background: 'linear-gradient(135deg, #2563EB, #60A5FA)', filter: 'blur(12px)' }} />
               </div>
               <div className="leading-tight">
@@ -961,10 +961,10 @@ export default function LandingPage() {
             <div className="md:col-span-1">
               <div className="flex items-center gap-3 mb-5">
                 <div
-                  className="flex h-10 w-10 items-center justify-center rounded-2xl"
-                  style={{ background: 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)', boxShadow: '0 4px 16px rgba(59,130,246,0.4)' }}
+                  className="flex h-10 w-10 items-center justify-center overflow-hidden"
+                  style={{ borderRadius: '0.75rem', boxShadow: '0 4px 16px rgba(59,130,246,0.4)' }}
                 >
-                  <Landmark size={20} className="text-white" />
+                  <img src="/logo.png" alt="AI UMKM" className="h-full w-full object-cover" />
                 </div>
                 <span className="text-lg font-extrabold" style={{ color: '#F1F5F9' }}>AI UMKM</span>
               </div>
