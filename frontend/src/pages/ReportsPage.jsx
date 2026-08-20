@@ -5,6 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import { buildAllReportsFullHtml } from '../utils/reportPdfBuilder'
 import { formatRupiah } from '../utils/formatters'
 import toast from 'react-hot-toast'
+import { extractError } from '../api/extractError'
 import { FileDown, FileSpreadsheet, FileText, TrendingUp, TrendingDown, Scale, AlertCircle, Loader2 } from 'lucide-react'
 
 const TABS = [
@@ -135,7 +136,7 @@ export default function ReportsPage() {
     client.get(url)
       .then(r => setData(r.data))
       .catch((err) => {
-        const msg = err.response?.data?.detail || 'Gagal memuat laporan'
+        const msg = extractError(err, 'Gagal memuat laporan')
         setError(msg)
         toast.error(msg)
       })

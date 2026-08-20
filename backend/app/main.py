@@ -10,18 +10,39 @@ Sebelum pertama kali jalan, siapkan database:
 
 from contextlib import asynccontextmanager
 import threading
+import time
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.config.logging import get_logger, setup_logging
 from app.config.settings import settings
 from app.database.database import check_db_connection, check_qdrant_connection
+from app.middleware.auth import require_admin
 from app.middleware.cors import setup_cors
-from app.routers import accounting, authentication, chatbot, dashboard, downloads, spt, upload
+from app.routers import accounting, authentication, chatbot, dashboard, downloads, notifications, spt, upload
 
 setup_logging()
 logger = get_logger(__name__)
+
+# ---------------------------------------------------------------------------
+# Rate limiter
+# ---------------------------------------------------------------------------
+limiter = Limiter(key_func=get_remote_address)
+
+# ---------------------------------------------------------------------------
+# Seed status tracking
+# ---------------------------------------------------------------------------
+_seed_status = {
+    "running": False,
+    "completed": False,
+    "error": None,
+    "started_at": None,
+    "completed_at": None,
+}
 
 
 @asynccontextmanager
@@ -41,6 +62,8 @@ async def lifespan(app: FastAPI):
 
     # Seed knowledge base di background (idempotent — hanya proses file baru).
     # Dengan ini aplikasi desktop langsung bisa dipakai tanpa langkah manual.
+    _seed_status["running"] = True
+    _seed_status["started_at"] = time.time()
     threading.Thread(target=_seed_knowledge_background, daemon=True).start()
     yield
     logger.info("Shutting down %s...", settings.APP_NAME)
@@ -51,8 +74,13 @@ def _seed_knowledge_background() -> None:
         from app.services.ingestion.seed_knowledge_base import run as seed_run
 
         seed_run()
-    except Exception:  # noqa: BLE001
+        _seed_status["completed"] = True
+        _seed_status["completed_at"] = time.time()
+    except Exception as exc:  # noqa: BLE001
         logger.exception("Seeding knowledge base di background gagal — fitur RAG mungkin kosong.")
+        _seed_status["error"] = str(exc)
+    finally:
+        _seed_status["running"] = False
 
 
 app = FastAPI(
@@ -61,6 +89,10 @@ app = FastAPI(
     description="Backend AI Accounting RAG untuk pembukuan & konsultasi pajak UMKM (SAK EMKM).",
     lifespan=lifespan,
 )
+
+# Tambah rate limiter ke app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 setup_cors(app)
 
@@ -74,6 +106,7 @@ app.include_router(upload.router)
 app.include_router(dashboard.router)
 app.include_router(chatbot.router)
 app.include_router(downloads.router)
+app.include_router(notifications.router)
 
 
 @app.get("/", tags=["Root"])
@@ -87,7 +120,14 @@ def root() -> dict:
 
 
 @app.get("/health", tags=["Root"])
-def health() -> JSONResponse:
+def health() -> dict:
+    """Health check publik — tidak membocorkan info internal."""
+    return {"status": "ok"}
+
+
+@app.get("/health/detail", tags=["Root"])
+def health_detail(admin=Depends(require_admin)) -> JSONResponse:
+    """Health check detail — hanya untuk admin/monitoring internal."""
     db_ok = check_db_connection()
     qdrant_ok = check_qdrant_connection()
     status_code = 200 if db_ok else 503
@@ -98,3 +138,18 @@ def health() -> JSONResponse:
             "qdrant": "connected" if qdrant_ok else "disconnected",
         },
     )
+
+
+@app.get("/health/seed-status", tags=["Root"])
+def seed_status(admin=Depends(require_admin)) -> dict:
+    """Status background seeding knowledge base."""
+    result = dict(_seed_status)
+    if result["started_at"]:
+        result["started_at"] = time.strftime(
+            "%Y-%m-%dT%H:%M:%S", time.localtime(result["started_at"])
+        )
+    if result["completed_at"]:
+        result["completed_at"] = time.strftime(
+            "%Y-%m-%dT%H:%M:%S", time.localtime(result["completed_at"])
+        )
+    return result

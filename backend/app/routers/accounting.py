@@ -33,7 +33,7 @@ from app.accounting.jurnal_umum import list_jurnal as service_list_jurnal
 from app.config.logging import get_logger
 from app.database.database import get_db
 from app.database.models import Akun, JenisJurnal, JurnalUmum, User
-from app.middleware.auth import get_current_user_from_query, require_active_user
+from app.middleware.auth import create_download_token, require_active_user
 from app.schemas.report_schema import (
     BukuBesarResponse,
     CalkResponse,
@@ -527,6 +527,7 @@ def _generate_xlsx(report_type: str, data, tanggal_per: date | None) -> io.Bytes
 def _generate_csv(report_type: str, data, tanggal_per: date | None) -> io.StringIO:
     rows = _build_rows(report_type, data)
     output = io.StringIO()
+    output.write("\ufeff")  # UTF-8 BOM untuk kompatibilitas Excel
     writer = csv.writer(output)
     for row in rows:
         writer.writerow(row)
@@ -624,6 +625,7 @@ def _generate_all_xlsx(all_data: dict, tanggal_per: date | None) -> io.BytesIO:
 
 def _generate_all_csv(all_data: dict, tanggal_per: date | None) -> io.StringIO:
     output = io.StringIO()
+    output.write("\ufeff")  # UTF-8 BOM untuk kompatibilitas Excel
     writer = csv.writer(output)
 
     for idx, report_type in enumerate(ALL_REPORTS):
@@ -697,7 +699,7 @@ def export_all_laporan(
     format: str = Query("xlsx", regex="^(xlsx|csv)$"),
     tanggal_per: date | None = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_from_query),
+    current_user: User = Depends(require_active_user),
 ):
     engines = {
         "neraca-saldo": neraca_saldo_engine.get_neraca_saldo,

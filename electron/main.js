@@ -19,14 +19,35 @@ const fs = require('fs')
 const crypto = require('crypto')
 const net = require('net')
 const { spawn } = require('child_process')
+const { ipcMain } = require('electron')
 const { startServer } = require('./server')
 
 const isDev = process.argv.includes('--dev')
+
+// Cegah crash dari EPIPE atau error tak terduga saat app dibuka dari Finder.
+process.stdout?.on?.('error', () => {})
+process.stderr?.on?.('error', () => {})
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err)
+})
+
+// ---------------------------------------------------------------------------
+// IPC — remote mode URL saving
+// ---------------------------------------------------------------------------
+ipcMain.handle('set-remote-url', async (_event, url) => {
+  const cfgPath = path.join(userDataDir(), 'config.json')
+  let cfg = {}
+  try { cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf-8')) } catch {}
+  cfg.remoteUrl = url
+  fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2))
+  return true
+})
 
 let backendProc = null
 let staticServer = null
 let mainWindow = null
 let backendPort = null
+let remoteMode = false
 
 const VITE_DEV_URL = 'http://localhost:5173'
 
@@ -151,8 +172,16 @@ async function startBackend(cfg) {
     env: backendEnv(cfg),
     stdio: ['ignore', 'pipe', 'pipe'],
   })
-  backendProc.stdout.on('data', (d) => process.stdout.write(`[backend] ${d}`))
-  backendProc.stderr.on('data', (d) => process.stderr.write(`[backend] ${d}`))
+
+  // Safe write — saat app dibuka dari Finder, process.stdout/stderr bisa
+  // berupa broken pipe (EPIPE). Tangani supaya tidak crash.
+  const safeWrite = (stream, prefix, data) => {
+    try {
+      if (stream.writable && !stream.destroyed) stream.write(`${prefix} ${data}`)
+    } catch { /* EPIPE dari Finder — abaikan */ }
+  }
+  backendProc.stdout.on('data', (d) => safeWrite(process.stdout, '[backend]', d))
+  backendProc.stderr.on('data', (d) => safeWrite(process.stderr, '[backend]', d))
   backendProc.on('exit', (code) => {
     console.log(`Backend process exit code: ${code}`)
     backendProc = null
@@ -229,23 +258,42 @@ function createWindow(url) {
 // ---------------------------------------------------------------------------
 async function main() {
   const cfg = loadCredentials()
-  backendPort = await getFreePort()
 
+  // Coba jalankan backend lokal (mode normal / full desktop app).
+  // Kalau binary backend tidak ada (client build tanpa PyInstaller),
+  // masuk mode remote — app jadi thin client yang connect ke server.
+  let backendStarted = false
   try {
+    backendPort = await getFreePort()
     await startBackend(cfg)
+    backendStarted = true
+    console.log('Backend lokal berhasil dijalankan.')
   } catch (err) {
-    dialog.showErrorBox('Gagal menjalankan backend', String(err.message || err))
-    app.quit()
-    return
+    console.log('Backend lokal tidak tersedia — mode remote:', err.message)
+    remoteMode = true
   }
 
   let windowUrl
   if (isDev) {
     windowUrl = VITE_DEV_URL
-  } else {
+  } else if (backendStarted) {
+    // Mode normal: serve frontend statis + proxy ke backend lokal
     const distDir = path.join(process.resourcesPath, 'frontend')
     staticServer = await startServer({ distDir, backendPort })
     windowUrl = `http://127.0.0.1:${staticServer.port}`
+  } else {
+    // Mode remote: cek config untuk URL tersimpan
+    const savedUrl = cfg.remoteUrl || ''
+    if (savedUrl) {
+      console.log('Menggunakan URL remote tersimpan:', savedUrl)
+      windowUrl = savedUrl
+    } else {
+      // Tampilkan halaman setup untuk input URL
+      const setupPath = isDev
+        ? path.join(__dirname, 'remote-setup.html')
+        : path.join(process.resourcesPath, 'remote-setup.html')
+      windowUrl = `file://${setupPath}`
+    }
   }
 
   createWindow(windowUrl)

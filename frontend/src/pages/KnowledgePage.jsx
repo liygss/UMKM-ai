@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { formatDateTime } from '../utils/formatters'
 import toast from 'react-hot-toast'
+import { extractError } from '../api/extractError'
 import { BookOpen, Plus, Trash2, CheckCircle, XCircle, Clock, Loader2, Database } from 'lucide-react'
 
 const KATEGORI_OPTIONS = [
@@ -69,7 +70,7 @@ export default function KnowledgePage() {
       setShowForm(false)
       load()
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal menyimpan knowledge')
+      toast.error(extractError(err, 'Gagal menyimpan knowledge'))
     } finally {
       setSubmitting(false)
     }

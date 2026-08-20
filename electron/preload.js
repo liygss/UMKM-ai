@@ -1,11 +1,14 @@
 /**
  * Preload script — jembatan aman (contextIsolation) antara renderer dan main.
- * Untuk sekarang tidak mengekspos apa pun; placeholder untuk fitur IPC
- * (mis. membaca/menulis config API key dari halaman Settings).
+ * Menyediakan API aman untuk komunikasi IPC (remote mode) dan info platform.
  */
-const { contextBridge } = require('electron')
+const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('desktop', {
   platform: process.platform,
   version: '1.0.0',
+})
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  setRemoteUrl: (url) => ipcRenderer.invoke('set-remote-url', url),
 })

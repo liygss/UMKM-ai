@@ -4,6 +4,7 @@ import client from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { formatRupiah, formatDateTime } from '../utils/formatters'
 import toast from 'react-hot-toast'
+import { extractError } from '../api/extractError'
 import { Upload, FileText, CheckCircle, XCircle, Clock, UploadCloud, Trash2, LayoutDashboard, TrendingUp, TrendingDown, Banknote, BarChart3, Sparkles } from 'lucide-react'
 
 const STATUS_ICON = {
@@ -198,7 +199,7 @@ export default function UploadPage() {
       window.dispatchEvent(new Event('data-changed'))
       load()
     } catch (err) {
-      toast.error(err.response?.data?.detail || `Gagal upload ${file.name}`)
+      toast.error(extractError(err, `Gagal upload ${file.name}`))
     } finally {
       setUploading(false)
     }

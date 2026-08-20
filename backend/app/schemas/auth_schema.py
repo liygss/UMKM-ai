@@ -1,5 +1,6 @@
 """Schema untuk register, login, dan token JWT."""
 
+import re
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
@@ -13,11 +14,17 @@ class UserRegister(BaseModel):
     full_name: str
     company_name: str | None = None
 
-    @field_validator("password")
+    @field_validator("password", mode="after")
     @classmethod
-    def password_min_length(cls, v: str) -> str:
+    def password_complexity(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("Password minimal 8 karakter")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password harus mengandung huruf besar (A-Z)")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password harus mengandung huruf kecil (a-z)")
+        if not re.search(r"\d", v):
+            raise ValueError("Password harus mengandung angka (0-9)")
         return v
 
 

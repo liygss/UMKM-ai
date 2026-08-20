@@ -30,3 +30,7 @@ electron/release/
 
 # Installer aplikasi desktop (disajikan langsung via /downloads)
 downloads/
+
+# Local data / reports
+data/
+bug_report*.html

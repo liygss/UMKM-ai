@@ -3,6 +3,7 @@ import client from '../api/client'
 import DataTable from '../components/DataTable'
 import LoadingSpinner from '../components/LoadingSpinner'
 import toast from 'react-hot-toast'
+import { extractError } from '../api/extractError'
 import { Plus, X, Search } from 'lucide-react'
 
 const KATEGORI = ['ASET', 'LIABILITAS', 'MODAL', 'PENDAPATAN', 'BEBAN']
@@ -49,7 +50,7 @@ export default function AccountingPage() {
       setForm({ kode_akun: '', nama_akun: '', kategori: 'ASET', saldo_normal: 'DEBIT', sub_kategori: '' })
       load()
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal menambah akun')
+      toast.error(extractError(err, 'Gagal menambah akun'))
     }
   }
 

@@ -27,6 +27,14 @@ const MIME = {
   '.ttf': 'font/ttf',
 }
 
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' http://127.0.0.1:*; font-src 'self' data:;",
+}
+
 /**
  * @param {{distDir: string, backendPort: number}} opts
  * @returns {Promise<{server: import('http').Server, port: number}>}
@@ -39,15 +47,25 @@ function startServer({ distDir, backendPort }) {
       // Proxy API ke backend FastAPI (hapus prefix /api)
       if (url.startsWith('/api/')) {
         const targetPath = url.slice('/api'.length) || '/'
+
+        // Strip incoming security headers that shouldn't be forwarded
+        const proxyHeaders = { ...req.headers, host: `127.0.0.1:${backendPort}` }
+        delete proxyHeaders['x-content-type-options']
+        delete proxyHeaders['x-frame-options']
+        delete proxyHeaders['x-xss-protection']
+        delete proxyHeaders['referrer-policy']
+        delete proxyHeaders['content-security-policy']
+
         const proxyReq = http.request(
           {
             host: '127.0.0.1',
             port: backendPort,
             path: targetPath,
             method: req.method,
-            headers: { ...req.headers, host: `127.0.0.1:${backendPort}` },
+            headers: proxyHeaders,
           },
           (proxyRes) => {
+            // Forward backend response headers as-is
             res.writeHead(proxyRes.statusCode || 502, proxyRes.headers)
             proxyRes.pipe(res)
           }
@@ -87,13 +105,13 @@ function startServer({ distDir, backendPort }) {
                 res.end('not found')
                 return
               }
-              res.writeHead(200, { 'Content-Type': MIME['.html'] })
+              res.writeHead(200, { 'Content-Type': MIME['.html'], ...SECURITY_HEADERS })
               res.end(indexHtml)
             })
             return
           }
           const ext = path.extname(filePath).toLowerCase()
-          res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' })
+          res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', ...SECURITY_HEADERS })
           res.end(data)
         })
       })

@@ -4,26 +4,32 @@ import axios from 'axios'
 // Di desktop/built: bisa diarahkan ke URL backend langsung via VITE_API_URL.
 const baseURL = import.meta.env.VITE_API_URL || '/api'
 
+let _onUnauthorized = null
+
+export function setUnauthorizedHandler(fn) {
+  _onUnauthorized = fn
+}
+
 const client = axios.create({
   baseURL,
+  withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
-})
-
-client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
 })
 
 client.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
+      const path = window.location.pathname
+      const publicPaths = ['/', '/login', '/register', '/demo']
+      if (!publicPaths.includes(path)) {
+        localStorage.removeItem('user')
+        if (_onUnauthorized) {
+          _onUnauthorized()
+        } else {
+          window.location.href = '/login'
+        }
+      }
     }
     return Promise.reject(err)
   }

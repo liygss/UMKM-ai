@@ -4,6 +4,7 @@ import { formatRupiah, formatDate } from '../utils/formatters'
 import { buildSptPrintHtml } from '../utils/sptPdfBuilder'
 import { GUIDE_STEPS, contohData } from '../data/sptTutorial'
 import toast from 'react-hot-toast'
+import { extractError } from '../api/extractError'
 import {
   User, Wallet, Receipt, Home, Users, FileCheck, Calculator,
   Save, Printer, Trash2, Plus, FileSpreadsheet, History, Landmark, Info,
@@ -84,6 +85,16 @@ function sumDict(dict) {
   return Object.values(dict || {}).reduce((s, v) => s + (Number(v) || 0), 0)
 }
 
+// Format pesan error dari axios: detail 422 berupa array -> dirangkai jadi
+// teks terbaca supaya user tahu field mana yang bermasalah.
+function fmtErr(err, fallback) {
+  const detail = err?.response?.data?.detail
+  if (Array.isArray(detail)) {
+    return `${fallback}: ${detail.map((d) => d?.msg || JSON.stringify(d)).join('; ')}`
+  }
+  return (typeof detail === 'string' && detail) || fallback
+}
+
 function setPath(data, path, value) {
   if (path.length === 1) return { ...data, [path[0]]: value }
   const [head, ...rest] = path
@@ -111,11 +122,20 @@ function Field({ label, children, className }) {
 }
 
 function NumField({ value, onChange, placeholder, className }) {
+  // Sanitasi value dari state: NaN/Infinity/undefined/null/string -> 0.
+  // Ini penting karena tipe `number` di browser bisa menghasilkan transient
+  // seperti "5e" atau "-" saat user mengetik parsial, yang Number(...) = NaN
+  // dan JSON.stringify(NaN) = null -> backend Pydantic tolak (422).
+  // Number(value) juga menangani string-numerik dari draft lama ("50000" -> 50000).
+  const safe = Number.isFinite(Number(value)) ? Number(value) : 0
   return (
     <input
       type="number" min="0" step="any"
-      value={value === 0 || value === undefined || value === null ? '' : value}
-      onChange={(e) => onChange(e.target.value === '' ? 0 : Number(e.target.value))}
+      value={safe === 0 ? '' : safe}
+      onChange={(e) => {
+        const v = e.target.value === '' ? 0 : Number(e.target.value)
+        onChange(Number.isFinite(v) ? v : 0)
+      }}
       className={className || 'input-field'}
       placeholder={placeholder || '0'}
     />
@@ -332,7 +352,7 @@ export default function SptPage() {
       setCalc(res)
       toast.success('Perhitungan berhasil')
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal menghitung')
+      toast.error(fmtErr(err, 'Gagal menghitung'))
     } finally {
       setLoading(false)
     }
@@ -357,7 +377,7 @@ export default function SptPage() {
       }
       await loadDrafts()
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal menyimpan draft')
+      toast.error(fmtErr(err, 'Gagal menyimpan draft'))
     } finally {
       setSaving(false)
     }
@@ -391,7 +411,7 @@ export default function SptPage() {
       setDrafts((d) => d.filter((x) => x.id !== id))
       toast.success('Draft dihapus')
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal menghapus')
+      toast.error(extractError(err, 'Gagal menghapus'))
     }
   }
 

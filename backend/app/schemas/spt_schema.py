@@ -2,10 +2,36 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationInfo
 
 
-class IdentitasForm(BaseModel):
+# ---------------------------------------------------------------------------
+# Mixin: coerce None / "" / string-numerik pada field int/float -> 0.
+#
+# Tanpa mixin ini, frontend yang mengirim `NaN` (yang JSON.stringify jadi
+# `null`) atau `""` ke field float/int akan ditolak Pydantic (422), sehingga
+# UI menampilkan "Gagal menghitung" tanpa pesan yang jelas.
+# ---------------------------------------------------------------------------
+class _NumCoerceModel(BaseModel):
+    @field_validator("*", mode="before")
+    @classmethod
+    def _coerce_numeric_field(cls, v: object, info: ValidationInfo):
+        finfo = cls.model_fields.get(info.field_name) if info.field_name else None
+        if finfo is None or finfo.annotation not in (int, float):
+            return v
+        if v is None:
+            return 0
+        if isinstance(v, str):
+            if v.strip() == "":
+                return 0
+            try:
+                return int(v) if finfo.annotation is int else float(v)
+            except ValueError:
+                return 0
+        return v
+
+
+class IdentitasForm(_NumCoerceModel):
     npwp: str = ""
     nama: str = ""
     jenis_usaha: str = ""
@@ -22,7 +48,7 @@ class IdentitasForm(BaseModel):
     jenis_form: str = "1770"  # 1770 / 1770S
 
 
-class PenghasilanUsahaPembukuan(BaseModel):
+class PenghasilanUsahaPembukuan(_NumCoerceModel):
     peredaran_usaha: float = 0
     hpp: float = 0
     laba_rugi_bruto: float = 0
@@ -34,13 +60,13 @@ class PenghasilanUsahaPembukuan(BaseModel):
     jumlah_penyesuaian_negatif: float = 0
 
 
-class PenghasilanUsahaPencatatan(BaseModel):
+class PenghasilanUsahaPencatatan(_NumCoerceModel):
     jenis_usaha: str = ""
     norma_persen: float = 0
     peredaran_usaha: float = 0
 
 
-class PenghasilanNeto(BaseModel):
+class PenghasilanNeto(_NumCoerceModel):
     """Struktur bagian 'penghasilan' pada form SPT."""
 
     metode: str = "pembukuan"  # pembukuan / pencatatan
@@ -56,14 +82,14 @@ class PenghasilanNeto(BaseModel):
     final: list[dict] = Field(default_factory=list)  # [{jenis, dasar_pengenaan, pph_terutang}]
 
 
-class KreditPajakForm(BaseModel):
+class KreditPajakForm(_NumCoerceModel):
     dalam_negeri: float = 0  # kredit pajak PPh 24
     pemotongan: list[dict] = Field(default_factory=list)  # [{nama, npwp, jenis, no_bukti, tanggal, jumlah}]
     pph_dibayar_sendiri_25: float = 0  # jumlah PPh 25 yang telah dibayar
     stp_pph_25: float = 0  # STP PPh Pasal 25 (hanya pokok pajak)
 
 
-class HartaForm(BaseModel):
+class HartaForm(_NumCoerceModel):
     kode: str = ""
     nama: str = ""
     tahun_perolehan: int = 0
@@ -71,7 +97,7 @@ class HartaForm(BaseModel):
     keterangan: str = ""
 
 
-class UtangForm(BaseModel):
+class UtangForm(_NumCoerceModel):
     kode: str = ""
     nama_pemberi: str = ""
     alamat_pemberi: str = ""
@@ -113,10 +139,32 @@ class SptCreate(BaseModel):
     status: str = "DRAFT"
     data: SptData = SptData()
 
+    @field_validator("form_type", mode="after")
+    @classmethod
+    def validate_form_type(cls, v: str) -> str:
+        if v not in ("1770", "1770S"):
+            raise ValueError("form_type harus '1770' atau '1770S'")
+        return v
+
+    @field_validator("tahun_pajak", mode="after")
+    @classmethod
+    def validate_tahun_pajak(cls, v: int) -> int:
+        current_year = datetime.now().year
+        if not (2000 <= v <= current_year + 1):
+            raise ValueError(f"tahun_pajak harus antara 2000 dan {current_year + 1}")
+        return v
+
 
 class SptUpdate(BaseModel):
     status: str | None = None
     data: SptData | None = None
+
+    @field_validator("status", mode="after")
+    @classmethod
+    def validate_status(cls, v: str | None) -> str | None:
+        if v is not None and v not in ("DRAFT", "FINAL"):
+            raise ValueError("status harus 'DRAFT' atau 'FINAL'")
+        return v
 
 
 class SptResponse(BaseModel):

@@ -1,22 +1,26 @@
 """
 Utilitas autentikasi: hashing password, pembuatan & verifikasi JWT,
-serta dependency `get_current_user` untuk dipakai di router yang butuh login.
+signed download token (itsdangerous), serta dependency `get_current_user`
+untuk dipakai di router yang butuh login.
+
+Autentikasi menggunakan httpOnly cookie (bukan Authorization header).
 """
 
+import re
 from datetime import datetime, timedelta, timezone
 
-from fastapi import Depends, HTTPException, Query, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Cookie, Depends, HTTPException, Request, status
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 from app.config.settings import settings
 from app.database.database import get_db
 from app.database.models import RoleUser, User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+_download_serializer = URLSafeTimedSerializer(settings.SECRET_KEY)
 
 
 # ---------------------------------------------------------------------------
@@ -30,9 +34,24 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
+def validate_password_complexity(password: str) -> None:
+    """Validasi kompleksitas password. Raise ValueError jika tidak valid."""
+    if len(password) < 8:
+        raise ValueError("Password minimal 8 karakter")
+    if not re.search(r"[A-Z]", password):
+        raise ValueError("Password harus mengandung huruf besar")
+    if not re.search(r"[a-z]", password):
+        raise ValueError("Password harus mengandung huruf kecil")
+    if not re.search(r"\d", password):
+        raise ValueError("Password harus mengandung angka")
+
+
 # ---------------------------------------------------------------------------
 # JWT
 # ---------------------------------------------------------------------------
+COOKIE_NAME = "access_token"
+
+
 def create_access_token(subject: str, expires_delta: timedelta | None = None) -> str:
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -59,12 +78,45 @@ def decode_access_token(token: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# FastAPI dependencies
+# Signed download token (itsdangerous) — untuk <a href> download
 # ---------------------------------------------------------------------------
+def create_download_token(user_id: str) -> str:
+    """Buat signed token one-time untuk download file via <a href>."""
+    return _download_serializer.dumps({"uid": user_id}, salt="download")
+
+
+def verify_download_token(token: str, max_age: int = 3600) -> str:
+    """Verifikasi signed download token. Mengembalikan user_id."""
+    try:
+        data = _download_serializer.loads(token, salt="download", max_age=max_age)
+        return data["uid"]
+    except (BadSignature, SignatureExpired) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token download tidak valid atau sudah kedaluwarsa",
+        ) from exc
+
+
+# ---------------------------------------------------------------------------
+# FastAPI dependencies — cookie-based auth
+# ---------------------------------------------------------------------------
+def _extract_token_from_request(request: Request) -> str | None:
+    """Ambil token dari cookie (httpOnly)."""
+    return request.cookies.get(COOKIE_NAME)
+
+
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    request: Request,
     db: Session = Depends(get_db),
 ) -> User:
+    """Dependency: ambil user dari cookie. Return 401 jika tidak ada/tidak valid."""
+    token = _extract_token_from_request(request)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tidak terautentikasi",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     user_id = decode_access_token(token)
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
@@ -77,21 +129,6 @@ def get_current_user(
 def require_active_user(current_user: User = Depends(get_current_user)) -> User:
     """Alias eksplisit untuk dipakai di router: Depends(require_active_user)"""
     return current_user
-
-
-def get_current_user_from_query(
-    token: str = Query(..., description="JWT token untuk download via <a href>"),
-    db: Session = Depends(get_db),
-) -> User:
-    """Auth via query param ?token=... — dipakai untuk endpoint download
-    (PDF/Excel/CSV) yang diakses lewat <a href> (tidak bisa set header)."""
-    user_id = decode_access_token(token)
-    user = db.query(User).filter(User.id == user_id).first()
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User tidak ditemukan")
-    if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Akun tidak aktif")
-    return user
 
 
 def require_admin(current_user: User = Depends(require_active_user)) -> User:

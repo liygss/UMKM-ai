@@ -77,32 +77,37 @@ def check_db_connection() -> bool:
 # ---------------------------------------------------------------------------
 # Qdrant (vector database)
 # ---------------------------------------------------------------------------
+import threading
+
 _qdrant_client: QdrantClient | None = None
+_qdrant_lock = threading.Lock()
 
 
 def get_qdrant_client() -> QdrantClient:
     """
-    Singleton Qdrant client. Dipakai oleh services/ingestion/qdrant_service.py
-    dan rag/retriever.py.
+    Thread-safe singleton Qdrant client. Dipakai oleh
+    services/ingestion/qdrant_service.py dan rag/retriever.py.
 
     Cloud/server mode: kalau QDRANT_API_KEY diset, pakai url (https) + api_key.
     Embedded lokal: kalau tidak ada API key, pakai path file (tanpa server).
     """
     global _qdrant_client
     if _qdrant_client is None:
-        if settings.QDRANT_API_KEY:
-            _qdrant_client = QdrantClient(
-                url=f"https://{settings.QDRANT_HOST}",
-                api_key=settings.QDRANT_API_KEY,
-                timeout=60,
-            )
-            logger.info("Qdrant client terhubung ke cloud %s", settings.QDRANT_HOST)
-        else:
-            _qdrant_client = QdrantClient(
-                path=settings.QDRANT_LOCAL_PATH,
-                timeout=60,
-            )
-            logger.info("Qdrant client embedded lokal: %s", settings.QDRANT_LOCAL_PATH)
+        with _qdrant_lock:
+            if _qdrant_client is None:
+                if settings.QDRANT_API_KEY:
+                    _qdrant_client = QdrantClient(
+                        url=f"https://{settings.QDRANT_HOST}",
+                        api_key=settings.QDRANT_API_KEY,
+                        timeout=60,
+                    )
+                    logger.info("Qdrant client terhubung ke cloud %s", settings.QDRANT_HOST)
+                else:
+                    _qdrant_client = QdrantClient(
+                        path=settings.QDRANT_LOCAL_PATH,
+                        timeout=60,
+                    )
+                    logger.info("Qdrant client embedded lokal: %s", settings.QDRANT_LOCAL_PATH)
     return _qdrant_client
 
 

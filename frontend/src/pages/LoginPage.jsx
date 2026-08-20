@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
+import { extractError } from '../api/extractError'
 import { Landmark, Eye, EyeOff, ArrowRight, ArrowLeft, Sparkles, Shield, Zap, CheckCircle2 } from 'lucide-react'
 
 export default function LoginPage() {
@@ -20,7 +21,7 @@ export default function LoginPage() {
       toast.success('Berhasil login!')
       navigate('/dashboard')
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Login gagal')
+      toast.error(extractError(err, 'Login gagal'))
     } finally {
       setLoading(false)
     }

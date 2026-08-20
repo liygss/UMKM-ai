@@ -56,7 +56,13 @@ def _ambil_histori(db: Session, session: ChatSession) -> list[dict[str, str]]:
     return [{"role": m.role.value.lower(), "content": m.content} for m in messages]
 
 
-def ask(db: Session, user_id: str, session_id: str | None, pertanyaan: str) -> RagAnswer:
+def ask(
+    db: Session,
+    user_id: str,
+    session_id: str | None,
+    pertanyaan: str,
+    financial_context: str | None = None,
+) -> RagAnswer:
     session = _get_or_create_session(db, user_id, session_id)
     histori = _ambil_histori(db, session)
 
@@ -69,8 +75,9 @@ def ask(db: Session, user_id: str, session_id: str | None, pertanyaan: str) -> R
     # 3. Context (knowledge base)
     context = build_context(reranked)
 
-    # 3b. Financial context (data keuangan user dari PostgreSQL)
-    financial_context = get_financial_context(db, user_id, pertanyaan)
+    # 3b. Financial context — gunakan yang sudah dihitung atau hitung baru
+    if financial_context is None:
+        financial_context = get_financial_context(db, user_id, pertanyaan)
 
     # 4. Prompt (gabungkan knowledge base + financial context)
     messages = build_messages(pertanyaan, context, histori, financial_context)

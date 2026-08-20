@@ -10,7 +10,10 @@
     "build:web": "npm --prefix ../frontend run build",
     "build:backend": "bash ../backend/packaging/build.sh",
     "build": "npm run build:credentials && npm run build:web && npm run build:backend && electron-builder",
-    "dist": "npm run build:credentials && electron-builder"
+    "dist": "npm run build:credentials && electron-builder",
+    "build:client": "npm run build:credentials && npm run build:web && electron-builder",
+    "build:client:win": "npm run build:credentials && npm run build:web && electron-builder --win --x64",
+    "build:client:linux": "npm run build:credentials && npm run build:web && electron-builder --linux --x64"
   },
   "devDependencies": {
     "electron": "^33.0.0",
@@ -22,7 +25,8 @@
     "files": [
       "main.js",
       "server.js",
-      "preload.js"
+      "preload.js",
+      "remote-setup.html"
     ],
     "extraResources": [
       {

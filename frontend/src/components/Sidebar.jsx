@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   LayoutDashboard, BookOpen, FileText,
   BarChart3, Upload, Calculator, LogOut, X, Landmark,
-  ChevronsLeft, ChevronsRight, Database, PlayCircle, FileSpreadsheet
+  ChevronsLeft, ChevronsRight, Database, PlayCircle, FileSpreadsheet, Send
 } from 'lucide-react'
 
 export default function Sidebar({ open, onClose }) {
@@ -42,6 +42,7 @@ export default function Sidebar({ open, onClose }) {
         { to: '/demo', label: 'Lihat Demo', icon: PlayCircle },
         { to: '/upload', label: 'Upload File', icon: Upload },
         ...(isAdmin ? [{ to: '/knowledge', label: 'Knowledge Base', icon: Database }] : []),
+        ...(isAdmin ? [{ to: '/notif-admin', label: 'Kirim Notifikasi', icon: Send }] : []),
       ]
     },
   ]

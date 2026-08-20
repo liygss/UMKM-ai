@@ -1,5 +1,7 @@
 """Router chatbot: tanya jawab akuntansi & pajak berbasis RAG + Ollama."""
 
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -15,6 +17,8 @@ from app.services.data_context_service import get_financial_context
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
 logger = get_logger(__name__)
 
+CHATBOT_TIMEOUT_SECONDS = 60
+
 
 @router.get("/health")
 def health() -> dict:
@@ -22,17 +26,33 @@ def health() -> dict:
 
 
 @router.post("/ask", response_model=ChatResponse)
-def ask_chatbot(
+async def ask_chatbot(
     payload: ChatRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_active_user),
 ) -> ChatResponse:
     try:
-        # Cek apakah pertanyaan memerlukan data keuangan
+        # Hitung financial context sekali saja
         financial_context = get_financial_context(db, current_user.id, payload.message)
         has_financial_data = financial_context is not None
 
-        hasil = ask(db, current_user.id, payload.session_id, payload.message)
+        # Jalankan RAG pipeline dengan timeout
+        hasil = await asyncio.wait_for(
+            asyncio.to_thread(
+                ask,
+                db,
+                current_user.id,
+                payload.session_id,
+                payload.message,
+                financial_context,
+            ),
+            timeout=CHATBOT_TIMEOUT_SECONDS,
+        )
+    except asyncio.TimeoutError:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Chatbot terlalu lama merespons. Silakan coba lagi nanti.",
+        )
     except OllamaError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

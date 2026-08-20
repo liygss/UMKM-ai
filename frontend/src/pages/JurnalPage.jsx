@@ -4,6 +4,7 @@ import DataTable from '../components/DataTable'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { formatRupiah, formatDate } from '../utils/formatters'
 import toast from 'react-hot-toast'
+import { extractError } from '../api/extractError'
 import { Plus, Trash2, Send } from 'lucide-react'
 
 export default function JurnalPage() {
@@ -45,7 +46,7 @@ export default function JurnalPage() {
       setForm({ no_bukti: '', tanggal: new Date().toISOString().split('T')[0], deskripsi: '', detail: [{ kode_akun: '', debit: 0, kredit: 0, keterangan: '' }] })
       load()
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal membuat jurnal')
+      toast.error(extractError(err, 'Gagal membuat jurnal'))
     }
   }
 

@@ -12,7 +12,7 @@ data dan potensi tidak sinkron antara jurnal dan laporan turunannya.
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Boolean,
@@ -33,6 +33,10 @@ from app.database.database import Base
 
 def gen_uuid() -> str:
     return str(uuid.uuid4())
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 # ---------------------------------------------------------------------------
@@ -90,15 +94,20 @@ class User(Base):
     role: Mapped[RoleUser] = mapped_column(Enum(RoleUser), default=RoleUser.OWNER)
     company_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    verification_token: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=utc_now, onupdate=utc_now
     )
 
     jurnal_entries: Mapped[list["JurnalUmum"]] = relationship(back_populates="created_by")
     uploaded_files: Mapped[list["UploadedFile"]] = relationship(back_populates="uploaded_by")
     chat_sessions: Mapped[list["ChatSession"]] = relationship(back_populates="user")
     spt_records: Mapped[list["SptTahunan"]] = relationship(back_populates="user")
+    notifications: Mapped[list["Notification"]] = relationship(
+        back_populates="user", foreign_keys="Notification.user_id"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -118,7 +127,7 @@ class Akun(Base):
     saldo_normal: Mapped[SaldoNormal] = mapped_column(Enum(SaldoNormal), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     deskripsi: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     detail_jurnal: Mapped[list["JurnalDetail"]] = relationship(back_populates="akun")
 
@@ -142,7 +151,7 @@ class JurnalUmum(Base):
 
     # referensi ke sumber data (upload csv/xlsx), nullable karena bisa juga input manual
     sumber_upload_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("uploaded_files.id"), nullable=True
+        String(36), ForeignKey("uploaded_files.id"), nullable=True, index=True
     )
 
     created_by_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
@@ -151,7 +160,7 @@ class JurnalUmum(Base):
     is_locked: Mapped[bool] = mapped_column(
         Boolean, default=False
     )  # dikunci setelah dipakai untuk menyusun laporan periode tertentu
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     detail: Mapped[list["JurnalDetail"]] = relationship(
         back_populates="jurnal", cascade="all, delete-orphan", order_by="JurnalDetail.urutan"
@@ -210,7 +219,7 @@ class UploadedFile(Base):
     uploaded_by_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
     uploaded_by: Mapped["User"] = relationship(back_populates="uploaded_files")
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     processed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     jurnal_entries: Mapped[list["JurnalUmum"]] = relationship(back_populates="sumber_upload")
@@ -236,7 +245,7 @@ class DocumentChunk(Base):
     qdrant_point_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     token_count: Mapped[int | None] = mapped_column(nullable=True)
     extra_metadata: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON string
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     source_file: Mapped["UploadedFile"] = relationship(back_populates="chunks")
 
@@ -250,7 +259,10 @@ class ChatSession(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
     title: Mapped[str] = mapped_column(String(255), default="Percakapan baru")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now
+    )
 
     user: Mapped["User"] = relationship(back_populates="chat_sessions")
     messages: Mapped[list["ChatMessage"]] = relationship(
@@ -270,9 +282,9 @@ class SptTahunan(Base):
     tahun_pajak: Mapped[int] = mapped_column(nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(20), default="DRAFT")  # DRAFT, FINAL
     data: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=utc_now, onupdate=utc_now
     )
 
     user: Mapped["User"] = relationship(back_populates="spt_records")
@@ -289,6 +301,40 @@ class ChatMessage(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     # daftar chunk yang dipakai sebagai konteks jawaban (untuk sitasi di frontend)
     retrieved_chunk_ids: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     session: Mapped["ChatSession"] = relationship(back_populates="messages")
+
+
+# ---------------------------------------------------------------------------
+# Notifikasi (dikirim admin ke user spesifik, atau dihasilkan otomatis oleh
+# sistem — misalnya Ringkasan Bulanan).
+# ---------------------------------------------------------------------------
+class NotificationType(str, enum.Enum):
+    ADMIN = "ADMIN"          # dibuat manual oleh admin
+    MONTHLY = "MONTHLY"      # ringkasan bulanan (sistem)
+    SYSTEM = "SYSTEM"        # notifikasi sistem lain (placeholder)
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
+    # Nullable: NULL berarti dikirim oleh sistem (tidak ada admin spesifik).
+    sender_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id"), nullable=True
+    )
+    type: Mapped[NotificationType] = mapped_column(
+        Enum(NotificationType), default=NotificationType.ADMIN
+    )
+    title: Mapped[str] = mapped_column(String(150), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    # Route frontend tujuan saat notifikasi diklik, nullable (kosong = tidak navigasi).
+    link: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
+
+    user: Mapped["User"] = relationship(
+        back_populates="notifications", foreign_keys=[user_id]
+    )

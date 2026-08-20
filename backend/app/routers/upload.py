@@ -6,6 +6,7 @@ File disimpan ke disk lalu diproses lewat ingestion pipeline
 endpoint tidak perlu menunggu embedding selesai sebelum merespons.
 """
 
+import re
 import uuid
 from pathlib import Path
 
@@ -16,7 +17,7 @@ from sqlalchemy.orm import Session
 from app.config.logging import get_logger
 from app.config.settings import settings
 from app.database.database import SessionLocal, get_db
-from app.database.models import DocumentChunk, JurnalDetail, JurnalUmum, UploadedFile, User
+from app.database.models import DocumentChunk, JurnalDetail, JurnalUmum, RoleUser, UploadedFile, User
 from app.middleware.auth import require_active_user, require_admin
 from app.schemas.upload_schema import KnowledgeInput, KnowledgeResponse, UploadedFileResponse
 from app.services.ingestion.ingestion_pipeline import ingest_static_markdown, process_uploaded_file
@@ -25,6 +26,15 @@ from app.services.ingestion.validator import validate_upload
 
 router = APIRouter(prefix="/upload", tags=["Upload"])
 logger = get_logger(__name__)
+
+
+def _safe_filename(name: str) -> str:
+    """Sanitasi nama file untuk mencegah path traversal."""
+    name = name.strip()
+    name = re.sub(r"[^\w\-\.]", "_", name)
+    name = re.sub(r"\.{2,}", ".", name)
+    name = re.sub(r"^\.+", "", name)
+    return name[:100] or "untitled"
 
 
 @router.get("/health")
@@ -126,7 +136,7 @@ async def add_knowledge(
     knowledge_dir = Path(settings.MARKDOWN_DIR) / "auto"
     knowledge_dir.mkdir(parents=True, exist_ok=True)
 
-    safe_name = judul.replace("/", "_").replace(" ", "_")
+    safe_name = _safe_filename(judul)
     file_path = knowledge_dir / f"{safe_name}.md"
     file_path.write_text(konten, encoding="utf-8")
 
@@ -218,7 +228,15 @@ def reset_user_data(
     Hapus SEMUA data akuntansi milik user: semua file upload + jurnal (termasuk
     jurnal yang tidak terikat ke file upload / sumber_upload_id NULL), supaya
     dashboard kembali kosong.
+    Hanya OWNER atau ADMIN yang boleh melakukan reset.
     """
+    if current_user.role not in (RoleUser.OWNER, RoleUser.ADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya owner atau admin yang boleh mereset data",
+        )
+
+    logger.warning("RESET DATA oleh user %s (role=%s)", current_user.id, current_user.role.value)
     # 1. Semua jurnal milik user (termasuk orphan tanpa sumber_upload_id)
     jurnal_ids = [
         r[0]

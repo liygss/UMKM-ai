@@ -3,10 +3,11 @@ Konfigurasi utama aplikasi.
 Semua nilai bisa di-override lewat environment variable atau file .env
 """
 
+import os
 from functools import lru_cache
 from typing import List
 
-from pydantic import AnyHttpUrl, Field
+from pydantic import AnyHttpUrl, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,7 +15,7 @@ class Settings(BaseSettings):
     # ---------- General ----------
     APP_NAME: str = "AI Accounting RAG"
     APP_VERSION: str = "0.1.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
     ENV: str = Field(default="development")  # development | staging | production
 
     # ---------- Database (SQLite default) ----------
@@ -74,7 +75,7 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: AnyHttpUrl = "https://ollama.com"
     OLLAMA_API_KEY: str | None = None
     # Model chat. Untuk cloud pakai nama model cloud (mis. gpt-oss:120b).
-    OLLAMA_MODEL: str = "gpt-oss:120b"
+    OLLAMA_MODEL: str = "llama3.2:3b"
     OLLAMA_TIMEOUT: int = 300
 
     @property
@@ -92,9 +93,27 @@ class Settings(BaseSettings):
     EMBEDDING_DIMENSIONS: int | None = None  # text-embedding-3-small bisa 512/1024/1536
 
     # ---------- Auth / Security ----------
-    SECRET_KEY: str = "CHANGE_ME_IN_PRODUCTION"
+    SECRET_KEY: str = Field(default="")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 hari
+
+    @model_validator(mode="after")
+    def validate_security(self) -> "Settings":
+        if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
+            env_val = os.environ.get("SECRET_KEY", "")
+            if env_val and len(env_val) >= 32:
+                self.SECRET_KEY = env_val
+            elif self.ENV.lower() == "production":
+                raise ValueError(
+                    "SECRET_KEY harus di-set minimal 32 karakter di production. "
+                    "Generate: python -c \"import secrets; print(secrets.token_hex(32))\""
+                )
+            else:
+                self.SECRET_KEY = "dev-only-secret-key-change-in-production-min32char!"
+        if self.DEBUG and self.ENV.lower() == "production":
+            import warnings
+            warnings.warn("ENV=production tapi DEBUG=True — nonaktifkan di production!")
+        return self
 
     # ---------- CORS ----------
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
@@ -116,6 +135,14 @@ class Settings(BaseSettings):
     CHUNK_SIZE: int = 800
     CHUNK_OVERLAP: int = 100
     TOP_K_RETRIEVAL: int = 5
+
+    # ---------- Email Verification (SMTP) ----------
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "noreply@aiaccounting.local"
+    SMTP_USE_TLS: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",

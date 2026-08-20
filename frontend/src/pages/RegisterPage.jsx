@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
+import { extractError } from '../api/extractError'
 import { Landmark, Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle, Sparkles, Rocket } from 'lucide-react'
 
 export default function RegisterPage() {
@@ -22,7 +23,7 @@ export default function RegisterPage() {
       toast.success('Registrasi berhasil! Silakan login.')
       navigate('/login')
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Registrasi gagal')
+      toast.error(extractError(err, 'Registrasi gagal'))
     } finally {
       setLoading(false)
     }

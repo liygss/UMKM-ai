@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import client from '../api/client'
+import client, { setUnauthorizedHandler } from '../api/client'
 
 const AuthContext = createContext(null)
 
@@ -8,13 +8,34 @@ export function AuthProvider({ children }) {
     const saved = localStorage.getItem('user')
     return saved ? JSON.parse(saved) : null
   })
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  // Verify cookie session on mount
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUser(null)
+      localStorage.removeItem('user')
+    })
+    const verifySession = async () => {
+      try {
+        const { data } = await client.get('/auth/me')
+        setUser(data)
+        localStorage.setItem('user', JSON.stringify(data))
+      } catch {
+        setUser(null)
+        localStorage.removeItem('user')
+      } finally {
+        setLoading(false)
+      }
+    }
+    verifySession()
+  }, [])
 
   const login = async (email, password) => {
     const { data } = await client.post('/auth/login', { email, password })
-    localStorage.setItem('token', data.access_token)
-    localStorage.setItem('user', JSON.stringify(data.user))
-    setUser(data.user)
+    // Token is set as httpOnly cookie by the server — no localStorage needed
+    localStorage.setItem('user', JSON.stringify(data))
+    setUser(data)
     return data
   }
 
@@ -23,8 +44,12 @@ export function AuthProvider({ children }) {
     return data
   }
 
-  const logout = () => {
-    localStorage.removeItem('token')
+  const logout = async () => {
+    try {
+      await client.post('/auth/logout')
+    } catch {
+      // Ignore errors — clear locally regardless
+    }
     localStorage.removeItem('user')
     setUser(null)
   }

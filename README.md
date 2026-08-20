@@ -95,10 +95,16 @@ PyInstaller **tidak bisa cross-compile**: binary backend Windows hanya bisa dibu
 
 Config lengkap ada di `.github/workflows/release.yml` (target mac/win/linux sudah di `electron/package.json`).
 
-## Download langsung dari halaman landing (tanpa GitHub)
+## Download langsung dari halaman landing
 
-Tombol "Unduh" di halaman landing menyajikan installer **langsung dari backend** (`GET /api/downloads/<file>`), bukan redirect ke GitHub:
+Tombol "Unduh" di halaman landing menyajikan installer dari **dua sumber** yang diperiksa otomatis:
 
+1. **Backend lokal** (`GET /api/downloads/<file>`) — untuk file yang sudah ada di folder `downloads/`.
+2. **GitHub Releases terbaru** — untuk platform yang belum dibangun lokal (Windows/Linux hasil CI).
+
+Prioritas: kalau file ada lokal, tombol mengunduh dari backend (lebih cepat). Kalau tidak, tombol otomatis mengunduh dari GitHub Releases begitu CI selesai publish. Keduanya aktif berdasarkan nama file kanonik.
+
+### Menyiapkan file lokal (opsional, paling cepat)
 1. Salin installer yang sudah dibangun ke folder `downloads/` di root proyek:
    ```bash
    bash scripts/sync-downloads.sh
@@ -110,7 +116,14 @@ Tombol "Unduh" di halaman landing menyajikan installer **langsung dari backend**
    - Linux: `AI Accounting RAG-1.0.0.AppImage`
 3. Jalankan backend (web dev): `cd backend && source venv/bin/activate && uvicorn app.main:app --reload --port 8000` → cek `http://localhost:8000/downloads/AI%20Accounting%20RAG-1.0.0-arm64.dmg`.
 
-Landing page otomatis menanyakan `GET /api/downloads` (daftar file yang ada): platform yang file-nya belum tersedia tombolnya tampil **"Segera hadir"** (tidak bisa diklik), dan langsung berubah jadi **"Unduh"** begitu file dimasukkan ke `downloads/` (refresh halaman).
+### Menyiapkan Windows/Linux lewat GitHub Releases (otomatis)
+Karena PyInstaller tidak bisa cross-compile, installer Windows & Linux dibangun lewat GitHub Actions lalu di-publish ke Releases — tanpa perlu menyalin binari besar manual:
+
+1. Set secret `OLLAMA_API_KEY` di GitHub: **Settings → Secrets and variables → Actions**.
+2. Jalankan workflow **Actions → Build Desktop Installers → Run workflow** (pilih `windows,linux`), atau push tag `git tag v1.0.0 && git push origin v1.0.0` (build otomatis + publish ke Releases).
+3. Selesai — landing page otomatis menanyakan `releases/latest` dan tombol Windows/Linux berubah jadi **"Unduh"** yang mengarah langsung ke asset di GitHub Releases.
+
+Repo & endpoint yang dipakai landing page ada di konstanta `GITHUB_REPO` pada `frontend/src/pages/LandingPage.jsx`. Platform yang belum tersedia (lokal maupun Releases) tetap tampil **"Segera hadir"** yang mengarah ke halaman Releases.
 
 Folder `downloads/` berada di `.gitignore` (binari besar tidak di-commit).
 

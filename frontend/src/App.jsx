@@ -12,16 +12,19 @@ import UploadPage from './pages/UploadPage'
 import TaxPage from './pages/TaxPage'
 import SptPage from './pages/SptPage'
 import KnowledgePage from './pages/KnowledgePage'
+import NotifAdminPage from './pages/NotifAdminPage'
 import DemoPage from './pages/DemoPage'
 
 function ProtectedRoute({ children }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  if (loading) return null
   if (!user) return <Navigate to="/login" replace />
   return children
 }
 
 function GuestRoute({ children }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  if (loading) return null
   if (user) return <Navigate to="/dashboard" replace />
   return children
 }
@@ -42,6 +45,7 @@ export default function App() {
         <Route path="/pajak" element={<TaxPage />} />
         <Route path="/spt" element={<SptPage />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
+        <Route path="/notif-admin" element={<NotifAdminPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

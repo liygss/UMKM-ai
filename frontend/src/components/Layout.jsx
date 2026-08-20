@@ -3,7 +3,8 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import FloatingChatbot from './FloatingChatbot'
 import DemoWelcomeModal from './DemoWelcomeModal'
-import { Menu, Bell, Search, Landmark } from 'lucide-react'
+import NotificationsDropdown from './NotificationsDropdown'
+import { Menu, Search, Landmark } from 'lucide-react'
 
 const PAGE_TITLES = {
   '/dashboard': 'Dashboard',
@@ -13,6 +14,7 @@ const PAGE_TITLES = {
   '/upload': 'Upload File',
   '/pajak': 'Kalkulator Pajak',
   '/spt': 'SPT Tahunan PPh OP',
+  '/notif-admin': 'Kirim Notifikasi',
 }
 
 export default function Layout() {
@@ -65,10 +67,7 @@ export default function Layout() {
             </div>
 
             {/* Notification bell */}
-            <button className="relative p-2.5 rounded-xl transition-all duration-300 hover:bg-white/5" style={{ color: '#94A3B8' }}>
-              <Bell size={18} />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full" style={{ background: '#EF4444', boxShadow: '0 0 0 2px #0B1220' }} />
-            </button>
+            <NotificationsDropdown />
 
             {/* Brand badge */}
             <div className="hidden sm:flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#93C5FD', border: '1px solid rgba(59, 130, 246, 0.25)' }}>

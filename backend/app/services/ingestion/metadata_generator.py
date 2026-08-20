@@ -5,7 +5,7 @@ cari di kategori "tax") dan untuk menampilkan sitasi ke user.
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 CATEGORY_BY_PATH_HINT: dict[str, str] = {
     "tax": "tax",
@@ -47,5 +47,5 @@ def build_chunk_metadata(
         source_filename=source_filename,
         chunk_index=chunk_index,
         category=category or guess_category(source_filename),
-        uploaded_at=datetime.utcnow().isoformat(),
+        uploaded_at=datetime.now(timezone.utc).isoformat(),
     )

@@ -11,6 +11,8 @@ Embedding TIDAK lewat service ini lagi — pindah ke app/llm/embedding_service.p
 fastembed lebih cocok untuk aplikasi desktop).
 """
 
+import threading
+
 from ollama import Client
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -20,19 +22,22 @@ from app.config.settings import settings
 logger = get_logger(__name__)
 
 _client: Client | None = None
+_client_lock = threading.Lock()
 
 
 def get_client() -> Client:
     global _client
     if _client is None:
-        headers = {}
-        if settings.ollama_is_cloud:
-            headers["Authorization"] = f"Bearer {settings.OLLAMA_API_KEY}"
-        _client = Client(
-            host=str(settings.OLLAMA_BASE_URL),
-            timeout=settings.OLLAMA_TIMEOUT,
-            headers=headers,
-        )
+        with _client_lock:
+            if _client is None:
+                headers = {}
+                if settings.ollama_is_cloud:
+                    headers["Authorization"] = f"Bearer {settings.OLLAMA_API_KEY}"
+                _client = Client(
+                    host=str(settings.OLLAMA_BASE_URL),
+                    timeout=settings.OLLAMA_TIMEOUT,
+                    headers=headers,
+                )
     return _client
 
 

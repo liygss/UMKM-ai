@@ -2,6 +2,7 @@ import { useState } from 'react'
 import client from '../api/client'
 import { formatRupiah } from '../utils/formatters'
 import toast from 'react-hot-toast'
+import { extractError } from '../api/extractError'
 import { Calculator, Receipt, Percent, Info, CheckCircle2 } from 'lucide-react'
 
 export default function TaxPage() {
@@ -38,7 +39,7 @@ function PPhFinalCard() {
       })
       setResult(data)
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal menghitung')
+      toast.error(extractError(err, 'Gagal menghitung'))
     } finally {
       setLoading(false)
     }
@@ -123,7 +124,7 @@ function PPNCard() {
       })
       setResult(data)
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal menghitung')
+      toast.error(extractError(err, 'Gagal menghitung'))
     } finally {
       setLoading(false)
     }

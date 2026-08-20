@@ -15,11 +15,20 @@ const NAV_LINKS = [
   { label: 'Download', href: '#download' },
 ]
 
-// Installer disajikan langsung oleh backend (folder downloads/), bukan redirect
-// ke GitHub. URL dibuat relatif supaya jalan di web dev ('/api' di-proxy Vite)
-// maupun desktop (server statis mem-proxy '/api/*' ke backend).
+// Installer disajikan langsung oleh backend (folder downloads/) untuk file yang
+// sudah ada lokal, DAN dari GitHub Releases untuk platform yang belum dibangun
+// lokal (Windows/Linux — PyInstaller tidak bisa cross-compile, jadi dibangun
+// lewat GitHub Actions lalu di-publish ke Releases). URL dibuat relatif supaya
+// jalan di web dev ('/api' di-proxy Vite) maupun desktop (server statis
+// mem-proxy '/api/*' ke backend).
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 const DOWNLOAD_BASE = `${API_BASE}/downloads`
+
+// Repo tempat CI mem-publish installer (electron/release.yml). Landing page
+// menanyakan releases/latest untuk mengetahui asset apa saja yang tersedia,
+// lalu mengaktifkan tombol platform yang sesuai secara otomatis.
+const GITHUB_REPO = 'liygss/UMKM-ai'
+const GITHUB_RELEASES_API = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`
 
 const PLATFORMS = [
   { icon: Apple,       os: 'macOS',   note: 'Apple Silicon & Intel',    file: 'AI Accounting RAG-1.0.0-arm64.dmg',  ext: '.dmg'      },
@@ -123,12 +132,27 @@ export default function LandingPage() {
   const downloadRef = useRef(null)
   const [downloadVisible, setDownloadVisible] = useState(false)
   const [availableDownloads, setAvailableDownloads] = useState([])
+  const [releaseAssets, setReleaseAssets] = useState({})
 
   useEffect(() => {
+    // 1) File installer yang disajikan backend dari folder downloads/ (lokal).
     fetch(`${DOWNLOAD_BASE}`)
       .then((res) => (res.ok ? res.json() : []))
       .then((files) => setAvailableDownloads(Array.isArray(files) ? files : []))
       .catch(() => setAvailableDownloads([]))
+
+    // 2) Asset dari GitHub Releases terbaru (Windows/Linux dibangun lewat CI).
+    fetch(GITHUB_RELEASES_API, { headers: { Accept: 'application/vnd.github+json' } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data || !Array.isArray(data.assets)) return setReleaseAssets({})
+        const map = {}
+        for (const a of data.assets) {
+          if (a && a.name && a.browser_download_url) map[a.name] = a.browser_download_url
+        }
+        setReleaseAssets(map)
+      })
+      .catch(() => setReleaseAssets({}))
   }, [])
 
   const isAvailable = (ext) => availableDownloads.some((f) => f.toLowerCase().endsWith(ext.toLowerCase()))
@@ -818,18 +842,22 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {PLATFORMS.map((p, i) => {
-              const hasFile = isAvailable(p.ext)
+              const hasLocal = isAvailable(p.ext)
+              const releaseUrl = releaseAssets[p.file]
+              const downloadUrl = hasLocal
+                ? `${DOWNLOAD_BASE}/${encodeURIComponent(p.file)}`
+                : releaseUrl
+              const canDownload = hasLocal || Boolean(releaseUrl)
               const cardStyle = {
                 animationDelay: `${i * 150}ms`,
                 background: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(148,163,184,0.12)',
                 backdropFilter: 'blur(16px)',
-                ...(hasFile ? {} : { opacity: 0.45, cursor: 'not-allowed' }),
               }
-              return hasFile ? (
+              return canDownload ? (
                 <a
                   key={p.os}
-                  href={`${DOWNLOAD_BASE}/${encodeURIComponent(p.file)}`}
+                  href={downloadUrl}
                   target="_blank"
                   rel="noreferrer"
                   className={`group flex flex-col items-center rounded-3xl p-8 text-center transition-all duration-700 hover:-translate-y-2 ${downloadVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
@@ -853,20 +881,22 @@ export default function LandingPage() {
               ) : (
                 <div
                   key={p.os}
-                  className={`flex flex-col items-center rounded-3xl p-8 text-center transition-all duration-700 ${downloadVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                  className={`flex flex-col items-center rounded-3xl p-8 text-center transition-all duration-700 hover:-translate-y-2 ${downloadVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                   style={cardStyle}
                 >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl mb-5" style={{ background: 'rgba(148,163,184,0.15)' }}>
-                    <p.icon size={28} className="text-slate-400" />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl mb-5 transition-transform duration-500 group-hover:scale-110" style={{ background: 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)', boxShadow: '0 8px 24px rgba(59,130,246,0.35)' }}>
+                    <p.icon size={28} className="text-white" />
                   </div>
                   <h3 className="text-xl font-bold mb-1.5" style={{ color: '#F1F5F9' }}>{p.os}</h3>
                   <p className="text-sm mb-6" style={{ color: '#94A3B8' }}>{p.note}</p>
-                  <div
-                    className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold"
-                    style={{ background: 'rgba(148,163,184,0.15)', color: '#94A3B8' }}
+                  <Link
+                    to="/register"
+                    className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white transition-all duration-300 group-hover:-translate-y-0.5"
+                    style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)', boxShadow: '0 8px 24px rgba(37,99,235,0.35)' }}
                   >
-                    Segera hadir
-                  </div>
+                    <PlayCircle size={15} />
+                    Gunakan di Browser
+                  </Link>
                 </div>
               )
             })}
