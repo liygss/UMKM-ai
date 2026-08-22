@@ -8,10 +8,16 @@ import { MotionBarShape, MotionActiveBar, MotionTooltip } from '../components/Mo
 import { formatRupiah, formatRupiahCompact } from '../utils/formatters'
 import { fadeUp, fadeIn, staggerContainer, itemStagger, EASE_GENTLE } from '../utils/motionPresets'
 import { Banknote, TrendingUp, TrendingDown, Wallet, FileText, MessageSquare, Upload, Plus, ArrowRight, Activity, Calendar, RefreshCw } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts'
 
 const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444']
 const NEGATIVE_COLOR = '#EF4444'
+
+const BAR_LEGEND = [
+  { name: 'Pendapatan', color: '#10B981', glow: 'rgba(16, 185, 129, 0.5)' },
+  { name: 'Beban', color: '#EF4444', glow: 'rgba(239, 68, 68, 0.5)' },
+]
+const SERIES_COLORS = { Pendapatan: '#34D399', Beban: '#F87171' }
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -29,15 +35,21 @@ const QUICK_ACTIONS = [
 
 function CustomTooltip({ active, payload, label }) {
   if (active && payload && payload.length) {
+    const net = payload[0]?.payload?.laba_rugi ?? 0
     return (
       <MotionTooltip>
-        <div className="rounded-xl p-3 shadow-xl" style={{ background: 'rgba(15, 26, 46, 0.95)', border: '1px solid rgba(148, 163, 184, 0.18)', backdropFilter: 'blur(12px)' }}>
-          <p className="text-xs font-semibold mb-1" style={{ color: '#94A3B8' }}>{label}</p>
+        <div className="rounded-xl p-3 shadow-xl" style={{ background: 'rgba(15, 26, 46, 0.95)', border: '1px solid rgba(148, 163, 184, 0.18)', backdropFilter: 'blur(12px)', minWidth: 200 }}>
+          <p className="text-xs font-semibold mb-1.5" style={{ color: '#94A3B8' }}>{label}</p>
           {payload.map((entry, i) => (
-            <p key={i} className="text-sm font-bold" style={{ color: entry.color }}>
+            <p key={i} className="flex items-center gap-1.5 text-sm font-bold" style={{ color: SERIES_COLORS[entry.dataKey] || entry.color }}>
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: SERIES_COLORS[entry.dataKey] || entry.color }} />
               {entry.name}: {formatRupiah(entry.value)}
             </p>
           ))}
+          <div className="mt-1.5 pt-1.5 flex items-center justify-between gap-4" style={{ borderTop: '1px solid rgba(148, 163, 184, 0.15)' }}>
+            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: '#94A3B8' }}>Laba/Rugi</span>
+            <span className="text-sm font-extrabold" style={{ color: net >= 0 ? '#34D399' : '#F87171' }}>{formatRupiah(net)}</span>
+          </div>
         </div>
       </MotionTooltip>
     )
@@ -53,10 +65,21 @@ function formatCompact(value) {
 }
 
 function BarValueLabel(props) {
-  const { x, y, width, value, dataKey } = props
-  if (!value) return null
+  const { x, y, width, height, value } = props
+  if (!value || !height || height < 14) return null
   return (
-    <text x={x + width / 2} y={y - 5} textAnchor="middle" fontSize={10} fontWeight={600} fill={dataKey === 'Pendapatan' ? '#34D399' : '#F87171'}>
+    <text
+      x={x + width / 2}
+      y={y - 6}
+      textAnchor="middle"
+      fontSize={11}
+      fontWeight={700}
+      fill="#FFFFFF"
+      stroke="#0B1626"
+      strokeWidth={3}
+      paintOrder="stroke"
+      strokeLinejoin="round"
+    >
       {formatCompact(value)}
     </text>
   )
@@ -115,6 +138,9 @@ export default function DashboardPage() {
   const autoRef = useRef(true)
   const debounceRef = useRef(null)
   const [pieActiveIndex, setPieActiveIndex] = useState(null)
+  // Animasi grow bar hanya diputar sekali saat data pertama tampil;
+  // auto-refresh diam (interval/fokus tab) tidak boleh mengulang animasinya.
+  const [barAnimDone, setBarAnimDone] = useState(false)
 
   const handleDateChange = (newDate) => {
     autoRef.current = false
@@ -158,6 +184,14 @@ export default function DashboardPage() {
   }, [debouncedDate])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  // Setelah animasi grow bar pertama selesai (~1.6s), matikan animasi supaya
+  // refresh diam tiap 15 detik tidak membuat bar "tumbuh" ulang.
+  useEffect(() => {
+    if (loading || barAnimDone || monthly.length === 0) return undefined
+    const t = setTimeout(() => setBarAnimDone(true), 1600)
+    return () => clearTimeout(t)
+  }, [loading, monthly, barAnimDone])
 
   // Auto-refresh: muat ulang data saat tab fokus/terlihat kembali + interval,
   // dan saat ada event 'data-changed' (misal data diupload/dihapus dari halaman lain)
@@ -363,23 +397,50 @@ export default function DashboardPage() {
           </div>
           {barData.length > 0 ? (
             <>
+              <div className="flex items-center gap-5 mb-1">
+                {BAR_LEGEND.map((item) => (
+                  <span key={item.name} className="flex items-center gap-2 text-xs font-semibold" style={{ color: '#CBD5E1' }}>
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: item.color, boxShadow: `0 0 10px ${item.glow}` }} />
+                    {item.name}
+                  </span>
+                ))}
+              </div>
               <ResponsiveContainer width="100%" height={370}>
-                <BarChart data={barData} barCategoryGap="30%" barGap={6} margin={{ top: 24, right: 12, left: 0, bottom: 0 }}>
+                <BarChart data={barData} barCategoryGap="18%" barGap={8} margin={{ top: 28, right: 12, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.15)" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94A3B8' }} axisLine={{ stroke: 'rgba(148, 163, 184, 0.2)' }} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} tickFormatter={(v) => formatCompact(v)} axisLine={false} tickLine={false} width={44} />
+                  <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} tickFormatter={(v) => formatCompact(v)} axisLine={false} tickLine={false} width={52} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.06)' }} />
-                  <Legend wrapperStyle={{ fontSize: 12, color: '#CBD5E1' }} />
-                  <Bar dataKey="Pendapatan" fill="url(#gradEmerald)" radius={[6,6,0,0]} maxBarSize={36} label={BarValueLabel} isAnimationActive={false} shape={MotionBarShape} activeBar={<MotionActiveBar />} />
-                  <Bar dataKey="Beban" fill="url(#gradRose)" radius={[6,6,0,0]} maxBarSize={36} label={BarValueLabel} isAnimationActive={false} shape={MotionBarShape} activeBar={<MotionActiveBar />} />
+                  <Bar
+                    dataKey="Pendapatan"
+                    fill="url(#gradEmerald)"
+                    radius={[8, 8, 0, 0]}
+                    maxBarSize={52}
+                    label={BarValueLabel}
+                    isAnimationActive={false}
+                    shape={<MotionBarShape animate={!barAnimDone} glowColor="rgba(16, 185, 129, 0.35)" />}
+                    activeBar={<MotionActiveBar glowColor="rgba(16, 185, 129, 0.55)" />}
+                  />
+                  <Bar
+                    dataKey="Beban"
+                    fill="url(#gradRose)"
+                    radius={[8, 8, 0, 0]}
+                    maxBarSize={52}
+                    label={BarValueLabel}
+                    isAnimationActive={false}
+                    shape={<MotionBarShape animate={!barAnimDone} glowColor="rgba(239, 68, 68, 0.35)" />}
+                    activeBar={<MotionActiveBar glowColor="rgba(239, 68, 68, 0.55)" />}
+                  />
                   <defs>
                     <linearGradient id="gradEmerald" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#10B981" />
-                      <stop offset="100%" stopColor="#059669" />
+                      <stop offset="0%" stopColor="#4ADE80" />
+                      <stop offset="45%" stopColor="#10B981" />
+                      <stop offset="100%" stopColor="#047857" />
                     </linearGradient>
                     <linearGradient id="gradRose" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#EF4444" />
-                      <stop offset="100%" stopColor="#DC2626" />
+                      <stop offset="0%" stopColor="#F87171" />
+                      <stop offset="45%" stopColor="#EF4444" />
+                      <stop offset="100%" stopColor="#B91C1C" />
                     </linearGradient>
                   </defs>
                 </BarChart>

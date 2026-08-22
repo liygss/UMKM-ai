@@ -351,8 +351,10 @@ export default function SptPage() {
       })
       setCalc(res)
       toast.success('Perhitungan berhasil')
+      return res
     } catch (err) {
       toast.error(fmtErr(err, 'Gagal menghitung'))
+      return null
     } finally {
       setLoading(false)
     }
@@ -384,19 +386,34 @@ export default function SptPage() {
   }
 
   const cetak = async () => {
-    if (!calc) await hitung()
-    if (!calc) return
-    const html = buildSptPrintHtml(buildPayload(data, formType), calc, formType)
-    const w = window.open('', '_blank')
-    if (!w) {
-      toast.error('Blokir popup terdeteksi — izinkan popup untuk mencetak.')
-      return
+    let currentCalc = calc
+    if (!currentCalc) {
+      currentCalc = await hitung()
     }
-    w.document.open()
-    w.document.write(html)
-    w.document.close()
-    w.addEventListener('load', () => w.print(), { once: true })
-    setTimeout(() => w.print(), 800)
+    if (!currentCalc) return
+    try {
+      const html = buildSptPrintHtml(buildPayload(data, formType), currentCalc, formType)
+      if (!html) {
+        toast.error('Gagal membuat dokumen cetak')
+        return
+      }
+      const blob = new Blob([html], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      const w = window.open(url, '_blank')
+      if (!w) {
+        toast.error('Blokir popup terdeteksi — izinkan popup untuk mencetak.')
+        URL.revokeObjectURL(url)
+        return
+      }
+      w.addEventListener('load', () => {
+        w.print()
+        setTimeout(() => URL.revokeObjectURL(url), 2000)
+      }, { once: true })
+      setTimeout(() => { try { w.print() } catch {} ; URL.revokeObjectURL(url) }, 1500)
+    } catch (err) {
+      console.error('Cetak error:', err)
+      toast.error('Gagal mencetak: ' + (err.message || 'Unknown error'))
+    }
   }
 
   const hapusDraft = async (id) => {
@@ -518,7 +535,7 @@ export default function SptPage() {
               <FileSpreadsheet size={14} style={{ color: '#93C5FD' }} />
               <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#94A3B8' }}>Draft Tersimpan</span>
             </div>
-            <button type="button" onClick={muatContoh} className="btn-ghost w-full text-xs justify-start !px-2 mb-2">
+            <button type="button" onClick={() => muatContoh()} className="btn-ghost w-full text-xs justify-start !px-2 mb-2">
               <Plus size={12} /> Muat data contoh
             </button>
             <div className="space-y-2">
@@ -1053,13 +1070,13 @@ function HasilSection({ formType, data, calc, previewRows, loading, saving, hitu
   return (
     <SectionCard title="Hasil Perhitungan & Cetak" icon={Calculator} desc="Preview perhitungan alur Formulir Induk sesuai form terpilih">
       <div className="flex flex-wrap gap-3 mb-6">
-        <button type="button" onClick={hitung} disabled={loading} className="btn-primary">
+        <button type="button" onClick={() => hitung()} disabled={loading} className="btn-primary">
           <Calculator size={16} /> {loading ? 'Menghitung...' : 'Hitung & Preview'}
         </button>
-        <button type="button" onClick={simpan} disabled={saving} className="btn-secondary">
+        <button type="button" onClick={() => simpan()} disabled={saving} className="btn-secondary">
           <Save size={16} /> {saving ? 'Menyimpan...' : 'Simpan Draft'}
         </button>
-        <button type="button" onClick={cetak} disabled={!calc} className="btn-secondary" style={!calc ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
+        <button type="button" onClick={() => cetak()} disabled={!calc} className="btn-secondary" style={!calc ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
           <Printer size={16} /> Cetak / Simpan PDF
         </button>
       </div>

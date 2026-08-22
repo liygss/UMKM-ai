@@ -3,16 +3,51 @@ import { motion, useReducedMotion } from 'motion/react'
 const BAR_STAGGER = 0.05
 const BAR_GROW_SPRING = { type: 'spring', stiffness: 320, damping: 28, mass: 0.8 }
 
+function barRadius(radius) {
+  const r = Array.isArray(radius) ? radius[0] : radius ?? 4
+  return { rx: r, ry: r }
+}
+
 export function MotionBarShape(props) {
-  const { x, y, width, height, fill, radius, index = 0 } = props
+  const {
+    x,
+    y,
+    width,
+    height,
+    fill,
+    radius,
+    glowColor = 'rgba(0, 0, 0, 0.35)',
+    index = 0,
+    animate = true,
+  } = props
   const reduceMotion = useReducedMotion()
-  const rx = Array.isArray(radius) ? radius[0] : radius ?? 4
-  const ry = Array.isArray(radius) ? radius[0] : radius ?? 4
+  const { rx, ry } = barRadius(radius)
+  const safeHeight = Math.max(height || 0, 0)
+  const showSheen = safeHeight > 12 && width > 8
 
   if (reduceMotion || !isFinite(height) || height <= 0) {
     return (
       <g>
-        <rect x={x} y={y} width={width} height={Math.max(height, 0)} rx={rx} ry={ry} fill={fill} />
+        <rect
+          x={x}
+          y={y}
+          width={width}
+          height={safeHeight}
+          rx={rx}
+          ry={ry}
+          fill={fill}
+          filter={`drop-shadow(0 6px 14px ${glowColor})`}
+        />
+        {showSheen && (
+          <rect
+            x={x + 3}
+            y={y + 3}
+            width={width - 6}
+            height={5}
+            rx={2.5}
+            fill="rgba(255, 255, 255, 0.22)"
+          />
+        )}
       </g>
     )
   }
@@ -20,19 +55,45 @@ export function MotionBarShape(props) {
   return (
     <motion.g
       style={{ originY: 1 }}
-      initial={{ scaleY: 0, opacity: 0.5 }}
+      initial={animate ? { scaleY: 0, opacity: 0.5 } : false}
       animate={{ scaleY: 1, opacity: 1 }}
       transition={{ ...BAR_GROW_SPRING, delay: index * BAR_STAGGER }}
     >
-      <rect x={x} y={y} width={width} height={height} rx={rx} ry={ry} fill={fill} />
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        rx={rx}
+        ry={ry}
+        fill={fill}
+        filter={`drop-shadow(0 6px 14px ${glowColor})`}
+      />
+      {showSheen && (
+        <rect
+          x={x + 3}
+          y={y + 3}
+          width={width - 6}
+          height={5}
+          rx={2.5}
+          fill="rgba(255, 255, 255, 0.22)"
+        />
+      )}
     </motion.g>
   )
 }
 
 export function MotionActiveBar(props) {
-  const { x, y, width, height, fill, radius } = props
-  const rx = Array.isArray(radius) ? radius[0] : radius ?? 4
-  const ry = Array.isArray(radius) ? radius[0] : radius ?? 4
+  const {
+    x,
+    y,
+    width,
+    height,
+    fill,
+    radius,
+    glowColor = 'rgba(96, 165, 250, 0.5)',
+  } = props
+  const { rx, ry } = barRadius(radius)
 
   return (
     <motion.g
@@ -49,8 +110,8 @@ export function MotionActiveBar(props) {
         rx={rx}
         ry={ry}
         fill={fill}
-        opacity={0.9}
-        filter="drop-shadow(0 6px 16px rgba(0,0,0,0.35))"
+        opacity={0.95}
+        filter={`drop-shadow(0 10px 22px ${glowColor})`}
       />
     </motion.g>
   )

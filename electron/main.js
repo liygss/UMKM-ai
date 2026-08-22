@@ -43,6 +43,42 @@ ipcMain.handle('set-remote-url', async (_event, url) => {
   return true
 })
 
+
+// ---------------------------------------------------------------------------
+// IPC — SPT PDF download
+// ---------------------------------------------------------------------------
+ipcMain.handle('spt:download-pdf', async (_event, htmlContent) => {
+  try {
+    const win = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: false } })
+    await win.loadHTML(htmlContent)
+    
+    const pdf = await win.webContents.printToPDF({
+      pageSize: 'A4',
+      marginsType: 0, // No margin
+      landscape: false,
+      printBackground: true,
+    })
+    
+    win.close()
+    
+    const defaultPath = `SPT_1770_${new Date().getFullYear()}.pdf`
+    const savePath = dialog.showSaveDialogSync(win, {
+      defaultPath: defaultPath,
+      filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
+    })
+    
+    if (savePath) {
+      fs.writeFileSync(savePath, pdf)
+      return { success: true, path: savePath }
+    }
+    
+    return { success: false, message: 'User cancelled' }
+  } catch (err) {
+    console.error('SPT PDF generation failed:', err)
+    return { success: false, message: err.message }
+  }
+})
+
 let backendProc = null
 let staticServer = null
 let mainWindow = null

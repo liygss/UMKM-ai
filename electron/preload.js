@@ -1,6 +1,5 @@
 /**
  * Preload script — jembatan aman (contextIsolation) antara renderer dan main.
- * Menyediakan API aman untuk komunikasi IPC (remote mode) dan info platform.
  */
 const { contextBridge, ipcRenderer } = require('electron')
 
@@ -11,4 +10,9 @@ contextBridge.exposeInMainWorld('desktop', {
 
 contextBridge.exposeInMainWorld('electronAPI', {
   setRemoteUrl: (url) => ipcRenderer.invoke('set-remote-url', url),
+  
+  // SPT PDF download API
+  spt: {
+    downloadPdf: (htmlContent) => ipcRenderer.invoke('spt:download-pdf', htmlContent),
+  },
 })
