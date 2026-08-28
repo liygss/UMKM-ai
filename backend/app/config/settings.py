@@ -97,6 +97,11 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 hari
 
+    # ---------- Bootstrap Admin ----------
+    # Email yang otomatis dijadikan ADMIN saat aplikasi pertama kali jalan
+    # (di-upgrade/dibuat bila belum ada). Bisa di-override lewat env.
+    BOOTSTRAP_ADMIN_EMAIL: str = "haidarmgn@gmail.com"
+
     @model_validator(mode="after")
     def validate_security(self) -> "Settings":
         if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
@@ -143,6 +148,9 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = "noreply@aiaccounting.local"
     SMTP_USE_TLS: bool = True
+
+    # URL aplikasi frontend, dipakai untuk membangun link reset password di email.
+    FRONTEND_BASE_URL: str = "http://localhost:5173"
 
     model_config = SettingsConfigDict(
         env_file=".env",

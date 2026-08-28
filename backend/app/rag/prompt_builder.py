@@ -7,15 +7,31 @@ from app.llm.prompt_template import (
 )
 from app.rag.context_builder import BuiltContext
 
-TAX_KEYWORDS = ["pajak", "pph", "ppn", "npwp", "faktur", "spt", "umkm final"]
-ACCOUNTING_KEYWORDS = ["jurnal", "neraca", "laba rugi", "buku besar", "akun", "penyusutan"]
+TAX_KEYWORDS = [
+    "pajak", "pph", "ppn", "npwp", "faktur", "spt", "umkm final", "tarif",
+    "formulir", "lapor", "billing", "ntpn", "pph21", "pph23", "ppn12", "ppn 12",
+]
+ACCOUNTING_KEYWORDS = [
+    "jurnal", "neraca", "laba rugi", "buku besar", "akun", "penyusutan",
+    "pembukuan", "modal", "arus kas", "debit", "kredit",
+]
+
+
+def detect_domain(pertanyaan: str) -> str:
+    """Deteksi topik pertanyaan: "tax", "accounting", atau "" (umum)."""
+    lowered = pertanyaan.lower()
+    if any(k in lowered for k in TAX_KEYWORDS):
+        return "tax"
+    if any(k in lowered for k in ACCOUNTING_KEYWORDS):
+        return "accounting"
+    return ""
 
 
 def _pilih_prompt_addon(pertanyaan: str) -> str:
-    lowered = pertanyaan.lower()
-    if any(k in lowered for k in TAX_KEYWORDS):
+    domain = detect_domain(pertanyaan)
+    if domain == "tax":
         return get_tax_prompt_addon()
-    if any(k in lowered for k in ACCOUNTING_KEYWORDS):
+    if domain == "accounting":
         return get_accounting_prompt_addon()
     return ""
 
@@ -25,17 +41,26 @@ def build_messages(
     context: BuiltContext,
     histori_chat: list[dict[str, str]] | None = None,
     financial_context: str | None = None,
+    page: str | None = None,
 ) -> list[dict[str, str]]:
     """
     histori_chat: list of {"role": "user"|"assistant", "content": "..."} dari
     ChatMessage sebelumnya di sesi yang sama (dibatasi beberapa pesan terakhir
     oleh pemanggil supaya prompt tidak membengkak).
     financial_context: data keuangan user dari PostgreSQL (opsional).
+    page: label halaman aktif user (opsional) agar jawaban lebih kontekstual.
     """
     system_prompt = get_system_prompt()
     addon = _pilih_prompt_addon(pertanyaan)
     if addon:
         system_prompt = f"{system_prompt}\n\n{addon}"
+
+    if page:
+        system_prompt += (
+            f"\n\nLokasi pengguna saat ini: halaman {page}. "
+            "Jika relevan, arahkan jawaban pada fitur/perintah yang ada di "
+            "halaman tersebut."
+        )
 
     # Tambahkan financial context (data keuangan user) jika ada
     if financial_context:
@@ -56,9 +81,10 @@ def build_messages(
         )
     else:
         system_prompt += (
-            "\n\nTidak ada dokumen pengetahuan relevan yang ditemukan untuk pertanyaan ini. "
-            "Jawab berdasarkan data keuangan pengguna (jika tersedia) atau "
-            "katakan terus terang bahwa informasinya tidak tersedia."
+            "\n\nTidak ada dokumen pengetahuan spesifik yang ditemukan untuk "
+            "pertanyaan ini. Jawablah dengan pengetahuan umummu secara "
+            "langsung dan membantu. Bila pertanyaan menyangkut keuangan/pajak "
+            "pengguna, gunakan data keuangan yang tersedia bila ada."
         )
 
     messages = [{"role": "system", "content": system_prompt}]

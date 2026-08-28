@@ -12,7 +12,7 @@ const ICON_BY_TYPE = {
 const COLOR_BY_TYPE = {
   ADMIN: { bg: 'rgba(59,130,246,0.12)', fg: '#93C5FD', ring: 'rgba(59,130,246,0.25)' },
   MONTHLY: { bg: 'rgba(16,185,129,0.12)', fg: '#6EE7B7', ring: 'rgba(16,185,129,0.25)' },
-  SYSTEM: { bg: 'rgba(148,163,184,0.12)', fg: '#CBD5E1', ring: 'rgba(148,163,184,0.25)' },
+  SYSTEM: { bg: 'rgba(148,163,184,0.12)', fg: 'var(--color-slate-text)', ring: 'rgba(148,163,184,0.25)' },
 }
 
 const POLL_INTERVAL_MS = 60_000
@@ -105,7 +105,7 @@ export default function NotificationsDropdown() {
       <button
         onClick={() => setOpen((v) => !v)}
         className="relative p-2.5 rounded-xl transition-all duration-300 hover:bg-white/5"
-        style={{ color: '#94A3B8' }}
+        style={{ color: 'var(--color-slate-body)' }}
         aria-label="Notifikasi"
         title="Notifikasi"
       >
@@ -113,7 +113,7 @@ export default function NotificationsDropdown() {
         {unread > 0 && (
           <span
             className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-            style={{ background: '#EF4444', boxShadow: '0 0 0 2px #0B1220' }}
+            style={{ background: '#EF4444', boxShadow: '0 0 0 2px var(--color-surface-0)' }}
           >
             {unread > 9 ? '9+' : unread}
           </span>
@@ -124,9 +124,8 @@ export default function NotificationsDropdown() {
         <div
           className="absolute right-0 top-full mt-2 w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden flex flex-col"
           style={{
-            background: 'rgba(11, 18, 32, 0.96)',
-            backdropFilter: 'blur(20px) saturate(160%)',
-            border: '1px solid rgba(148,163,184,0.16)',
+            background: 'var(--color-surface-deep)',
+            border: '1px solid var(--color-border-soft)',
             boxShadow: '0 20px 40px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.08)',
             maxHeight: '70vh',
           }}
@@ -137,7 +136,7 @@ export default function NotificationsDropdown() {
             style={{ borderBottom: '1px solid rgba(148,163,184,0.12)' }}
           >
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold" style={{ color: '#F1F5F9' }}>Notifikasi</span>
+              <span className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Notifikasi</span>
               {unread > 0 && (
                 <span
                   className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
@@ -161,7 +160,7 @@ export default function NotificationsDropdown() {
           {/* List */}
           <div className="overflow-y-auto flex-1" style={{ scrollbarGutter: 'stable' }}>
             {loading && items.length === 0 && (
-              <div className="p-6 text-center text-xs" style={{ color: '#64748B' }}>Memuat...</div>
+              <div className="p-6 text-center text-xs" style={{ color: 'var(--color-slate-muted)' }}>Memuat...</div>
             )}
             {!loading && items.length === 0 && (
               <div className="p-8 text-center">
@@ -169,10 +168,10 @@ export default function NotificationsDropdown() {
                   className="inline-flex h-12 w-12 items-center justify-center rounded-2xl mb-3"
                   style={{ background: 'rgba(148,163,184,0.08)' }}
                 >
-                  <Inbox size={22} style={{ color: '#64748B' }} />
+                  <Inbox size={22} style={{ color: 'var(--color-slate-muted)' }} />
                 </div>
-                <p className="text-sm font-medium" style={{ color: '#CBD5E1' }}>Belum ada notifikasi</p>
-                <p className="text-xs mt-1" style={{ color: '#64748B' }}>
+                <p className="text-sm font-medium" style={{ color: 'var(--color-slate-text)' }}>Belum ada notifikasi</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--color-slate-muted)' }}>
                   Admin akan mengirim info penting di sini, dan Ringkasan Bulanan akan muncul otomatis.
                 </p>
               </div>
@@ -210,18 +209,18 @@ export default function NotificationsDropdown() {
                       )}
                       <span
                         className={`text-sm truncate ${n.is_read ? '' : 'font-semibold'}`}
-                        style={{ color: n.is_read ? '#CBD5E1' : '#F1F5F9' }}
+                        style={{ color: n.is_read ? 'var(--color-slate-text)' : 'var(--color-slate-heading)' }}
                       >
                         {n.title}
                       </span>
                     </div>
                     <p
                       className="text-xs mt-0.5 line-clamp-2"
-                      style={{ color: n.is_read ? '#94A3B8' : '#CBD5E1' }}
+                      style={{ color: n.is_read ? 'var(--color-slate-body)' : 'var(--color-slate-text)' }}
                     >
                       {n.message}
                     </p>
-                    <p className="text-[10px] mt-1" style={{ color: '#64748B' }}>
+                    <p className="text-[10px] mt-1" style={{ color: 'var(--color-slate-muted)' }}>
                       {timeAgo(n.created_at)}
                     </p>
                   </div>

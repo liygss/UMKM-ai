@@ -31,7 +31,6 @@ import {
 
 const SPT_PDF_CSS = `
 ${INDUK1770_CSS}
-@media print { @page { size: 216mm 330mm; margin: 8mm; } }
 `
 
 /* ========================================================================

@@ -1,9 +1,11 @@
 """
-Baca isi file mentah (csv/xlsx/pdf) jadi representasi perantara yang seragam,
+Baca isi file mentah (csv/xlsx/xls/pdf) jadi representasi perantara yang seragam,
 supaya markdown_generator.py tidak perlu tahu format aslinya.
 """
 
+import re
 from dataclasses import dataclass, field
+from datetime import datetime
 
 import pandas as pd
 from pypdf import PdfReader
@@ -24,10 +26,81 @@ class LoadedDocument:
     raw_text_pages: list[str] = field(default_factory=list)  # untuk pdf, satu string per halaman
 
     def get_transaction_dataframe(self):
-        """Ambil DataFrame pertama dari file csv/xlsx (untuk auto-journal)."""
-        if self.tables:
-            return self.tables[0].dataframe.copy()
-        return None
+        """Ambil DataFrame sheet yang paling mirip data transaksi (bukan sekadar
+        sheet pertama). Workbook multi-sheet dengan transaksi di sheet mana pun
+        tetap bisa diproses jadi jurnal otomatis.
+        Mengembalikan salinan DataFrame atau None bila tak ada sheet transaksi."""
+        best_df = None
+        best_score = -1.0
+        for table in self.tables:
+            score = _sheet_transaction_score(table.dataframe)
+            if score > best_score:
+                best_score = score
+                best_df = table.dataframe
+        return best_df.copy() if best_df is not None else None
+
+
+def _looks_like_date_series(series) -> bool:
+    """Cek apakah suatu kolom berisi tanggal."""
+    sample = [str(v).strip() for v in series.dropna().head(20) if str(v).strip()]
+    if not sample:
+        return False
+    date_formats = ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d")
+    for raw in sample:
+        if raw.lower() in ("nan", "none", "nat"):
+            continue
+        if not any(_try_parse_date(raw, fmt) for fmt in date_formats):
+            return False
+    return True
+
+
+def _try_parse_date(value: str, fmt: str) -> bool:
+    try:
+        datetime.strptime(value, fmt)
+        return True
+    except ValueError:
+        return False
+
+
+def _looks_like_amount_series(series) -> bool:
+    """Cek apakah suatu kolom berisi nilai uang/numerik."""
+    sample = [str(v).strip() for v in series.dropna().head(20) if str(v).strip()]
+    if not sample:
+        return False
+    for raw in sample:
+        s = re.sub(r"(?i)\b(?:rp|idr)\b", "", raw)
+        s = s.replace(" ", "").replace("\u00a0", "")
+        s = s.replace(".", "").replace(",", "")
+        if not s:
+            return False
+        try:
+            float(s)
+        except ValueError:
+            return False
+    return True
+
+
+def _sheet_transaction_score(df: pd.DataFrame) -> float:
+    """Skor ke-mirip-an transaksi sebuah sheet.
+    +2 bila ada kolom tanggal, +2 bila ada kolom nominal; bonus kecil untuk
+    jumlah baris agar sheet yang lebih berisi dipilih."""
+    if df is None or df.empty:
+        return -1.0
+    has_date = has_amount = False
+    for col in df.columns:
+        if _looks_like_date_series(df[col]):
+            has_date = True
+        if _looks_like_amount_series(df[col]):
+            has_amount = True
+    if not (has_date or has_amount):
+        return -1.0
+    score = 0.0
+    if has_date:
+        score += 2.0
+    if has_amount:
+        score += 2.0
+    score += len(df) * 0.001
+    return score
 
 
 def load_csv(path: str) -> LoadedDocument:
@@ -47,7 +120,22 @@ def _read_csv_tolerant(path: str) -> pd.DataFrame:
 
 
 def load_xlsx(path: str) -> LoadedDocument:
-    sheets = pd.read_excel(path, sheet_name=None)  # dict {sheet_name: df}
+    # Ekstensi .xls (Excel lama) butuh engine 'xlrd'; .xlsx/.xlsm pakai 'openpyxl'.
+    engine = "xlrd" if str(path).lower().endswith(".xls") else "openpyxl"
+    try:
+        sheets = pd.read_excel(path, sheet_name=None, engine=engine)
+    except ImportError as exc:
+        raise ValueError(
+            f"Gagal membaca file Excel: engine '{engine}' tidak tersedia. "
+            "Pastikan dependensi openpyxl (xlsx) atau xlrd (xls) terpasang."
+        ) from exc
+    except Exception as exc:  # noqa: BLE001
+        # Fallback: biarkan pandas memilih engine sendiri (mis. ekstensi tak
+        # standar / file ringan yang sedikit rusak).
+        try:
+            sheets = pd.read_excel(path, sheet_name=None)
+        except Exception as inner:
+            raise ValueError(f"Tidak bisa membaca file Excel: {inner}") from inner
     tables = [LoadedTable(sheet_name=name, dataframe=df) for name, df in sheets.items()]
     return LoadedDocument(file_type="xlsx", tables=tables)
 

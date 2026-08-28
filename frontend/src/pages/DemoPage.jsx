@@ -4,10 +4,11 @@ import { motion, AnimatePresence } from 'motion/react'
 import MotionNumber from '../components/MotionNumber'
 import { MotionBarShape, MotionActiveBar } from '../components/MotionChartShapes'
 import { fadeUp, scaleIn, staggerContainer, itemStagger } from '../utils/motionPresets'
+import ThemeToggle from '../components/ThemeToggle'
 import {
   LayoutDashboard, MessageSquare, FileText, BarChart3, Calculator, UploadCloud,
   ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Pause, Play, Sparkles,
-  Bot, Landmark, Wallet, Banknote, TrendingUp, TrendingDown,
+  Bot, Wallet, Banknote, TrendingUp, TrendingDown,
   CheckCircle2, Clock, ShieldCheck, Database, Zap
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -100,10 +101,10 @@ function useCountUp(target, duration = 1600) {
 
 function DashboardMock() {
   const stats = [
-    { label: 'Saldo Kas', value: DEMO_DASHBOARD.saldoKas, icon: Wallet, color: '#60A5FA', bg: 'rgba(59,130,246,0.12)' },
-    { label: 'Saldo Bank', value: DEMO_DASHBOARD.saldoBank, icon: Banknote, color: '#34D399', bg: 'rgba(16,185,129,0.12)' },
-    { label: 'Pendapatan', value: DEMO_DASHBOARD.pendapatan, icon: TrendingUp, color: '#34D399', bg: 'rgba(16,185,129,0.12)' },
-    { label: 'Beban', value: DEMO_DASHBOARD.beban, icon: TrendingDown, color: '#F87171', bg: 'rgba(239,68,68,0.12)' },
+    { label: 'Saldo Kas', value: DEMO_DASHBOARD.saldoKas, icon: Wallet, color: 'var(--color-accent-blue)', bg: 'rgba(59,130,246,0.12)' },
+    { label: 'Saldo Bank', value: DEMO_DASHBOARD.saldoBank, icon: Banknote, color: 'var(--color-accent-emerald)', bg: 'rgba(16,185,129,0.12)' },
+    { label: 'Pendapatan', value: DEMO_DASHBOARD.pendapatan, icon: TrendingUp, color: 'var(--color-accent-emerald)', bg: 'rgba(16,185,129,0.12)' },
+    { label: 'Beban', value: DEMO_DASHBOARD.beban, icon: TrendingDown, color: 'var(--color-accent-red)', bg: 'rgba(239,68,68,0.12)' },
   ]
 
   return (
@@ -120,15 +121,15 @@ function DashboardMock() {
             variants={itemStagger}
             whileHover={{ y: -4, scale: 1.01 }}
             className="rounded-2xl p-3.5"
-            style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.12)' }}
+            style={{ background: 'var(--color-glass-bg)', border: '1px solid rgba(148,163,184,0.12)' }}
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#64748B' }}>{s.label}</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-slate-muted)' }}>{s.label}</span>
               <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: s.bg }}>
                 <s.icon size={14} style={{ color: s.color }} />
               </div>
             </div>
-            <div className="text-base font-bold truncate" style={{ color: '#F1F5F9' }}>
+            <div className="text-base font-bold truncate" style={{ color: 'var(--color-slate-heading)' }}>
               <MotionNumber value={s.value} format={(v) => formatRupiah(Math.round(v))} />
             </div>
           </motion.div>
@@ -140,20 +141,20 @@ function DashboardMock() {
         initial="hidden"
         animate="visible"
         className="grid grid-cols-5 gap-3 rounded-2xl p-4"
-        style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.12)' }}
+        style={{ background: 'var(--color-glass-bg)', border: '1px solid rgba(148,163,184,0.12)' }}
       >
         <motion.div variants={itemStagger} className="col-span-3 h-44">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp size={14} style={{ color: '#60A5FA' }} />
-            <span className="text-xs font-semibold" style={{ color: '#E2E8F0' }}>Pendapatan vs Beban</span>
+            <TrendingUp size={14} style={{ color: 'var(--color-accent-blue)' }} />
+            <span className="text-xs font-semibold" style={{ color: 'var(--color-slate-text)' }}>Pendapatan vs Beban</span>
           </div>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={DEMO_DASHBOARD.barData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <XAxis dataKey="name" tick={{ fill: '#64748B', fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#64748B', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="name" tick={{ fill: 'var(--color-slate-muted)', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: 'var(--color-slate-muted)', fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip
-                contentStyle={{ background: '#0B1220', border: '1px solid rgba(148,163,184,0.2)', borderRadius: 12, fontSize: 12 }}
-                labelStyle={{ color: '#E2E8F0' }}
+                contentStyle={{ background: 'var(--color-surface-0)', border: '1px solid rgba(148,163,184,0.2)', borderRadius: 12, fontSize: 12 }}
+                labelStyle={{ color: 'var(--color-slate-text)' }}
               />
               <Bar dataKey="Pendapatan" fill="#3B82F6" radius={[4, 4, 0, 0]} isAnimationActive={false} shape={MotionBarShape} activeBar={<MotionActiveBar />} />
               <Bar dataKey="Beban" fill="#F59E0B" radius={[4, 4, 0, 0]} isAnimationActive={false} shape={MotionBarShape} activeBar={<MotionActiveBar />} />
@@ -162,8 +163,8 @@ function DashboardMock() {
         </motion.div>
         <motion.div variants={itemStagger} className="col-span-2 h-44">
           <div className="flex items-center gap-2 mb-2">
-            <Wallet size={14} style={{ color: '#34D399' }} />
-            <span className="text-xs font-semibold" style={{ color: '#E2E8F0' }}>Kas vs Bank</span>
+            <Wallet size={14} style={{ color: 'var(--color-accent-emerald)' }} />
+            <span className="text-xs font-semibold" style={{ color: 'var(--color-slate-text)' }}>Kas vs Bank</span>
           </div>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -173,8 +174,8 @@ function DashboardMock() {
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ background: '#0B1220', border: '1px solid rgba(148,163,184,0.2)', borderRadius: 12, fontSize: 12 }}
-                labelStyle={{ color: '#E2E8F0' }}
+                contentStyle={{ background: 'var(--color-surface-0)', border: '1px solid rgba(148,163,184,0.2)', borderRadius: 12, fontSize: 12 }}
+                labelStyle={{ color: 'var(--color-slate-text)' }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -186,19 +187,19 @@ function DashboardMock() {
 
 function ChatbotMock() {
   return (
-    <div className="flex h-full flex-col rounded-2xl overflow-hidden animate-scale-in" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.12)' }}>
+    <div className="flex h-full flex-col rounded-2xl overflow-hidden animate-scale-in" style={{ background: 'var(--color-glass-bg)', border: '1px solid rgba(148,163,184,0.12)' }}>
       <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
         <div className="relative">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: 'linear-gradient(135deg, #059669, #10B981)', boxShadow: '0 0 16px rgba(16,185,129,0.4)' }}>
             <Bot size={18} className="text-white" />
           </div>
-          <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0F172A]" style={{ background: '#34D399' }} />
+          <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[var(--color-surface-deep)]" style={{ background: 'var(--color-accent-emerald)' }} />
         </div>
         <div>
-          <div className="text-sm font-bold" style={{ color: '#F1F5F9' }}>AI UMKM</div>
-          <div className="text-[10px] font-medium" style={{ color: '#34D399' }}>Online • Menjawab instan</div>
+          <div className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Asisten Finora</div>
+          <div className="text-[10px] font-medium" style={{ color: 'var(--color-accent-emerald)' }}>Online • Menjawab instan</div>
         </div>
-        <span className="ml-auto rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: '#34D399', border: '1px solid rgba(16,185,129,0.25)' }}>
+        <span className="ml-auto rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--color-accent-emerald)', border: '1px solid rgba(16,185,129,0.25)' }}>
           SAK EMKM
         </span>
       </div>
@@ -215,20 +216,20 @@ function ChatbotMock() {
             <Bot size={15} className="text-white" />
           </div>
           <div className="space-y-2">
-            <div className="flex gap-1 items-center rounded-2xl rounded-tl-sm px-4 py-3" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(148,163,184,0.15)' }}>
-              <span className="typing-dot h-1.5 w-1.5 rounded-full" style={{ background: '#94A3B8' }} />
-              <span className="typing-dot h-1.5 w-1.5 rounded-full" style={{ background: '#94A3B8' }} />
-              <span className="typing-dot h-1.5 w-1.5 rounded-full" style={{ background: '#94A3B8' }} />
+            <div className="flex gap-1 items-center rounded-2xl rounded-tl-sm px-4 py-3" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148,163,184,0.15)' }}>
+              <span className="typing-dot h-1.5 w-1.5 rounded-full" style={{ background: 'var(--color-slate-body)' }} />
+              <span className="typing-dot h-1.5 w-1.5 rounded-full" style={{ background: 'var(--color-slate-body)' }} />
+              <span className="typing-dot h-1.5 w-1.5 rounded-full" style={{ background: 'var(--color-slate-body)' }} />
             </div>
-            <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed animate-fade-in" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(148,163,184,0.15)', color: '#E2E8F0', animationDelay: '1600ms' }}>
+            <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed animate-fade-in" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148,163,184,0.15)', color: 'var(--color-slate-text)', animationDelay: '1600ms' }}>
               <p className="mb-2">Pada SAK EMKM, penjualan tunai dicatat:</p>
               <div className="space-y-1 rounded-xl p-3 text-xs" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                <div className="flex justify-between"><span style={{ color: '#A7F3D0' }}>Debit — Kas</span><span className="font-semibold" style={{ color: '#34D399' }}>Rp 1.500.000</span></div>
-                <div className="flex justify-between"><span style={{ color: '#FECACA' }}>Kredit — Pendapatan</span><span className="font-semibold" style={{ color: '#F87171' }}>Rp 1.500.000</span></div>
+                <div className="flex justify-between"><span style={{ color: 'var(--color-accent-emerald)' }}>Debit — Kas</span><span className="font-semibold" style={{ color: 'var(--color-accent-emerald)' }}>Rp 1.500.000</span></div>
+                <div className="flex justify-between"><span style={{ color: 'var(--color-accent-red)' }}>Kredit — Pendapatan</span><span className="font-semibold" style={{ color: 'var(--color-accent-red)' }}>Rp 1.500.000</span></div>
               </div>
               <div className="mt-2 flex items-start gap-1.5 animate-fade-in" style={{ animationDelay: '2400ms' }}>
-                <Database size={12} className="mt-0.5 shrink-0" style={{ color: '#60A5FA' }} />
-                <span className="text-[11px]" style={{ color: '#94A3B8' }}>Sumber: SAK EMKM — Bab 3, ayat 1.2</span>
+                <Database size={12} className="mt-0.5 shrink-0" style={{ color: 'var(--color-accent-blue)' }} />
+                <span className="text-[11px]" style={{ color: 'var(--color-slate-body)' }}>Sumber: SAK EMKM — Bab 3, ayat 1.2</span>
               </div>
             </div>
           </div>
@@ -240,13 +241,13 @@ function ChatbotMock() {
 
 function JurnalMock() {
   return (
-    <div className="rounded-2xl overflow-hidden animate-fade-in" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.12)' }}>
+    <div className="rounded-2xl overflow-hidden animate-fade-in" style={{ background: 'var(--color-glass-bg)', border: '1px solid rgba(148,163,184,0.12)' }}>
       <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
         <div>
-          <div className="text-sm font-bold" style={{ color: '#F1F5F9' }}>Jurnal Umum</div>
-          <div className="text-[11px]" style={{ color: '#64748B' }}>Bulan Maret 2026</div>
+          <div className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Jurnal Umum</div>
+          <div className="text-[11px]" style={{ color: 'var(--color-slate-muted)' }}>Bulan Maret 2026</div>
         </div>
-        <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: '#34D399', border: '1px solid rgba(16,185,129,0.25)' }}>
+        <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--color-accent-emerald)', border: '1px solid rgba(16,185,129,0.25)' }}>
           <CheckCircle2 size={13} /> Balance ✓
         </span>
       </div>
@@ -254,30 +255,30 @@ function JurnalMock() {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
-              <th className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider" style={{ color: '#64748B' }}>No Bukti</th>
-              <th className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider" style={{ color: '#64748B' }}>Deskripsi</th>
-              <th className="px-5 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider" style={{ color: '#64748B' }}>Debit</th>
-              <th className="px-5 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider" style={{ color: '#64748B' }}>Kredit</th>
+              <th className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-slate-muted)' }}>No Bukti</th>
+              <th className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-slate-muted)' }}>Deskripsi</th>
+              <th className="px-5 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-slate-muted)' }}>Debit</th>
+              <th className="px-5 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-slate-muted)' }}>Kredit</th>
             </tr>
           </thead>
           <tbody>
             {DEMO_JURNAL.map((row, i) => (
               <tr key={row.no} className="row-in" style={{ borderBottom: '1px solid rgba(148,163,184,0.06)', animationDelay: `${300 + i * 250}ms` }}>
                 <td className="px-5 py-3">
-                  <span className="rounded-lg px-2 py-0.5 text-[11px] font-bold" style={{ background: 'rgba(59,130,246,0.12)', color: '#93C5FD' }}>{row.no}</span>
-                  <div className="mt-0.5 text-[11px]" style={{ color: '#64748B' }}>{row.tanggal}</div>
+                  <span className="rounded-lg px-2 py-0.5 text-[11px] font-bold" style={{ background: 'rgba(59,130,246,0.12)', color: 'var(--color-accent-blue)' }}>{row.no}</span>
+                  <div className="mt-0.5 text-[11px]" style={{ color: 'var(--color-slate-muted)' }}>{row.tanggal}</div>
                 </td>
-                <td className="px-5 py-3 font-medium" style={{ color: '#E2E8F0' }}>{row.deskripsi}</td>
-                <td className="px-5 py-3 text-right font-semibold" style={{ color: '#34D399' }}>{row.debit ? formatRupiah(row.debit) : ''}</td>
-                <td className="px-5 py-3 text-right font-semibold" style={{ color: '#F87171' }}>{row.kredit ? formatRupiah(row.kredit) : ''}</td>
+                <td className="px-5 py-3 font-medium" style={{ color: 'var(--color-slate-text)' }}>{row.deskripsi}</td>
+                <td className="px-5 py-3 text-right font-semibold" style={{ color: 'var(--color-accent-emerald)' }}>{row.debit ? formatRupiah(row.debit) : ''}</td>
+                <td className="px-5 py-3 text-right font-semibold" style={{ color: 'var(--color-accent-red)' }}>{row.kredit ? formatRupiah(row.kredit) : ''}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr className="row-in" style={{ animationDelay: '1400ms' }}>
-              <td className="px-5 py-3 text-xs font-bold" style={{ color: '#94A3B8' }} colSpan={2}>TOTAL</td>
-              <td className="px-5 py-3 text-right text-xs font-bold" style={{ color: '#34D399' }}>{formatRupiah(3275000)}</td>
-              <td className="px-5 py-3 text-right text-xs font-bold" style={{ color: '#F87171' }}>{formatRupiah(3275000)}</td>
+              <td className="px-5 py-3 text-xs font-bold" style={{ color: 'var(--color-slate-body)' }} colSpan={2}>TOTAL</td>
+              <td className="px-5 py-3 text-right text-xs font-bold" style={{ color: 'var(--color-accent-emerald)' }}>{formatRupiah(3275000)}</td>
+              <td className="px-5 py-3 text-right text-xs font-bold" style={{ color: 'var(--color-accent-red)' }}>{formatRupiah(3275000)}</td>
             </tr>
           </tfoot>
         </table>
@@ -293,37 +294,37 @@ function LaporanMock() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between rounded-2xl px-5 py-4 animate-fade-in" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.12)' }}>
+      <div className="flex items-center justify-between rounded-2xl px-5 py-4 animate-fade-in" style={{ background: 'var(--color-glass-bg)', border: '1px solid rgba(148,163,184,0.12)' }}>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: 'linear-gradient(135deg, #7C3AED, #8B5CF6)', boxShadow: '0 4px 16px rgba(139,92,246,0.4)' }}>
             <BarChart3 size={18} className="text-white" />
           </div>
           <div>
-            <div className="text-sm font-bold" style={{ color: '#F1F5F9' }}>Neraca Lajur</div>
-            <div className="text-[11px]" style={{ color: '#64748B' }}>Per 31 Juli 2026</div>
+            <div className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Neraca Lajur</div>
+            <div className="text-[11px]" style={{ color: 'var(--color-slate-muted)' }}>Per 31 Juli 2026</div>
           </div>
         </div>
-        <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold animate-glow-pulse" style={{ background: 'rgba(139,92,246,0.12)', color: '#C4B5FD', border: '1px solid rgba(139,92,246,0.3)' }}>
+        <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold animate-glow-pulse" style={{ background: 'rgba(139,92,246,0.12)', color: 'var(--color-accent-purple)', border: '1px solid rgba(139,92,246,0.3)' }}>
           <ShieldCheck size={13} /> Seimbang
         </span>
       </div>
 
       {[
-        { label: 'Total Aset', value: aset, color: '#60A5FA', bg: 'rgba(59,130,246,0.1)', delay: '200ms' },
-        { label: 'Total Liabilitas', value: liabilitas, color: '#F87171', bg: 'rgba(239,68,68,0.1)', delay: '500ms' },
-        { label: 'Total Modal + Laba', value: modal, color: '#34D399', bg: 'rgba(16,185,129,0.1)', delay: '800ms' },
+        { label: 'Total Aset', value: aset, color: 'var(--color-accent-blue)', bg: 'rgba(59,130,246,0.1)', delay: '200ms' },
+        { label: 'Total Liabilitas', value: liabilitas, color: 'var(--color-accent-red)', bg: 'rgba(239,68,68,0.1)', delay: '500ms' },
+        { label: 'Total Modal + Laba', value: modal, color: 'var(--color-accent-emerald)', bg: 'rgba(16,185,129,0.1)', delay: '800ms' },
       ].map((row) => (
-        <div key={row.label} className="flex items-center justify-between rounded-2xl px-5 py-4 animate-fade-in" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.12)', animationDelay: row.delay }}>
+        <div key={row.label} className="flex items-center justify-between rounded-2xl px-5 py-4 animate-fade-in" style={{ background: 'var(--color-glass-bg)', border: '1px solid rgba(148,163,184,0.12)', animationDelay: row.delay }}>
           <div className="flex items-center gap-2.5">
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: row.color, boxShadow: `0 0 8px ${row.color}` }} />
-            <span className="text-sm font-medium" style={{ color: '#CBD5E1' }}>{row.label}</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--color-slate-text)' }}>{row.label}</span>
           </div>
-          <span className="text-sm font-bold" style={{ color: '#F1F5F9' }}>{formatRupiah(Math.round(row.value))}</span>
+          <span className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>{formatRupiah(Math.round(row.value))}</span>
         </div>
       ))}
 
       <div className="rounded-2xl px-5 py-3.5 text-center animate-fade-in" style={{ background: 'rgba(139,92,246,0.08)', border: '1px dashed rgba(139,92,246,0.35)', animationDelay: '1100ms' }}>
-        <span className="text-xs font-bold" style={{ color: '#C4B5FD' }}>Aset = Liabilitas + Modal ✓</span>
+        <span className="text-xs font-bold" style={{ color: 'var(--color-accent-purple)' }}>Aset = Liabilitas + Modal ✓</span>
       </div>
     </div>
   )
@@ -335,31 +336,31 @@ function PajakMock() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl p-5 animate-fade-in" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.12)' }}>
+      <div className="rounded-2xl p-5 animate-fade-in" style={{ background: 'var(--color-glass-bg)', border: '1px solid rgba(148,163,184,0.12)' }}>
         <div className="flex items-center gap-2 mb-1.5">
-          <Calculator size={14} style={{ color: '#F87171' }} />
-          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#64748B' }}>Omzet Bulan Ini</span>
+          <Calculator size={14} style={{ color: 'var(--color-accent-red)' }} />
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-slate-muted)' }}>Omzet Bulan Ini</span>
         </div>
-        <div className="text-2xl font-black" style={{ color: '#F1F5F9' }}>{formatRupiah(Math.round(omzet))}</div>
+        <div className="text-2xl font-black" style={{ color: 'var(--color-slate-heading)' }}>{formatRupiah(Math.round(omzet))}</div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <span className="rounded-lg px-2.5 py-1 text-[11px] font-bold" style={{ background: 'rgba(239,68,68,0.1)', color: '#FCA5A5', border: '1px solid rgba(239,68,68,0.25)' }}>Tarif: {DEMO_PAJAK.tarif}</span>
-          <span className="rounded-lg px-2.5 py-1 text-[11px] font-bold" style={{ background: 'rgba(59,130,246,0.1)', color: '#93C5FD', border: '1px solid rgba(59,130,246,0.25)' }}>Omzet Kumulatif: {formatRupiah(DEMO_PAJAK.omzetKumulatif)}</span>
+          <span className="rounded-lg px-2.5 py-1 text-[11px] font-bold" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-accent-red)', border: '1px solid rgba(239,68,68,0.25)' }}>Tarif: {DEMO_PAJAK.tarif}</span>
+          <span className="rounded-lg px-2.5 py-1 text-[11px] font-bold" style={{ background: 'rgba(59,130,246,0.1)', color: 'var(--color-accent-blue)', border: '1px solid rgba(59,130,246,0.25)' }}>Omzet Kumulatif: {formatRupiah(DEMO_PAJAK.omzetKumulatif)}</span>
         </div>
       </div>
 
       <div className="relative rounded-2xl p-5 overflow-hidden animate-scale-in" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05))', border: '1px solid rgba(239,68,68,0.3)', animationDelay: '500ms' }}>
         <div className="absolute -top-10 -right-10 h-28 w-28 rounded-full blur-2xl animate-blob" style={{ background: 'rgba(239,68,68,0.25)' }} />
-        <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: '#FCA5A5' }}>PPh Final Terutang</div>
-        <div className="text-3xl font-black" style={{ color: '#FECACA' }}>{formatRupiah(Math.round(pph))}</div>
-        <div className="mt-3 text-[11px] leading-relaxed" style={{ color: '#94A3B8' }}>
-          <Zap size={11} className="mr-1 inline" style={{ color: '#F87171' }} />
+        <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-accent-red)' }}>PPh Final Terutang</div>
+        <div className="text-3xl font-black" style={{ color: 'var(--color-accent-red)' }}>{formatRupiah(Math.round(pph))}</div>
+        <div className="mt-3 text-[11px] leading-relaxed" style={{ color: 'var(--color-slate-body)' }}>
+          <Zap size={11} className="mr-1 inline" style={{ color: 'var(--color-accent-red)' }} />
           {DEMO_PAJAK.catatan}
         </div>
       </div>
 
       <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '1200ms' }}>
-        <Clock size={13} style={{ color: '#34D399' }} />
-        <span className="text-[11px] font-medium" style={{ color: '#64748B' }}>Perhitungan otomatis & siap untuk SPT Tahunan</span>
+        <Clock size={13} style={{ color: 'var(--color-accent-emerald)' }} />
+        <span className="text-[11px] font-medium" style={{ color: 'var(--color-slate-muted)' }}>Perhitungan otomatis & siap untuk SPT Tahunan</span>
       </div>
     </div>
   )
@@ -376,35 +377,35 @@ function UploadMock() {
   const done = progress >= 100
 
   return (
-    <div className="flex h-full flex-col rounded-2xl overflow-hidden animate-fade-in" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.12)' }}>
+    <div className="flex h-full flex-col rounded-2xl overflow-hidden animate-fade-in" style={{ background: 'var(--color-glass-bg)', border: '1px solid rgba(148,163,184,0.12)' }}>
       <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
         <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: 'linear-gradient(135deg, #0891B2, #06B6D4)', boxShadow: '0 4px 16px rgba(6,182,212,0.4)' }}>
           <UploadCloud size={18} className="text-white" />
         </div>
         <div>
-          <div className="text-sm font-bold" style={{ color: '#F1F5F9' }}>Upload File</div>
-          <div className="text-[11px]" style={{ color: '#64748B' }}>CSV, XLSX, PDF • maks 20MB</div>
+          <div className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Upload File</div>
+          <div className="text-[11px]" style={{ color: 'var(--color-slate-muted)' }}>CSV, XLSX, PDF • maks 20MB</div>
         </div>
       </div>
 
       <div className="flex-1 p-5 space-y-4">
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-8 animate-fade-in" style={{ borderColor: 'rgba(6,182,212,0.3)', background: 'rgba(6,182,212,0.04)' }}>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl animate-float-gentle" style={{ background: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.3)' }}>
-            <UploadCloud size={24} style={{ color: '#22D3EE' }} />
+            <UploadCloud size={24} style={{ color: 'var(--color-accent-cyan)' }} />
           </div>
-          <p className="mt-3 text-sm font-semibold" style={{ color: '#E2E8F0' }}>Tarik & letakkan file di sini</p>
-          <p className="text-[11px]" style={{ color: '#64748B' }}>atau klik untuk memilih file</p>
+          <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--color-slate-text)' }}>Tarik & letakkan file di sini</p>
+          <p className="text-[11px]" style={{ color: 'var(--color-slate-muted)' }}>atau klik untuk memilih file</p>
         </div>
 
-        <div className="flex items-center gap-3 rounded-xl p-3 animate-fade-in" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(148,163,184,0.12)', animationDelay: '300ms' }}>
+        <div className="flex items-center gap-3 rounded-xl p-3 animate-fade-in" style={{ background: 'var(--color-surface-faint)', border: '1px solid rgba(148,163,184,0.12)', animationDelay: '300ms' }}>
           <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: 'rgba(6,182,212,0.12)' }}>
-            <FileText size={16} style={{ color: '#22D3EE' }} />
+            <FileText size={16} style={{ color: 'var(--color-accent-cyan)' }} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-semibold truncate" style={{ color: '#E2E8F0' }}>{DEMO_UPLOAD.filename}</div>
-            <div className="text-[10px]" style={{ color: '#64748B' }}>{DEMO_UPLOAD.size} • {DEMO_UPLOAD.tipe}</div>
+            <div className="text-xs font-semibold truncate" style={{ color: 'var(--color-slate-text)' }}>{DEMO_UPLOAD.filename}</div>
+            <div className="text-[10px]" style={{ color: 'var(--color-slate-muted)' }}>{DEMO_UPLOAD.size} • {DEMO_UPLOAD.tipe}</div>
           </div>
-          <span className={`text-[11px] font-bold ${done ? 'animate-bounce-in' : ''}`} style={{ color: done ? '#34D399' : '#22D3EE' }}>
+          <span className={`text-[11px] font-bold ${done ? 'animate-bounce-in' : ''}`} style={{ color: done ? 'var(--color-accent-emerald)' : 'var(--color-accent-cyan)' }}>
             {done ? 'Selesai' : `${progress}%`}
           </span>
         </div>
@@ -422,11 +423,11 @@ function UploadMock() {
 
         <div className="flex items-center gap-2 flex-wrap">
           {[
-            { label: 'Menunggu', color: '#F59E0B', delay: '0ms', on: true },
-            { label: 'Diproses', color: '#22D3EE', delay: '900ms', on: true },
-            { label: 'Tersimpan ke KB', color: '#34D399', delay: '1900ms', on: done },
+            { label: 'Menunggu', color: 'var(--color-accent-amber)', delay: '0ms', on: true },
+            { label: 'Diproses', color: 'var(--color-accent-cyan)', delay: '900ms', on: true },
+            { label: 'Tersimpan ke KB', color: 'var(--color-accent-emerald)', delay: '1900ms', on: done },
           ].map((chip) => (
-            <span key={chip.label} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold animate-fade-in ${chip.on ? '' : 'opacity-0'}`} style={{ background: `${chip.color}1f`, color: chip.color, border: `1px solid ${chip.color}40`, animationDelay: chip.delay }}>
+            <span key={chip.label} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold animate-fade-in ${chip.on ? '' : 'opacity-0'}`} style={{ background: `color-mix(in srgb, ${chip.color} 12%, transparent)`, color: chip.color, border: `1px solid color-mix(in srgb, ${chip.color} 25%, transparent)`, animationDelay: chip.delay }}>
               <CheckCircle2 size={12} /> {chip.label}
             </span>
           ))}
@@ -475,32 +476,33 @@ export default function DemoPage() {
 
       <div className="relative z-10 flex min-h-screen flex-col">
         {/* Header */}
-        <header className="flex items-center gap-4 px-5 lg:px-8 h-18" style={{ background: 'rgba(11,18,32,0.72)', backdropFilter: 'blur(20px) saturate(160%)', borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
-          <Link to={user ? '/dashboard' : '/'} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-300 hover:bg-white/5" style={{ color: '#94A3B8' }}>
+        <header className="flex items-center gap-4 px-5 lg:px-8 h-18" style={{ background: 'var(--color-glass-bg)', backdropFilter: 'blur(20px) saturate(160%)', borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
+          <Link to={user ? '/dashboard' : '/'} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-300 hover:bg-[var(--color-hover)]" style={{ color: 'var(--color-slate-body)' }}>
             <ArrowLeft size={16} />
             {user ? 'Dashboard' : 'Beranda'}
           </Link>
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)', boxShadow: '0 4px 14px rgba(59,130,246,0.4)' }}>
-              <Landmark size={18} className="text-white" />
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl" style={{ boxShadow: '0 4px 14px rgba(59,130,246,0.4)' }}>
+              <img src="/finora-logo.jpg" alt="Finora" className="h-full w-full object-cover" />
             </div>
-            <span className="text-sm font-bold" style={{ color: '#F1F5F9' }}>AI UMKM <span className="hidden sm:inline font-medium" style={{ color: '#64748B' }}>/ Demo</span></span>
+            <span className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Finora <span className="hidden sm:inline font-medium" style={{ color: 'var(--color-slate-muted)' }}>/ Demo</span></span>
           </div>
           <div className="ml-auto flex items-center gap-2.5">
             <button
               onClick={() => setAutoplay((a) => !a)}
-              className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all duration-300 hover:bg-white/5"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(148,163,184,0.2)', color: autoplay ? '#34D399' : '#94A3B8' }}
+              className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all duration-300 hover:bg-[var(--color-hover)]"
+              style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148,163,184,0.2)', color: autoplay ? 'var(--color-accent-emerald)' : 'var(--color-slate-body)' }}
               title={autoplay ? 'Matikan autoplay' : 'Nyalakan autoplay'}
             >
               {autoplay ? <Pause size={14} /> : <Play size={14} />}
               <span className="hidden sm:inline">{autoplay ? 'Autoplay' : 'Paused'}</span>
             </button>
+            <ThemeToggle compact />
             {user ? (
               <Link to="/dashboard" className="btn-primary !px-5 !py-2 text-sm">Buka Dashboard</Link>
             ) : (
               <>
-                <Link to="/login" className="hidden sm:inline-flex items-center rounded-full px-5 py-2 text-sm font-semibold transition-all duration-300 hover:bg-white/5" style={{ color: '#E2E8F0' }}>Masuk</Link>
+                <Link to="/login" className="hidden sm:inline-flex items-center rounded-full px-5 py-2 text-sm font-semibold transition-all duration-300 hover:bg-[var(--color-hover)]" style={{ color: 'var(--color-slate-text)' }}>Masuk</Link>
                 <Link to="/register" className="btn-primary !px-5 !py-2 text-sm">Daftar Gratis</Link>
               </>
             )}
@@ -541,10 +543,10 @@ export default function DemoPage() {
                     <slide.icon size={19} style={{ color: slide.color }} />
                   </div>
                 </div>
-                <h1 className="mt-5 text-3xl lg:text-4xl font-[900] leading-tight animate-slide-in-left delay-100" style={{ letterSpacing: '-0.02em', color: '#F8FAFC' }}>
+                <h1 className="mt-5 text-3xl lg:text-4xl font-[900] leading-tight animate-slide-in-left delay-100" style={{ letterSpacing: '-0.02em', color: 'var(--color-slate-heading)' }}>
                   {slide.title}
                 </h1>
-                <p className="mt-4 max-w-md text-base leading-relaxed animate-slide-in-left delay-200" style={{ color: '#94A3B8' }}>
+                <p className="mt-4 max-w-md text-base leading-relaxed animate-slide-in-left delay-200" style={{ color: 'var(--color-slate-body)' }}>
                   {slide.desc}
                 </p>
                 <ul className="mt-6 space-y-3">
@@ -553,12 +555,12 @@ export default function DemoPage() {
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: `${slide.color}1f`, border: `1px solid ${slide.color}45` }}>
                         <CheckCircle2 size={13} style={{ color: slide.color }} />
                       </span>
-                      <span className="text-sm font-medium" style={{ color: '#CBD5E1' }}>{b}</span>
+                      <span className="text-sm font-medium" style={{ color: 'var(--color-slate-text)' }}>{b}</span>
                     </li>
                   ))}
                 </ul>
                 <div className="mt-8 animate-slide-in-left delay-500">
-                  <span className="inline-flex items-center gap-2 text-xs font-semibold" style={{ color: '#64748B' }}>
+                  <span className="inline-flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--color-slate-muted)' }}>
                     <span className="flex gap-1">
                       {[0, 1, 2].map((d) => (
                         <span key={d} className="typing-dot h-1.5 w-1.5 rounded-full" style={{ background: slide.color }} />
@@ -580,15 +582,15 @@ export default function DemoPage() {
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
                 className="order-1 lg:order-2"
               >
-                <div className="relative rounded-3xl p-1.5 animate-scale-in" style={{ background: `linear-gradient(145deg, ${slide.color}33, transparent 60%)`, border: '1px solid rgba(148,163,184,0.15)', boxShadow: '0 24px 60px rgba(0,0,0,0.45)' }}>
+                <div className="relative rounded-3xl p-1.5 animate-scale-in" style={{ background: `linear-gradient(145deg, ${slide.color}33, transparent 60%)`, border: '1px solid rgba(148,163,184,0.15)', boxShadow: '0 24px 60px var(--color-shadow, rgba(0,0,0,0.45))' }}>
                   <div className="relative overflow-hidden rounded-[22px]">
-                    <div className="flex items-center gap-1.5 px-4 py-3" style={{ background: 'rgba(8,13,24,0.8)', borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
+                    <div className="flex items-center gap-1.5 px-4 py-3" style={{ background: 'var(--color-surface-card)', borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
                       <span className="h-2.5 w-2.5 rounded-full" style={{ background: '#EF4444' }} />
                       <span className="h-2.5 w-2.5 rounded-full" style={{ background: '#F59E0B' }} />
                       <span className="h-2.5 w-2.5 rounded-full" style={{ background: '#10B981' }} />
-                      <span className="ml-3 text-[10px] font-medium" style={{ color: '#64748B' }}>app.aiumkm.id — {slide.key}</span>
+                      <span className="ml-3 text-[10px] font-medium" style={{ color: 'var(--color-slate-muted)' }}>app.aiumkm.id — {slide.key}</span>
                     </div>
-                    <div className="h-[430px] lg:h-[470px] p-4 overflow-y-auto" style={{ background: 'rgba(13,20,36,0.55)' }}>
+                    <div className="h-[430px] lg:h-[470px] p-4 overflow-y-auto" style={{ background: 'var(--color-glass-bg)' }}>
                       <Mock />
                     </div>
                   </div>
@@ -603,8 +605,8 @@ export default function DemoPage() {
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <button
               onClick={() => goTo(index - 1)}
-              className="flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 hover:bg-white/10 hover:-translate-x-1"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(148,163,184,0.2)', color: '#E2E8F0' }}
+              className="flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 hover:bg-[var(--color-hover)] hover:-translate-x-1"
+              style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148,163,184,0.2)', color: 'var(--color-slate-text)' }}
               aria-label="Sebelumnya"
             >
               <ChevronLeft size={20} />
@@ -628,8 +630,8 @@ export default function DemoPage() {
 
             <button
               onClick={() => goTo(index + 1)}
-              className="flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 hover:bg-white/10 hover:translate-x-1"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(148,163,184,0.2)', color: '#E2E8F0' }}
+              className="flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 hover:bg-[var(--color-hover)] hover:translate-x-1"
+              style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148,163,184,0.2)', color: 'var(--color-slate-text)' }}
               aria-label="Berikutnya"
             >
               <ChevronRight size={20} />
@@ -639,14 +641,14 @@ export default function DemoPage() {
 
         {/* Footer CTA */}
         <div className="px-5 lg:px-8 pb-10">
-          <div className="mx-auto flex max-w-6xl flex-col sm:flex-row items-center justify-between gap-4 rounded-3xl px-6 py-6 sm:px-10" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.15)', backdropFilter: 'blur(16px)' }}>
+          <div className="mx-auto flex max-w-6xl flex-col sm:flex-row items-center justify-between gap-4 rounded-3xl px-6 py-6 sm:px-10" style={{ background: 'var(--color-glass-bg)', border: '1px solid rgba(148,163,184,0.15)', backdropFilter: 'blur(16px)' }}>
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex h-11 w-11 items-center justify-center rounded-2xl animate-float-gentle" style={{ background: 'linear-gradient(135deg, #1D4ED8, #3B82F6)', boxShadow: '0 4px 20px rgba(59,130,246,0.5)' }}>
                 <Database size={20} className="text-white" />
               </div>
               <div>
-                <div className="text-sm font-bold" style={{ color: '#F1F5F9' }}>Siap mengelola keuangan UMKM Anda?</div>
-                <div className="text-xs mt-0.5" style={{ color: '#64748B' }}>Gabung gratis dan lihat kekuatan AI untuk pembukuan bisnis Anda.</div>
+                <div className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Siap mengelola keuangan UMKM Anda?</div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--color-slate-muted)' }}>Gabung gratis dan lihat kekuatan AI untuk pembukuan bisnis Anda.</div>
               </div>
             </div>
             {user ? (

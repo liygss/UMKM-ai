@@ -15,8 +15,10 @@ dipakai, jadikan Alembic sebagai satu-satunya sumber kebenaran skema.
 """
 
 from app.config.logging import get_logger, setup_logging
+from app.config.settings import settings
 from app.database.database import Base, SessionLocal, engine
-from app.database.models import Akun, KategoriAkun, SaldoNormal
+from app.database.models import Akun, KategoriAkun, RoleUser, SaldoNormal, User
+from app.middleware.auth import hash_password
 
 logger = get_logger(__name__)
 
@@ -115,11 +117,72 @@ def _auto_migrate() -> None:
         logger.info("Tidak ada kolom yang perlu dimigrasi.")
 
 
+def _repair_plan_column() -> None:
+    """Baris lama hasil ALTER TABLE ADD COLUMN berisi plan='' -> normalisasi ke FREE."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    if not inspector.has_table("users"):
+        return
+    columns = {col["name"] for col in inspector.get_columns("users")}
+    if "plan" not in columns:
+        return
+    with engine.begin() as conn:
+        conn.execute(text(
+            "UPDATE users SET plan = 'FREE' WHERE plan IS NULL OR plan NOT IN ('FREE', 'MAINTENANCE')"
+        ))
+
+
 def create_tables() -> None:
     logger.info("Membuat tabel database (jika belum ada)...")
     Base.metadata.create_all(bind=engine)
     _auto_migrate()
+    _repair_plan_column()
     logger.info("Tabel database siap.")
+
+
+def seed_bootstrap_admin(db: "Session | None" = None) -> None:
+    """Pastikan email BOOTSTRAP_ADMIN_EMAIL menjadi ADMIN.
+
+    - Bila user sudah ada: role di-upgrade ke ADMIN, aktif, dan ditandai
+      email terverifikasi (akun milik pengelola server).
+    - Bila belum ada: dibuat dengan password acak (bisa di-reset lewat
+      fitur lupa password). Idempotent — aman dipanggil tiap startup.
+    """
+    email = settings.BOOTSTRAP_ADMIN_EMAIL.strip().lower()
+    if not email:
+        return
+
+    import secrets
+
+    if db is not None:
+        user = db.query(User).filter(User.email == email).first()
+        if user is None:
+            db.add(User(
+                email=email,
+                hashed_password=hash_password(secrets.token_urlsafe(24)),
+                full_name="Administrator",
+                role=RoleUser.ADMIN,
+                is_active=True,
+                email_verified=True,
+            ))
+            logger.info("Bootstrap admin dibuat: %s", email)
+        else:
+            if user.role != RoleUser.ADMIN:
+                user.role = RoleUser.ADMIN
+                logger.info("Bootstrap admin: role %s di-upgrade ke ADMIN", email)
+            if not user.is_active:
+                user.is_active = True
+            if not user.email_verified:
+                user.email_verified = True
+        db.commit()
+        return
+
+    _db = SessionLocal()
+    try:
+        seed_bootstrap_admin(db=_db)
+    finally:
+        _db.close()
 
 
 def seed_chart_of_accounts() -> None:
@@ -152,6 +215,7 @@ def run() -> None:
     setup_logging()
     create_tables()
     seed_chart_of_accounts()
+    seed_bootstrap_admin()
 
 
 if __name__ == "__main__":

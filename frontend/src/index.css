@@ -13,16 +13,68 @@
   --color-surface-1: #0F1A2E;
   --color-surface-2: #141F36;
   --color-surface-3: #1A2740;
+  --color-surface-deep: #0F172A;
+  --color-surface-card: rgba(255, 255, 255, 0.04);
+  --color-surface-faint: rgba(255, 255, 255, 0.02);
 
   --color-border-subtle: rgba(148, 163, 184, 0.12);
   --color-border-soft: rgba(148, 163, 184, 0.18);
 
   --color-slate-heading: #F1F5F9;
+  --color-slate-text: #CBD5E1;
   --color-slate-body: #94A3B8;
   --color-slate-muted: #64748B;
 
   --color-glass-bg: rgba(17, 25, 45, 0.7);
   --color-glass-border: rgba(148, 163, 184, 0.12);
+  --color-shadow: rgba(0, 0, 0, 0.45);
+  --color-hover: rgba(255, 255, 255, 0.06);
+  --color-tooltip-bg: rgba(15, 26, 46, 0.95);
+  --color-tooltip-border: rgba(148, 163, 184, 0.18);
+
+  --color-accent-blue: #93C5FD;
+  --color-accent-emerald: #34D399;
+  --color-accent-green: #6EE7B7;
+  --color-accent-amber: #FBBF24;
+  --color-accent-orange: #FDBA74;
+  --color-accent-purple: #D8B4FE;
+  --color-accent-red: #FCA5A5;
+  --color-accent-cyan: #22D3EE;
+}
+
+html.light {
+  color-scheme: light;
+  --color-surface-0: #F1F5F9;
+  --color-surface-1: #F8FAFC;
+  --color-surface-2: #FFFFFF;
+  --color-surface-3: #E2E8F0;
+  --color-surface-deep: #FFFFFF;
+  --color-surface-card: rgba(255, 255, 255, 0.9);
+  --color-surface-faint: rgba(15, 23, 42, 0.03);
+
+  --color-border-subtle: rgba(15, 23, 42, 0.08);
+  --color-border-soft: rgba(15, 23, 42, 0.14);
+
+  --color-slate-heading: #0F172A;
+  --color-slate-text: #334155;
+  --color-slate-body: #475569;
+  --color-slate-muted: #64748B;
+
+  --color-glass-bg: rgba(248, 250, 252, 0.75);
+  --color-glass-border: rgba(15, 23, 42, 0.1);
+  --color-shadow: rgba(15, 23, 42, 0.18);
+  --color-hover: rgba(15, 23, 42, 0.05);
+  --color-tooltip-bg: rgba(255, 255, 255, 0.97);
+  --color-tooltip-border: rgba(15, 23, 42, 0.12);
+
+  --color-accent-blue: #2563EB;
+  --color-accent-emerald: #059669;
+  --color-accent-green: #047857;
+  --color-accent-amber: #B45309;
+  --color-accent-orange: #C2410C;
+  --color-accent-purple: #7E22CE;
+  --color-accent-red: #DC2626;
+  --color-accent-cyan: #0891B2;
 }
 
 @layer base {
@@ -102,11 +154,11 @@
     @apply inline-flex items-center justify-center gap-2 rounded-full border px-6 py-2.5 text-sm font-semibold transition-all duration-300;
     border-color: var(--color-border-soft);
     color: var(--color-brand-soft);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-surface-card);
   }
   .btn-secondary:hover {
     @apply -translate-y-0.5;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-surface-2);
     border-color: var(--color-brand-primary);
     box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
   }
@@ -134,7 +186,7 @@
   .input-field {
     @apply block w-full rounded-2xl border px-4 py-3 text-sm transition-all duration-300;
     border-color: var(--color-border-soft);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-surface-2);
     color: var(--color-slate-heading);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
@@ -155,7 +207,7 @@
   /* ===== CARDS ===== */
   .card {
     @apply rounded-2xl p-6 transition-all duration-300;
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.02) 100%);
+    background: var(--color-surface-card);
     border: 1px solid var(--color-border-subtle);
     box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
@@ -188,28 +240,28 @@
     border: 1px solid rgba(59, 130, 246, 0.25);
   }
 
-  .badge-aset { background: rgba(96, 165, 250, 0.12); color: #93C5FD; border: 1px solid rgba(96, 165, 250, 0.25); }
-  .badge-liabilitas { background: rgba(251, 146, 60, 0.12); color: #FDBA74; border: 1px solid rgba(251, 146, 60, 0.25); }
-  .badge-modal { background: rgba(192, 132, 252, 0.12); color: #D8B4FE; border: 1px solid rgba(192, 132, 252, 0.25); }
-  .badge-pendapatan { background: rgba(52, 211, 153, 0.12); color: #6EE7B7; border: 1px solid rgba(52, 211, 153, 0.25); }
-  .badge-beban { background: rgba(251, 191, 36, 0.12); color: #FCD34D; border: 1px solid rgba(251, 191, 36, 0.25); }
+  .badge-aset { background: rgba(96, 165, 250, 0.12); color: var(--color-accent-blue); border: 1px solid rgba(96, 165, 250, 0.25); }
+  .badge-liabilitas { background: rgba(251, 146, 60, 0.12); color: var(--color-accent-orange); border: 1px solid rgba(251, 146, 60, 0.25); }
+  .badge-modal { background: rgba(192, 132, 252, 0.12); color: var(--color-accent-purple); border: 1px solid rgba(192, 132, 252, 0.25); }
+  .badge-pendapatan { background: rgba(52, 211, 153, 0.12); color: var(--color-accent-green); border: 1px solid rgba(52, 211, 153, 0.25); }
+  .badge-beban { background: rgba(251, 191, 36, 0.12); color: var(--color-accent-amber); border: 1px solid rgba(251, 191, 36, 0.25); }
 
   /* ===== TABLES ===== */
   .tbl-header {
     @apply px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap;
     color: var(--color-slate-body);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--color-surface-faint);
   }
   .tbl-cell {
     @apply px-6 py-4 whitespace-nowrap;
-    color: #CBD5E1;
+    color: var(--color-slate-text);
   }
   .tbl-row {
     transition: background-color 0.15s ease;
     animation: row-in 0.45s ease-out both;
     border-bottom: 1px solid var(--color-border-subtle);
   }
-  .tbl-row:nth-child(even) { background: rgba(255, 255, 255, 0.015); }
+  .tbl-row:nth-child(even) { background: var(--color-surface-faint); }
   .tbl-row:hover { background: rgba(59, 130, 246, 0.08); }
   .num-cell {
     text-align: right;
@@ -236,7 +288,7 @@
   /* ===== PILL NAV ===== */
   .pill-nav {
     @apply rounded-full;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-surface-card);
     border: 1px solid var(--color-border-subtle);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
   }

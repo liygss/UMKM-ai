@@ -13,11 +13,11 @@ export default function DataTable({ columns, data, emptyMessage = 'Tidak ada dat
     return (
       <div className="card text-center py-16">
         <div className="inline-flex rounded-2xl p-4 mb-4" style={{ background: 'rgba(148, 163, 184, 0.1)' }}>
-          <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#64748B' }}>
+          <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'var(--color-slate-muted)' }}>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
           </svg>
         </div>
-        <p className="text-sm font-medium" style={{ color: '#94A3B8' }}>{emptyMessage}</p>
+        <p className="text-sm font-medium" style={{ color: 'var(--color-slate-body)' }}>{emptyMessage}</p>
       </div>
     )
   }
@@ -52,8 +52,8 @@ export default function DataTable({ columns, data, emptyMessage = 'Tidak ada dat
       </div>
 
       {showPagination && totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid rgba(148, 163, 184, 0.12)', background: 'rgba(255, 255, 255, 0.02)' }}>
-          <p className="text-xs" style={{ color: '#94A3B8' }}>
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid rgba(148, 163, 184, 0.12)', background: 'var(--color-surface-faint)' }}>
+          <p className="text-xs" style={{ color: 'var(--color-slate-body)' }}>
             Menampilkan {page * pageSize + 1}-{Math.min((page + 1) * pageSize, data.length)} dari {data.length} data
           </p>
           <div className="flex items-center gap-1">
@@ -82,7 +82,7 @@ export default function DataTable({ columns, data, emptyMessage = 'Tidak ada dat
                     color: 'white',
                     boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
                   } : {
-                    color: '#94A3B8',
+                    color: 'var(--color-slate-body)',
                   }}
                 >
                   {pageNum + 1}

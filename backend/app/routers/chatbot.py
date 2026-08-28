@@ -45,6 +45,7 @@ async def ask_chatbot(
                 payload.session_id,
                 payload.message,
                 financial_context,
+                payload.page,
             ),
             timeout=CHATBOT_TIMEOUT_SECONDS,
         )

@@ -16,7 +16,7 @@ export default function DemoWelcomeModal({ onClose, onLaunch }) {
           <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full blur-3xl animate-blob" style={{ background: 'rgba(139,92,246,0.18)', animationDelay: '4s' }} />
         </div>
 
-        <button onClick={onClose} className="absolute top-4 right-4 z-10 p-2 rounded-xl transition-all duration-300 hover:bg-white/10" style={{ color: '#94A3B8' }} aria-label="Tutup">
+        <button onClick={onClose} className="absolute top-4 right-4 z-10 p-2 rounded-xl transition-all duration-300 hover:bg-white/10" style={{ color: 'var(--color-slate-body)' }} aria-label="Tutup">
           <X size={18} />
         </button>
 
@@ -25,21 +25,21 @@ export default function DemoWelcomeModal({ onClose, onLaunch }) {
             <Sparkles size={28} className="text-white" />
           </div>
 
-          <h2 className="mt-5 text-2xl font-black animate-slide-up" style={{ color: '#F8FAFC', letterSpacing: '-0.02em' }}>
+          <h2 className="mt-5 text-2xl font-black animate-slide-up" style={{ color: 'var(--color-slate-heading)', letterSpacing: '-0.02em' }}>
             Selamat Datang!
           </h2>
-          <p className="mt-2 text-sm leading-relaxed animate-slide-up delay-100" style={{ color: '#94A3B8' }}>
+          <p className="mt-2 text-sm leading-relaxed animate-slide-up delay-100" style={{ color: 'var(--color-slate-body)' }}>
             Akun Anda sudah siap. Tonton demo singkat untuk melihat cara
-            kerja AI UMKM — dari dashboard hingga laporan keuangan.
+            kerja Finora — dari dashboard hingga laporan keuangan.
           </p>
 
           <div className="mt-6 grid grid-cols-4 gap-3 animate-slide-up delay-200">
             {perks.map((p, i) => (
-              <div key={p.label} className="rounded-2xl px-2 py-3.5 transition-all duration-300 hover:-translate-y-1" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(148,163,184,0.14)', animationDelay: `${i * 60}ms` }}>
+              <div key={p.label} className="rounded-2xl px-2 py-3.5 transition-all duration-300 hover:-translate-y-1" style={{ background: 'var(--color-surface-faint)', border: '1px solid rgba(148,163,184,0.14)', animationDelay: `${i * 60}ms` }}>
                 <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl animate-fade-in" style={{ background: `${p.color}1f`, border: `1px solid ${p.color}45`, animationDelay: `${300 + i * 150}ms` }}>
                   <p.icon size={16} style={{ color: p.color }} />
                 </div>
-                <div className="mt-2 text-[10px] font-bold" style={{ color: '#CBD5E1' }}>{p.label}</div>
+                <div className="mt-2 text-[10px] font-bold" style={{ color: 'var(--color-slate-text)' }}>{p.label}</div>
               </div>
             ))}
           </div>
@@ -53,7 +53,7 @@ export default function DemoWelcomeModal({ onClose, onLaunch }) {
               Langsung Mulai
             </button>
           </div>
-          <p className="mt-4 text-[11px] animate-fade-in" style={{ color: '#64748B', animationDelay: '600ms' }}>
+          <p className="mt-4 text-[11px] animate-fade-in" style={{ color: 'var(--color-slate-muted)', animationDelay: '600ms' }}>
             Demo hanya ~45 detik • Bisa diulang kapan saja dari sidebar
           </p>
         </div>

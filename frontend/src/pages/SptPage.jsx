@@ -2,13 +2,13 @@ import { useState, useEffect, useMemo } from 'react'
 import client from '../api/client'
 import { formatRupiah, formatDate } from '../utils/formatters'
 import { buildSptPrintHtml } from '../utils/sptPdfBuilder'
-import { GUIDE_STEPS, contohData } from '../data/sptTutorial'
+import { contohData } from '../data/sptTutorial'
 import toast from 'react-hot-toast'
 import { extractError } from '../api/extractError'
 import {
   User, Wallet, Receipt, Home, Users, FileCheck, Calculator,
   Save, Printer, Trash2, Plus, FileSpreadsheet, History, Landmark, Info,
-  BookOpen, ArrowRight, Zap,
+  Sparkles,
 } from 'lucide-react'
 
 const STATUS_KAWIN = [
@@ -112,11 +112,18 @@ function buildPayload(data, formType) {
   return p
 }
 
-function Field({ label, children, className }) {
+function Field({ label, children, className, contoh }) {
   return (
     <div className={className}>
       <label className="label">{label}</label>
       {children}
+      {contoh && (
+        <p className="mt-1 text-[11px] flex items-center gap-1.5">
+          <Sparkles size={11} style={{ color: 'var(--color-accent-blue)' }} />
+          <span style={{ color: 'var(--color-slate-muted)' }}>Contoh:</span>
+          <code className="font-mono rounded px-1.5 py-0.5 text-[10px]" style={{ background: 'rgba(59,130,246,0.1)', color: 'var(--color-accent-blue)' }}>{contoh}</code>
+        </p>
+      )}
     </div>
   )
 }
@@ -158,13 +165,18 @@ function ItemEditor({ title, items, fields, onChange, addDefault }) {
   return (
     <div className="mt-3 space-y-3">
       {items.length === 0 && (
-        <p className="text-xs" style={{ color: '#64748B' }}>Belum ada data. Klik <span className="font-semibold" style={{ color: '#93C5FD' }}>+ Tambah</span> untuk menambah.</p>
+        <p className="text-xs" style={{ color: 'var(--color-slate-muted)' }}>Belum ada data. Klik <span className="font-semibold" style={{ color: 'var(--color-accent-blue)' }}>+ Tambah</span> untuk menambah.</p>
       )}
       {items.map((it, i) => (
-        <div key={i} className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border-subtle)' }}>
+        <div key={i} className="rounded-2xl p-4" style={{ background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-subtle)' }}>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {fields.map((f) => (
-              <Field key={f.key} label={f.label} className={f.className}>
+              <Field
+                key={f.key}
+                label={f.label}
+                className={f.className}
+                contoh={f.contoh && (it[f.key] == null || it[f.key] === '' || it[f.key] === 0) ? f.contoh : undefined}
+              >
                 {f.type === 'number'
                   ? <NumField value={it[f.key]} onChange={(v) => set(i, f.key, v)} placeholder={f.placeholder} />
                   : f.type === 'select'
@@ -227,8 +239,8 @@ function PenyesuaianEditor({ title, values, onChange }) {
         <Plus size={14} /> Tambah {title}
       </button>
       <div className="mt-2 text-xs font-semibold flex items-center justify-between rounded-xl px-3 py-2" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
-        <span style={{ color: '#94A3B8' }}>Jumlah {title}</span>
-        <span className="font-mono" style={{ color: '#93C5FD' }}>{formatRupiah(total)}</span>
+        <span style={{ color: 'var(--color-slate-body)' }}>Jumlah {title}</span>
+        <span className="font-mono" style={{ color: 'var(--color-accent-blue)' }}>{formatRupiah(total)}</span>
       </div>
     </div>
   )
@@ -239,11 +251,11 @@ function SectionCard({ title, icon: Icon, desc, children }) {
     <div className="card">
       <div className="flex items-center gap-3 mb-4">
         <div className="rounded-2xl p-3" style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)' }}>
-          <Icon size={18} style={{ color: '#93C5FD' }} />
+          <Icon size={18} style={{ color: 'var(--color-accent-blue)' }} />
         </div>
         <div>
-          <h3 className="font-bold" style={{ color: '#F1F5F9' }}>{title}</h3>
-          {desc && <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>{desc}</p>}
+          <h3 className="font-bold" style={{ color: 'var(--color-slate-heading)' }}>{title}</h3>
+          {desc && <p className="text-xs mt-0.5" style={{ color: 'var(--color-slate-muted)' }}>{desc}</p>}
         </div>
       </div>
       {children}
@@ -319,7 +331,6 @@ export default function SptPage() {
   const [saving, setSaving] = useState(false)
   const [drafts, setDrafts] = useState([])
   const [draftId, setDraftId] = useState(null)
-  const [guideOpen, setGuideOpen] = useState(true)
 
   const up = (path, value) => setData((d) => setPath(d, path, value))
 
@@ -457,24 +468,6 @@ export default function SptPage() {
     toast.success(`Data contoh ${ft === '1770S' ? '1770S (Karyawan)' : '1770 (Usaha)'} dimuat`)
   }
 
-  const fillSection = (sectionId, ft = formType) => {
-    const sample = contohData(ft)
-    switch (sectionId) {
-      case 'identitas': up(['identitas'], sample.identitas); break
-      case 'penghasilan': up(['penghasilan'], sample.penghasilan); break
-      case 'kredit': up(['kredit_pajak'], sample.kredit_pajak); break
-      case 'harta':
-        up(['harta'], sample.harta)
-        up(['utang'], sample.utang)
-        break
-      case 'tanggungan': up(['tanggungan'], sample.tanggungan); break
-      case 'permohonan': up(['permohonan'], sample.permohonan); break
-      case 'hasil': break
-      default: break
-    }
-    toast.success(`Contoh isian '${GUIDE_STEPS.find((g) => g.id === sectionId)?.title || sectionId}' diterapkan`)
-  }
-
   const usaha = data.penghasilan.usaha
   const netoUsaha = useMemo(
     () => (usaha.peredaran_usaha || 0) - (usaha.hpp || 0) - (usaha.biaya_usaha || 0),
@@ -489,14 +482,14 @@ export default function SptPage() {
         <h1 className="text-3xl font-extrabold">
           <span className="gradient-text">SPT Tahunan PPh OP</span>
         </h1>
-        <p className="text-sm mt-1" style={{ color: '#94A3B8' }}>
+        <p className="text-sm mt-1" style={{ color: 'var(--color-slate-body)' }}>
           Isi formulir 1770 / 1770S — hitung otomatis, simpan draft, dan cetak ke PDF.
         </p>
       </div>
 
       <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)' }}>
-        <Info size={16} style={{ color: '#FBBF24' }} className="shrink-0 mt-0.5" />
-        <p className="text-xs" style={{ color: '#D6C08A' }}>
+        <Info size={16} style={{ color: 'var(--color-accent-amber)' }} className="shrink-0 mt-0.5" />
+        <p className="text-xs" style={{ color: 'var(--color-accent-amber)' }}>
           Alat bantu isian & hitung SPT — BUKAN pengganti e-Form/e-Filing resmi DJP. Validasi ke konsultan pajak sebelum pelaporan.
         </p>
       </div>
@@ -506,8 +499,8 @@ export default function SptPage() {
         <aside className="w-full lg:w-64 shrink-0 space-y-4 lg:sticky lg:top-0">
           <div className="card !p-4">
             <div className="flex items-center gap-2 mb-3">
-              <History size={14} style={{ color: '#93C5FD' }} />
-              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#94A3B8' }}>Bagian Form</span>
+              <History size={14} style={{ color: 'var(--color-accent-blue)' }} />
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-slate-body)' }}>Bagian Form</span>
             </div>
             <nav className="space-y-1">
               {SECTIONS.map((s) => {
@@ -518,11 +511,11 @@ export default function SptPage() {
                     type="button"
                     onClick={() => setSection(s.id)}
                     className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-300 ${
-                      active ? 'font-semibold text-[#93C5FD]' : 'text-[#94A3B8] hover:bg-white/5 hover:text-[#E2E8F0]'
+                      active ? 'font-semibold text-[var(--color-accent-blue)]' : 'text-[var(--color-slate-body)] hover:bg-white/5 hover:text-[var(--color-slate-text)]'
                     }`}
                     style={active ? { background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)' } : undefined}
                   >
-                    <s.icon size={16} className={active ? 'text-[#60A5FA]' : ''} />
+                    <s.icon size={16} className={active ? 'text-[var(--color-brand-soft)]' : ''} />
                     <span className="text-left">{s.label}</span>
                   </button>
                 )
@@ -532,21 +525,21 @@ export default function SptPage() {
 
           <div className="card !p-4">
             <div className="flex items-center gap-2 mb-3">
-              <FileSpreadsheet size={14} style={{ color: '#93C5FD' }} />
-              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#94A3B8' }}>Draft Tersimpan</span>
+              <FileSpreadsheet size={14} style={{ color: 'var(--color-accent-blue)' }} />
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-slate-body)' }}>Draft Tersimpan</span>
             </div>
             <button type="button" onClick={() => muatContoh()} className="btn-ghost w-full text-xs justify-start !px-2 mb-2">
               <Plus size={12} /> Muat data contoh
             </button>
             <div className="space-y-2">
               {drafts.length === 0 && (
-                <p className="text-xs" style={{ color: '#64748B' }}>Belum ada draft.</p>
+                <p className="text-xs" style={{ color: 'var(--color-slate-muted)' }}>Belum ada draft.</p>
               )}
               {drafts.map((d) => (
                 <div key={d.id} className="group flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-white/5" style={{ border: '1px solid var(--color-border-subtle)' }}>
                   <button type="button" onClick={() => muatDraft(d)} className="flex-1 text-left min-w-0">
-                    <div className="text-xs font-semibold truncate" style={{ color: '#F1F5F9' }}>SPT {d.form_type} {d.tahun_pajak}</div>
-                    <div className="text-[10px]" style={{ color: '#64748B' }}>{formatDate(d.updated_at)}</div>
+                    <div className="text-xs font-semibold truncate" style={{ color: 'var(--color-slate-heading)' }}>SPT {d.form_type} {d.tahun_pajak}</div>
+                    <div className="text-[10px]" style={{ color: 'var(--color-slate-muted)' }}>{formatDate(d.updated_at)}</div>
                   </button>
                   <button type="button" onClick={() => hapusDraft(d.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/10" style={{ color: '#F87171' }}>
                     <Trash2 size={13} />
@@ -559,15 +552,6 @@ export default function SptPage() {
 
         {/* ===== Form content ===== */}
         <div className="flex-1 min-w-0 w-full space-y-6">
-          <GuidePanel
-            activeId={section}
-            formType={formType}
-            open={guideOpen}
-            onToggle={() => setGuideOpen((o) => !o)}
-            onSelect={(id) => { setSection(id); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-            onFillSection={(id) => { fillSection(id); setSection(id) }}
-            onDemo={(ft) => muatContoh(ft, { hitungLangsung: true })}
-          />
           {section === 'identitas' && (
             <IdentitasSection formType={formType} data={data} up={up} onChangeFormType={changeFormType} />
           )}
@@ -591,116 +575,6 @@ export default function SptPage() {
 }
 
 /* ========================================================================
-   Panduan Interaktif (GuidePanel)
-   ======================================================================== */
-
-function GuidePanel({ activeId, formType, open, onToggle, onSelect, onFillSection, onDemo }) {
-  const idx = Math.max(0, GUIDE_STEPS.findIndex((g) => g.id === activeId))
-  const step = GUIDE_STEPS[idx]
-  const next = GUIDE_STEPS[idx + 1]
-  return (
-    <div className="card !p-4">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
-          <BookOpen size={15} style={{ color: '#93C5FD' }} />
-          <span className="text-sm font-bold" style={{ color: '#F1F5F9' }}>Panduan Pengisian</span>
-          <span className="badge !text-[9px]">LANGKAH {idx + 1}/{GUIDE_STEPS.length}</span>
-        </div>
-        <button type="button" onClick={onToggle} className="btn-ghost !px-2 !py-1 text-xs">
-          {open ? 'Tutup' : 'Buka'}
-        </button>
-      </div>
-
-      {open && (
-        <div className="mt-3 space-y-4">
-          <div className="rounded-2xl p-3" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)' }}>
-            <div className="text-xs font-semibold mb-2 flex items-center gap-1.5" style={{ color: '#6EE7B7' }}>
-              <Zap size={12} /> Coba demo: isi seluruh form otomatis + hitung langsung
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" className="btn-secondary text-xs" onClick={() => onDemo('1770S')}>Demo 1770S (Karyawan)</button>
-              <button type="button" className="btn-secondary text-xs" onClick={() => onDemo('1770')}>Demo 1770 (Usaha)</button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
-            <nav className="space-y-1">
-              {GUIDE_STEPS.map((g, i) => {
-                const active = g.id === activeId
-                return (
-                  <button
-                    key={g.id}
-                    type="button"
-                    onClick={() => onSelect(g.id)}
-                    className={`w-full flex items-center gap-2 rounded-xl px-3 py-2 text-left text-xs transition-all duration-300 ${active ? 'font-semibold' : 'text-[#94A3B8] hover:bg-white/5 hover:text-[#E2E8F0]'}`}
-                    style={active ? { background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', color: '#93C5FD' } : undefined}
-                  >
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
-                      style={{ background: active ? '#3B82F6' : 'rgba(148,163,184,0.15)', color: active ? '#fff' : '#94A3B8' }}>
-                      {i + 1}
-                    </span>
-                    <span className="truncate">{g.title}</span>
-                  </button>
-                )
-              })}
-            </nav>
-
-            <div className="space-y-3">
-              <div>
-                <div className="text-sm font-bold" style={{ color: '#F1F5F9' }}>{step.title}</div>
-                <p className="text-xs mt-1 leading-relaxed" style={{ color: '#94A3B8' }}>{step.ringkas}</p>
-              </div>
-
-              <div className="space-y-2">
-                {step.langkah.map((l, i) => (
-                  <div key={i} className="rounded-xl px-3 py-2.5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border-subtle)' }}>
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className="text-xs font-semibold" style={{ color: '#CBD5E1' }}>{l.field}</span>
-                      {l.contoh && (
-                        <code className="text-[10px] font-mono rounded px-1.5 py-0.5" style={{ background: 'rgba(59,130,246,0.12)', color: '#93C5FD' }}>{l.contoh}</code>
-                      )}
-                    </div>
-                    <p className="text-[11px] mt-1 leading-relaxed" style={{ color: '#64748B' }}>{l.cara}</p>
-                  </div>
-                ))}
-              </div>
-
-              {step.tips?.length > 0 && (
-                <div className="rounded-xl px-3 py-2.5" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                  <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#FBBF24' }}>Tips</div>
-                  <ul className="space-y-1">
-                    {step.tips.map((t, i) => (
-                      <li key={i} className="text-[11px] flex items-start gap-1.5" style={{ color: '#D6C08A' }}>
-                        <span className="mt-0.5 shrink-0">•</span><span>{t}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <div className="text-[10px] italic" style={{ color: '#64748B' }}>
-                Referensi: <span style={{ color: '#94A3B8' }}>{step.referensi}</span>
-              </div>
-
-              <div className="flex flex-wrap gap-2 pt-1">
-                <button type="button" className="btn-secondary text-xs" onClick={() => onFillSection(step.id)}>
-                  <Zap size={12} /> Isi otomatis bagian ini
-                </button>
-                {next && (
-                  <button type="button" className="btn-primary text-xs" onClick={() => onSelect(next.id)}>
-                    Lanjut: {next.title} <ArrowRight size={12} />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ========================================================================
    Bagian: Identitas
    ======================================================================== */
 
@@ -715,13 +589,13 @@ function IdentitasSection({ formType, data, up, onChangeFormType }) {
           className="rounded-2xl p-5 text-left transition-all duration-300"
           style={formType === '1770'
             ? { background: 'rgba(59,130,246,0.12)', border: '2px solid #3B82F6' }
-            : { background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border-subtle)' }}
+            : { background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-subtle)' }}
         >
           <div className="flex items-center justify-between">
-            <span className="font-extrabold text-lg" style={{ color: formType === '1770' ? '#93C5FD' : '#CBD5E1' }}>1770</span>
+            <span className="font-extrabold text-lg" style={{ color: formType === '1770' ? 'var(--color-accent-blue)' : 'var(--color-slate-text)' }}>1770</span>
             {formType === '1770' && <span className="badge !text-[10px]">DIPILIH</span>}
           </div>
-          <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>Wiraswasta / usaha, pekerjaan bebas, lebih dari satu pemberi kerja. Lampiran I–IV.</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--color-slate-body)' }}>Wiraswasta / usaha, pekerjaan bebas, lebih dari satu pemberi kerja. Lampiran I–IV.</p>
         </button>
         <button
           type="button"
@@ -729,54 +603,54 @@ function IdentitasSection({ formType, data, up, onChangeFormType }) {
           className="rounded-2xl p-5 text-left transition-all duration-300"
           style={formType === '1770S'
             ? { background: 'rgba(59,130,246,0.12)', border: '2px solid #3B82F6' }
-            : { background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border-subtle)' }}
+            : { background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-subtle)' }}
         >
           <div className="flex items-center justify-between">
-            <span className="font-extrabold text-lg" style={{ color: formType === '1770S' ? '#93C5FD' : '#CBD5E1' }}>1770S</span>
+            <span className="font-extrabold text-lg" style={{ color: formType === '1770S' ? 'var(--color-accent-blue)' : 'var(--color-slate-text)' }}>1770S</span>
             {formType === '1770S' && <span className="badge !text-[10px]">DIPILIH</span>}
           </div>
-          <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>Karyawan — penghasilan dari satu/lebih pemberi kerja. Lampiran S-I & S-II.</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--color-slate-body)' }}>Karyawan — penghasilan dari satu/lebih pemberi kerja. Lampiran S-I & S-II.</p>
         </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Field label="Tahun Pajak">
+        <Field label="Tahun Pajak" contoh={id.tahun_pajak ? undefined : '2025'}>
           <NumField value={id.tahun_pajak} onChange={(v) => up(['identitas', 'tahun_pajak'], v)} placeholder="2025" />
         </Field>
-        <Field label="NPWP">
+        <Field label="NPWP" contoh={id.npwp ? undefined : '01.234.567.8-901.000'}>
           <input type="text" value={id.npwp} onChange={(e) => up(['identitas', 'npwp'], e.target.value)} className="input-field" placeholder="00.000.000.0-000.000" />
         </Field>
-        <Field label="Nama Wajib Pajak">
+        <Field label="Nama Wajib Pajak" contoh={id.nama ? undefined : 'BUDI SANTOSO'}>
           <input type="text" value={id.nama} onChange={(e) => up(['identitas', 'nama'], e.target.value)} className="input-field" placeholder="Nama sesuai KTP/NPWP" />
         </Field>
-        <Field label="Status Perkawinan">
+        <Field label="Status Perkawinan" contoh={id.status_kawin ? undefined : 'KK — Kawin, kewajiban pajak digabung'}>
           <SelectField value={id.status_kawin} onChange={(v) => up(['identitas', 'status_kawin'], v)} options={STATUS_KAWIN} />
         </Field>
-        <Field label="NPWP Istri/Suami">
+        <Field label="NPWP Istri/Suami" contoh={id.npwp_pasangan ? undefined : '02.345.678.9-012.345'}>
           <input type="text" value={id.npwp_pasangan} onChange={(e) => up(['identitas', 'npwp_pasangan'], e.target.value)} className="input-field" placeholder="00.000.000.0-000.000" />
         </Field>
-        <Field label="Pembetulan Ke-">
+        <Field label="Pembetulan Ke-" contoh={(id.pembetulan_ke ?? 0) ? undefined : '0 (lapor pertama kali)'}>
           <NumField value={id.pembetulan_ke} onChange={(v) => up(['identitas', 'pembetulan_ke'], v)} />
         </Field>
-        <Field label="Jenis Usaha">
+        <Field label="Jenis Usaha" contoh={id.jenis_usaha ? undefined : 'Toko Sembako'}>
           <input type="text" value={id.jenis_usaha} onChange={(e) => up(['identitas', 'jenis_usaha'], e.target.value)} className="input-field" placeholder="cth: Toko Kelontong" />
         </Field>
-        <Field label="Pekerjaan Utama">
+        <Field label="Pekerjaan Utama" contoh={id.pekerjaan_utama ? undefined : 'Karyawan Swasta'}>
           <input type="text" value={id.pekerjaan_utama} onChange={(e) => up(['identitas', 'pekerjaan_utama'], e.target.value)} className="input-field" placeholder="cth: Karyawan" />
         </Field>
-        <Field label="Klasifikasi Lapangan Usaha (KLU)">
+        <Field label="Klasifikasi Lapangan Usaha (KLU)" contoh={id.klu ? undefined : '47911'}>
           <input type="text" value={id.klu} onChange={(e) => up(['identitas', 'klu'], e.target.value)} className="input-field" placeholder="cth: 47911" />
         </Field>
-        <Field label="No. Telepon">
+        <Field label="No. Telepon" contoh={id.no_telepon ? undefined : '021-5551234'}>
           <input type="text" value={id.no_telepon} onChange={(e) => up(['identitas', 'no_telepon'], e.target.value)} className="input-field" placeholder="021-0000000" />
         </Field>
-        <Field label="No. Faksimili">
+        <Field label="No. Faksimili" contoh={id.no_faks ? undefined : '021-5551234'}>
           <input type="text" value={id.no_faks} onChange={(e) => up(['identitas', 'no_faks'], e.target.value)} className="input-field" placeholder="021-0000000" />
         </Field>
-        <Field label="Alamat Tempat Tinggal" className="sm:col-span-2 lg:col-span-2">
+        <Field label="Alamat Tempat Tinggal" className="sm:col-span-2 lg:col-span-2" contoh={id.alamat ? undefined : 'Jl. Merdeka No.1 Jakarta'}>
           <input type="text" value={id.alamat} onChange={(e) => up(['identitas', 'alamat'], e.target.value)} className="input-field" placeholder="Jalan, RT/RW, Kelurahan" />
         </Field>
-        <Field label="Kelurahan / Kecamatan">
+        <Field label="Kelurahan / Kecamatan" contoh={id.kelurahan_kecamatan ? undefined : 'Menteng / Jakarta Pusat'}>
           <input type="text" value={id.kelurahan_kecamatan} onChange={(e) => up(['identitas', 'kelurahan_kecamatan'], e.target.value)} className="input-field" placeholder="cth: Menteng / Jakarta Pusat" />
         </Field>
       </div>
@@ -794,7 +668,7 @@ function PenghasilanSection({ formType, data, up, netoUsaha }) {
   const catat = ph.usaha_pencatatan
   return (
     <SectionCard title="Penghasilan Neto" icon={Wallet} desc="Sumber penghasilan dan komponen perhitungan neto">
-      <Field label="Metode Penghitungan Usaha">
+      <Field label="Metode Penghitungan Usaha" contoh={ph.metode ? undefined : 'Pembukuan'}>
         <SelectField
           value={ph.metode}
           onChange={(v) => up(['penghasilan', 'metode'], v)}
@@ -808,118 +682,118 @@ function PenghasilanSection({ formType, data, up, netoUsaha }) {
       {ph.metode === 'pembukuan' ? (
         <div className="mt-4 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Field label="Peredaran Usaha (1a)">
+            <Field label="Peredaran Usaha (1a)" contoh={usaha.peredaran_usaha ? undefined : '900.000.000'}>
               <NumField value={usaha.peredaran_usaha} onChange={(v) => up(['penghasilan', 'usaha', 'peredaran_usaha'], v)} />
             </Field>
-            <Field label="Harga Pokok Penjualan (1b)">
+            <Field label="Harga Pokok Penjualan (1b)" contoh={usaha.hpp ? undefined : '400.000.000'}>
               <NumField value={usaha.hpp} onChange={(v) => up(['penghasilan', 'usaha', 'hpp'], v)} />
             </Field>
-            <Field label="Biaya Usaha (1d)">
+            <Field label="Biaya Usaha (1d)" contoh={usaha.biaya_usaha ? undefined : '150.000.000'}>
               <NumField value={usaha.biaya_usaha} onChange={(v) => up(['penghasilan', 'usaha', 'biaya_usaha'], v)} />
             </Field>
           </div>
           <div className="rounded-2xl px-4 py-3 flex items-center justify-between text-sm" style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.25)' }}>
-            <span style={{ color: '#94A3B8' }}>Penghasilan neto komersial (1c − 1d)</span>
-            <span className="font-mono font-bold" style={{ color: '#6EE7B7' }}>{formatRupiah(netoUsaha)}</span>
+            <span style={{ color: 'var(--color-slate-body)' }}>Penghasilan neto komersial (1c − 1d)</span>
+            <span className="font-mono font-bold" style={{ color: 'var(--color-accent-green)' }}>{formatRupiah(netoUsaha)}</span>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border-subtle)' }}>
-              <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#93C5FD' }}>Penyesuaian Fiskal Positif (2a–2k)</div>
+            <div className="rounded-2xl p-4" style={{ background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-subtle)' }}>
+              <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-accent-blue)' }}>Penyesuaian Fiskal Positif (2a–2k)</div>
               <PenyesuaianEditor title="Penyesuaian" values={usaha.penyesuaian_positif} onChange={(v) => up(['penghasilan', 'usaha', 'penyesuaian_positif'], v)} />
             </div>
-            <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border-subtle)' }}>
-              <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#93C5FD' }}>Penyesuaian Fiskal Negatif (3a–3c)</div>
+            <div className="rounded-2xl p-4" style={{ background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-subtle)' }}>
+              <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-accent-blue)' }}>Penyesuaian Fiskal Negatif (3a–3c)</div>
               <PenyesuaianEditor title="Penyesuaian" values={usaha.penyesuaian_negatif} onChange={(v) => up(['penghasilan', 'usaha', 'penyesuaian_negatif'], v)} />
             </div>
           </div>
         </div>
       ) : (
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Field label="Jenis Usaha">
+          <Field label="Jenis Usaha" contoh={catat.jenis_usaha ? undefined : 'Toko Sembako'}>
             <input type="text" value={catat.jenis_usaha} onChange={(e) => up(['penghasilan', 'usaha_pencatatan', 'jenis_usaha'], e.target.value)} className="input-field" />
           </Field>
-          <Field label="Norma Penghitungan (%)">
+          <Field label="Norma Penghitungan (%)" contoh={catat.norma_persen ? undefined : '50'}>
             <NumField value={catat.norma_persen} onChange={(v) => up(['penghasilan', 'usaha_pencatatan', 'norma_persen'], v)} />
           </Field>
-          <Field label="Peredaran Usaha">
+          <Field label="Peredaran Usaha" contoh={catat.peredaran_usaha ? undefined : '900.000.000'}>
             <NumField value={catat.peredaran_usaha} onChange={(v) => up(['penghasilan', 'usaha_pencatatan', 'peredaran_usaha'], v)} />
           </Field>
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-        <Field label="Penghasilan Neto Luar Negeri (4)">
+        <Field label="Penghasilan Neto Luar Negeri (4)" contoh={ph.luar_negeri ? undefined : '0'}>
           <NumField value={ph.luar_negeri} onChange={(v) => up(['penghasilan', 'luar_negeri'], v)} />
         </Field>
-        <Field label="Zakat / Sumbangan Keagamaan (6)">
+        <Field label="Zakat / Sumbangan Keagamaan (6)" contoh={ph.zakat ? undefined : '5.000.000'}>
           <NumField value={ph.zakat} onChange={(v) => up(['penghasilan', 'zakat'], v)} />
         </Field>
         {formType === '1770' && (
-          <Field label="Kompensasi Kerugian (8)">
+          <Field label="Kompensasi Kerugian (8)" contoh={ph.kompensasi_kerugian ? undefined : '0'}>
             <NumField value={ph.kompensasi_kerugian} onChange={(v) => up(['penghasilan', 'kompensasi_kerugian'], v)} />
           </Field>
         )}
-        <Field label="Pengembalian / Pengurangan PPh 24 (13)">
+        <Field label="Pengembalian / Pengurangan PPh 24 (13)" contoh={ph.pengembalian_pph_24 ? undefined : '0'}>
           <NumField value={ph.pengembalian_pph_24} onChange={(v) => up(['penghasilan', 'pengembalian_pph_24'], v)} />
         </Field>
       </div>
 
       <div className="mt-6 space-y-6">
         <div>
-          <h4 className="text-sm font-bold mb-2" style={{ color: '#CBD5E1' }}>Pekerjaan (Lampiran I bagian C)</h4>
+          <h4 className="text-sm font-bold mb-2" style={{ color: 'var(--color-slate-text)' }}>Pekerjaan (Lampiran I bagian C)</h4>
           <ItemEditor
             title="pekerjaan"
             items={ph.pekerjaan}
             onChange={(v) => up(['penghasilan', 'pekerjaan'], v)}
             addDefault={{ nama_pemberi_kerja: '', npwp_pemberi_kerja: '', penghasilan_neto: 0 }}
             fields={[
-              { key: 'nama_pemberi_kerja', label: 'Nama Pemberi Kerja', placeholder: 'PT Maju Jaya' },
-              { key: 'npwp_pemberi_kerja', label: 'NPWP Pemberi Kerja', placeholder: '00.000.000.0-000.000' },
-              { key: 'penghasilan_neto', label: 'Penghasilan Neto (Rp)', type: 'number' },
+              { key: 'nama_pemberi_kerja', label: 'Nama Pemberi Kerja', placeholder: 'PT Maju Jaya', contoh: 'PT Maju Jaya' },
+              { key: 'npwp_pemberi_kerja', label: 'NPWP Pemberi Kerja', placeholder: '00.000.000.0-000.000', contoh: '03.456.789.0-123.000' },
+              { key: 'penghasilan_neto', label: 'Penghasilan Neto (Rp)', type: 'number', contoh: '200.000.000' },
             ]}
           />
         </div>
 
         <div>
-          <h4 className="text-sm font-bold mb-2" style={{ color: '#CBD5E1' }}>Dalam Negeri Lainnya (Lampiran I bagian D)</h4>
+          <h4 className="text-sm font-bold mb-2" style={{ color: 'var(--color-slate-text)' }}>Dalam Negeri Lainnya (Lampiran I bagian D)</h4>
           <ItemEditor
             title="penghasilan lainnya"
             items={ph.dalam_negeri_lainnya}
             onChange={(v) => up(['penghasilan', 'dalam_negeri_lainnya'], v)}
             addDefault={{ jenis: '', penghasilan_bruto: 0, penghasilan_neto: 0 }}
             fields={[
-              { key: 'jenis', label: 'Jenis Penghasilan', placeholder: 'Sewa rumah, royalti, dll' },
-              { key: 'penghasilan_bruto', label: 'Penghasilan Bruto (Rp)', type: 'number' },
-              { key: 'penghasilan_neto', label: 'Penghasilan Neto (Rp)', type: 'number' },
+              { key: 'jenis', label: 'Jenis Penghasilan', placeholder: 'Sewa rumah, royalti, dll', contoh: 'Sewa rumah' },
+              { key: 'penghasilan_bruto', label: 'Penghasilan Bruto (Rp)', type: 'number', contoh: '36.000.000' },
+              { key: 'penghasilan_neto', label: 'Penghasilan Neto (Rp)', type: 'number', contoh: '30.000.000' },
             ]}
           />
         </div>
 
         <div>
-          <h4 className="text-sm font-bold mb-2" style={{ color: '#CBD5E1' }}>Bukan Objek Pajak (1770-III bagian B)</h4>
+          <h4 className="text-sm font-bold mb-2" style={{ color: 'var(--color-slate-text)' }}>Bukan Objek Pajak (1770-III bagian B)</h4>
           <ItemEditor
             title="penghasilan bukan objek"
             items={ph.bukan_objek}
             onChange={(v) => up(['penghasilan', 'bukan_objek'], v)}
             addDefault={{ jenis: '', jumlah: 0 }}
             fields={[
-              { key: 'jenis', label: 'Jenis Penghasilan', placeholder: 'Warisan, hibah, dll' },
-              { key: 'jumlah', label: 'Jumlah (Rp)', type: 'number' },
+              { key: 'jenis', label: 'Jenis Penghasilan', placeholder: 'Warisan, hibah, dll', contoh: 'Warisan' },
+              { key: 'jumlah', label: 'Jumlah (Rp)', type: 'number', contoh: '50.000.000' },
             ]}
           />
         </div>
 
         <div>
-          <h4 className="text-sm font-bold mb-2" style={{ color: '#CBD5E1' }}>PPh Final / Bersifat Final (1770-III bagian A)</h4>
+          <h4 className="text-sm font-bold mb-2" style={{ color: 'var(--color-slate-text)' }}>PPh Final / Bersifat Final (1770-III bagian A)</h4>
           <ItemEditor
             title="penghasilan final"
             items={ph.final}
             onChange={(v) => up(['penghasilan', 'final'], v)}
             addDefault={{ jenis: '', dasar_pengenaan: 0, pph_terutang: 0 }}
             fields={[
-              { key: 'jenis', label: 'Jenis Penghasilan', placeholder: 'Bunga deposito, sewa, dll' },
-              { key: 'dasar_pengenaan', label: 'Dasar Pengenaan (Rp)', type: 'number' },
-              { key: 'pph_terutang', label: 'PPh Terutang (Rp)', type: 'number' },
+              { key: 'jenis', label: 'Jenis Penghasilan', placeholder: 'Bunga deposito, sewa, dll', contoh: 'Bunga deposito' },
+              { key: 'dasar_pengenaan', label: 'Dasar Pengenaan (Rp)', type: 'number', contoh: '10.000.000' },
+              { key: 'pph_terutang', label: 'PPh Terutang (Rp)', type: 'number', contoh: '200.000' },
             ]}
           />
         </div>
@@ -937,31 +811,31 @@ function KreditSection({ data, up }) {
   return (
     <SectionCard title="Kredit Pajak" icon={Receipt} desc="PPh yang sudah dipotong/dibayar untuk dikreditkan">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Field label="PPh Pasal 24 (Kredit Pajak Luar Negeri)">
+        <Field label="PPh Pasal 24 (Kredit Pajak Luar Negeri)" contoh={kp.dalam_negeri ? undefined : '0'}>
           <NumField value={kp.dalam_negeri} onChange={(v) => up(['kredit_pajak', 'dalam_negeri'], v)} />
         </Field>
-        <Field label="PPh Pasal 25 yang Dibayar Sendiri (17a)">
+        <Field label="PPh Pasal 25 yang Dibayar Sendiri (17a)" contoh={kp.pph_dibayar_sendiri_25 ? undefined : '30.000.000'}>
           <NumField value={kp.pph_dibayar_sendiri_25} onChange={(v) => up(['kredit_pajak', 'pph_dibayar_sendiri_25'], v)} />
         </Field>
-        <Field label="STP PPh Pasal 25 (17b)">
+        <Field label="STP PPh Pasal 25 (17b)" contoh={kp.stp_pph_25 ? undefined : '0'}>
           <NumField value={kp.stp_pph_25} onChange={(v) => up(['kredit_pajak', 'stp_pph_25'], v)} />
         </Field>
       </div>
 
       <div className="mt-6">
-        <h4 className="text-sm font-bold mb-2" style={{ color: '#CBD5E1' }}>Daftar Pemotongan/Pemungutan (1770-II bagian A)</h4>
+        <h4 className="text-sm font-bold mb-2" style={{ color: 'var(--color-slate-text)' }}>Daftar Pemotongan/Pemungutan (1770-II bagian A)</h4>
         <ItemEditor
           title="bukti potong"
           items={kp.pemotongan}
           onChange={(v) => up(['kredit_pajak', 'pemotongan'], v)}
           addDefault={{ nama: '', npwp: '', no_bukti: '', tanggal: '', jenis: '21', jumlah: 0 }}
           fields={[
-            { key: 'nama', label: 'Nama Pemotong', placeholder: 'PT Maju Jaya' },
-            { key: 'npwp', label: 'NPWP Pemotong', placeholder: '00.000.000.0-000.000' },
+            { key: 'nama', label: 'Nama Pemotong', placeholder: 'PT Maju Jaya', contoh: 'PT Maju Jaya' },
+            { key: 'npwp', label: 'NPWP Pemotong', placeholder: '00.000.000.0-000.000', contoh: '03.456.789.0-123.000' },
             { key: 'no_bukti', label: 'No. Bukti Potong' },
             { key: 'tanggal', label: 'Tanggal', type: 'date' },
             { key: 'jenis', label: 'Jenis Pajak', type: 'select', options: JENIS_POTONG.map((j) => ({ value: j, label: `PPh Pasal ${j}` })) },
-            { key: 'jumlah', label: 'Jumlah PPh (Rp)', type: 'number' },
+            { key: 'jumlah', label: 'Jumlah PPh (Rp)', type: 'number', contoh: '14.000.000' },
           ]}
         />
       </div>
@@ -976,33 +850,33 @@ function KreditSection({ data, up }) {
 function HartaSection({ data, up }) {
   return (
     <SectionCard title="Harta & Utang" icon={Home} desc="Lampiran IV — kondisi harta, utang pada akhir tahun pajak">
-      <h4 className="text-sm font-bold mb-2" style={{ color: '#CBD5E1' }}>Harta pada Akhir Tahun</h4>
+      <h4 className="text-sm font-bold mb-2" style={{ color: 'var(--color-slate-text)' }}>Harta pada Akhir Tahun</h4>
       <ItemEditor
         title="harta"
         items={data.harta}
         onChange={(v) => up(['harta'], v)}
         addDefault={{ kode: '', nama: '', tahun_perolehan: new Date().getFullYear(), harga_perolehan: 0, keterangan: '' }}
         fields={[
-          { key: 'kode', label: 'Kode Harta', placeholder: '031' },
-          { key: 'nama', label: 'Jenis/Nama Harta', placeholder: 'Rumah' },
-          { key: 'tahun_perolehan', label: 'Tahun Perolehan', type: 'number' },
-          { key: 'harga_perolehan', label: 'Harga Perolehan (Rp)', type: 'number' },
-          { key: 'keterangan', label: 'Keterangan', placeholder: 'Tempat tinggal' },
+          { key: 'kode', label: 'Kode Harta', placeholder: '031', contoh: '031' },
+          { key: 'nama', label: 'Jenis/Nama Harta', placeholder: 'Rumah', contoh: 'Rumah' },
+          { key: 'tahun_perolehan', label: 'Tahun Perolehan', type: 'number', contoh: '2018' },
+          { key: 'harga_perolehan', label: 'Harga Perolehan (Rp)', type: 'number', contoh: '800.000.000' },
+          { key: 'keterangan', label: 'Keterangan', placeholder: 'Tempat tinggal', contoh: 'Tempat tinggal' },
         ]}
       />
 
-      <h4 className="text-sm font-bold mb-2 mt-8" style={{ color: '#CBD5E1' }}>Utang pada Akhir Tahun</h4>
+      <h4 className="text-sm font-bold mb-2 mt-8" style={{ color: 'var(--color-slate-text)' }}>Utang pada Akhir Tahun</h4>
       <ItemEditor
         title="utang"
         items={data.utang}
         onChange={(v) => up(['utang'], v)}
         addDefault={{ kode: '', nama_pemberi: '', alamat_pemberi: '', tahun_peminjaman: new Date().getFullYear(), jumlah: 0 }}
         fields={[
-          { key: 'kode', label: 'Kode Utang', placeholder: '211' },
-          { key: 'nama_pemberi', label: 'Nama Pemberi Pinjaman', placeholder: 'Bank ABC' },
-          { key: 'alamat_pemberi', label: 'Alamat Pemberi' },
-          { key: 'tahun_peminjaman', label: 'Tahun Peminjaman', type: 'number' },
-          { key: 'jumlah', label: 'Jumlah Utang (Rp)', type: 'number' },
+          { key: 'kode', label: 'Kode Utang', placeholder: '211', contoh: '211' },
+          { key: 'nama_pemberi', label: 'Nama Pemberi Pinjaman', placeholder: 'Bank ABC', contoh: 'Bank ABC' },
+          { key: 'alamat_pemberi', label: 'Alamat Pemberi', contoh: 'Jakarta' },
+          { key: 'tahun_peminjaman', label: 'Tahun Peminjaman', type: 'number', contoh: '2019' },
+          { key: 'jumlah', label: 'Jumlah Utang (Rp)', type: 'number', contoh: '300.000.000' },
         ]}
       />
     </SectionCard>
@@ -1022,10 +896,10 @@ function TanggunganSection({ data, up }) {
         onChange={(v) => up(['tanggungan'], v)}
         addDefault={{ nama: '', nik: '', hubungan: 'Anak', pekerjaan: '' }}
         fields={[
-          { key: 'nama', label: 'Nama Anggota Keluarga', placeholder: 'Anak 1' },
-          { key: 'nik', label: 'NIK' },
-          { key: 'hubungan', label: 'Hubungan Keluarga', placeholder: 'Suami/Istri/Anak' },
-          { key: 'pekerjaan', label: 'Pekerjaan', placeholder: 'Pelajar' },
+          { key: 'nama', label: 'Nama Anggota Keluarga', placeholder: 'Anak 1', contoh: 'Anak 1' },
+          { key: 'nik', label: 'NIK', contoh: '3171010101010001' },
+          { key: 'hubungan', label: 'Hubungan Keluarga', placeholder: 'Suami/Istri/Anak', contoh: 'Anak' },
+          { key: 'pekerjaan', label: 'Pekerjaan', placeholder: 'Pelajar', contoh: 'Pelajar' },
         ]}
       />
     </SectionCard>
@@ -1055,7 +929,7 @@ function PermohonanSection({ data, up }) {
           />
         </Field>
       </div>
-      <p className="text-xs mt-4 rounded-xl p-3" style={{ color: '#94A3B8', background: 'rgba(255,255,255,0.04)' }}>
+      <p className="text-xs mt-4 rounded-xl p-3" style={{ color: 'var(--color-slate-body)', background: 'var(--color-surface-card)' }}>
         Permohonan restitusi hanya relevan bila terjadi lebih bayar (angka 19.b / 16.b). Kompensasi = lebih bayar diperhitungkan dengan utang pajak tahun berikutnya.
       </p>
     </SectionCard>
@@ -1083,16 +957,16 @@ function HasilSection({ formType, data, calc, previewRows, loading, saving, hitu
 
       {!calc ? (
         <div className="rounded-2xl p-8 text-center" style={{ border: '1px dashed var(--color-border-soft)' }}>
-          <Landmark size={32} style={{ color: '#64748B' }} className="mx-auto mb-3" />
-          <p className="text-sm" style={{ color: '#94A3B8' }}>
-            Belum ada perhitungan. Isi form lalu klik <span className="font-semibold text-[#93C5FD]">Hitung & Preview</span>.
+          <Landmark size={32} style={{ color: 'var(--color-slate-muted)' }} className="mx-auto mb-3" />
+          <p className="text-sm" style={{ color: 'var(--color-slate-body)' }}>
+            Belum ada perhitungan. Isi form lalu klik <span className="font-semibold text-[var(--color-accent-blue)]">Hitung & Preview</span>.
           </p>
         </div>
       ) : (
         <div className="space-y-6">
           <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--color-border-subtle)' }}>
             <div className="px-5 py-3 flex items-center justify-between" style={{ background: 'rgba(59,130,246,0.08)', borderBottom: '1px solid var(--color-border-subtle)' }}>
-              <span className="text-sm font-bold" style={{ color: '#F1F5F9' }}>Ringkasan Formulir Induk {formType} — {data.identitas.tahun_pajak}</span>
+              <span className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Ringkasan Formulir Induk {formType} — {data.identitas.tahun_pajak}</span>
               <span className="badge !text-[10px]">PPh {formType === '1770S' ? '1770S' : '1770'}</span>
             </div>
             <div className="overflow-x-auto">
@@ -1104,12 +978,12 @@ function HasilSection({ formType, data, calc, previewRows, loading, saving, hitu
                     const isFinal = key === 'angka_19a' || key === 'angka_19b'
                     return (
                       <tr key={key} style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
-                        <td className="px-4 py-2.5 text-xs font-mono" style={{ color: '#64748B' }}>{no}</td>
-                        <td className={`px-4 py-2.5 ${isTotal ? 'font-bold' : ''}`} style={{ color: isTotal ? '#93C5FD' : '#CBD5E1' }}>
+                        <td className="px-4 py-2.5 text-xs font-mono" style={{ color: 'var(--color-slate-muted)' }}>{no}</td>
+                        <td className={`px-4 py-2.5 ${isTotal ? 'font-bold' : ''}`} style={{ color: isTotal ? 'var(--color-accent-blue)' : 'var(--color-slate-text)' }}>
                           {label}
                           {isFinal && val > 0 && <span className="badge !text-[9px] ml-2">{key === 'angka_19a' ? 'KURANG BAYAR' : 'LEBIH BAYAR'}</span>}
                         </td>
-                        <td className="px-4 py-2.5 text-right font-mono" style={{ color: isFinal && val > 0 ? (key === 'angka_19a' ? '#F87171' : '#6EE7B7') : isTotal ? '#F1F5F9' : '#CBD5E1' }}>
+                        <td className="px-4 py-2.5 text-right font-mono" style={{ color: isFinal && val > 0 ? (key === 'angka_19a' ? '#F87171' : 'var(--color-accent-emerald)') : isTotal ? 'var(--color-slate-heading)' : 'var(--color-slate-text)' }}>
                           {formatRupiah(val)}
                         </td>
                       </tr>
@@ -1121,33 +995,33 @@ function HasilSection({ formType, data, calc, previewRows, loading, saving, hitu
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border-subtle)' }}>
-              <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#93C5FD' }}>PTKP</div>
+            <div className="rounded-2xl p-4" style={{ background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-subtle)' }}>
+              <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--color-accent-blue)' }}>PTKP</div>
               <div className="flex items-center justify-between text-sm mb-2">
-                <span style={{ color: '#94A3B8' }}>Status</span>
-                <span className="font-semibold" style={{ color: '#F1F5F9' }}>{calc.ptkp_detail?.status}</span>
+                <span style={{ color: 'var(--color-slate-body)' }}>Status</span>
+                <span className="font-semibold" style={{ color: 'var(--color-slate-heading)' }}>{calc.ptkp_detail?.status}</span>
               </div>
               <div className="flex items-center justify-between text-sm mb-2">
-                <span style={{ color: '#94A3B8' }}>Tanggungan</span>
-                <span className="font-semibold" style={{ color: '#F1F5F9' }}>{calc.ptkp_detail?.jumlah_tanggungan}</span>
+                <span style={{ color: 'var(--color-slate-body)' }}>Tanggungan</span>
+                <span className="font-semibold" style={{ color: 'var(--color-slate-heading)' }}>{calc.ptkp_detail?.jumlah_tanggungan}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span style={{ color: '#94A3B8' }}>Nilai PTKP</span>
-                <span className="font-mono font-bold" style={{ color: '#93C5FD' }}>{formatRupiah(calc.ptkp_detail?.nilai_ptkp)}</span>
+                <span style={{ color: 'var(--color-slate-body)' }}>Nilai PTKP</span>
+                <span className="font-mono font-bold" style={{ color: 'var(--color-accent-blue)' }}>{formatRupiah(calc.ptkp_detail?.nilai_ptkp)}</span>
               </div>
-              <p className="text-[10px] mt-3 italic" style={{ color: '#64748B' }}>{calc.ptkp_detail?.uraian}</p>
+              <p className="text-[10px] mt-3 italic" style={{ color: 'var(--color-slate-muted)' }}>{calc.ptkp_detail?.uraian}</p>
             </div>
 
-            <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border-subtle)' }}>
-              <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#93C5FD' }}>PPh Pasal 17</div>
+            <div className="rounded-2xl p-4" style={{ background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-subtle)' }}>
+              <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--color-accent-blue)' }}>PPh Pasal 17</div>
               {(calc.pph_pasal_17_detail?.rincian || []).map((r) => (
                 <div key={r.lapisan} className="flex items-center justify-between text-sm mb-1.5">
-                  <span style={{ color: '#94A3B8' }}>{r.lapisan} × {Math.round(r.tarif * 100)}%</span>
-                  <span className="font-mono" style={{ color: '#CBD5E1' }}>{formatRupiah(r.pph)}</span>
+                  <span style={{ color: 'var(--color-slate-body)' }}>{r.lapisan} × {Math.round(r.tarif * 100)}%</span>
+                  <span className="font-mono" style={{ color: 'var(--color-slate-text)' }}>{formatRupiah(r.pph)}</span>
                 </div>
               ))}
               {!calc.pph_pasal_17_detail?.rincian?.length && (
-                <p className="text-sm" style={{ color: '#64748B' }}>PKP ≤ 0 — tidak ada PPh terutang.</p>
+                <p className="text-sm" style={{ color: 'var(--color-slate-muted)' }}>PKP ≤ 0 — tidak ada PPh terutang.</p>
               )}
             </div>
           </div>
@@ -1155,7 +1029,7 @@ function HasilSection({ formType, data, calc, previewRows, loading, saving, hitu
           {(calc.catatan || []).length > 0 && (
             <div className="space-y-2">
               {(calc.catatan || []).map((c, i) => (
-                <div key={i} className="rounded-xl px-4 py-2.5 text-sm" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)', color: '#D6C08A' }}>
+                <div key={i} className="rounded-xl px-4 py-2.5 text-sm" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)', color: 'var(--color-accent-amber)' }}>
                   {c}
                 </div>
               ))}

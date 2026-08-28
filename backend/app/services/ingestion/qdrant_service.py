@@ -19,6 +19,19 @@ from app.llm.embedding_service import embedding_dimensions
 logger = get_logger(__name__)
 
 
+def _ensure_category_index(client) -> None:
+    """Buat payload index keyword untuk field 'category' supaya query filter kategori (mis. tax) cepat/jelas."""
+    try:
+        client.create_payload_index(
+            collection_name=settings.QDRANT_COLLECTION_NAME,
+            field_name="category",
+            field_schema={"type": "keyword"},
+        )
+        logger.info("Payload index 'category' dibuat.")
+    except Exception as exc:  # noqa: BLE001 - index sudah ada / jenis tidak didukung
+        logger.info("Payload index 'category' (dibuat atau sudah ada): %s", exc)
+
+
 def ensure_collection() -> None:
     client = get_qdrant_client()
     existing = {c.name for c in client.get_collections().collections}
@@ -29,6 +42,7 @@ def ensure_collection() -> None:
             vectors_config=VectorParams(size=dims, distance=Distance.COSINE),
         )
         logger.info("Collection Qdrant '%s' dibuat (dimensi %d).", settings.QDRANT_COLLECTION_NAME, dims)
+    _ensure_category_index(client)
 
 
 def upsert_chunks(

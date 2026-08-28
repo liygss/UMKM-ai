@@ -1,5 +1,7 @@
 """Endpoint register, login, verifikasi email, dan info user yang sedang login."""
 
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -8,16 +10,26 @@ from sqlalchemy.orm import Session
 from app.config.logging import get_logger
 from app.config.settings import settings
 from app.database.database import get_db
-from app.database.models import User
+from app.database.models import PlanUser, User, utc_now
 from app.middleware.auth import (
     COOKIE_NAME,
+    PASSWORD_RESET_MAX_AGE,
     create_access_token,
+    create_password_reset_token,
     get_current_user,
     hash_password,
     validate_password_complexity,
     verify_password,
+    verify_password_reset_token,
 )
-from app.schemas.auth_schema import Token, UserLogin, UserRegister, UserResponse
+from app.schemas.auth_schema import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    Token,
+    UserLogin,
+    UserRegister,
+    UserResponse,
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 logger = get_logger(__name__)
@@ -51,6 +63,8 @@ def register(
         hashed_password=hash_password(payload.password),
         full_name=payload.full_name,
         company_name=payload.company_name,
+        plan=payload.plan,
+        maintenance_joined_at=utc_now() if payload.plan == PlanUser.MAINTENANCE else None,
         verification_token=verification_token,
     )
     db.add(user)
@@ -84,6 +98,9 @@ def login(
         )
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Akun tidak aktif")
+
+    user.last_seen_at = utc_now()
+    db.commit()
 
     access_token = create_access_token(subject=user.id)
 
@@ -138,6 +155,73 @@ def verify_email(
 
     logger.info("Email diverifikasi: %s", user.email)
     return {"detail": "Email berhasil diverifikasi"}
+
+
+@router.post("/forgot-password")
+@limiter.limit("3/minute")
+def forgot_password(
+    request: Request,
+    payload: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Kirim link reset password ke email (jika terdaftar).
+
+    Selalu mengembalikan pesan yang sama agar tidak membocorkan
+    apakah sebuah email terdaftar atau tidak (anti user enumeration).
+    """
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user and user.is_active:
+        token = create_password_reset_token(user.email)
+        user.reset_password_token = token
+        user.reset_password_expires = datetime.utcnow() + timedelta(seconds=PASSWORD_RESET_MAX_AGE)
+        db.commit()
+
+        try:
+            from app.services.email_service import send_password_reset_email
+            send_password_reset_email(user.email, token, user.full_name)
+        except Exception as exc:
+            logger.warning("Gagal mengirim email reset password ke %s: %s", user.email, exc)
+
+        logger.info("Link reset password dikirim ke %s", user.email)
+
+    return {"detail": "Jika email terdaftar, link reset password telah dikirim."}
+
+
+@router.post("/reset-password")
+@limiter.limit("5/minute")
+def reset_password(
+    request: Request,
+    payload: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Atur ulang password menggunakan token yang dikirim lewat email."""
+    try:
+        validate_password_complexity(payload.password)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+    try:
+        email = verify_password_reset_token(payload.token)
+    except HTTPException as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.detail)
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user or not user.reset_password_token or user.reset_password_token != payload.token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token reset password tidak valid atau sudah digunakan",
+        )
+
+    if user.reset_password_expires and user.reset_password_expires < datetime.utcnow():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token reset password sudah kedaluwarsa")
+
+    user.hashed_password = hash_password(payload.password)
+    user.reset_password_token = None
+    user.reset_password_expires = None
+    db.commit()
+
+    logger.info("Password berhasil direset untuk %s", user.email)
+    return {"detail": "Password berhasil direset. Silakan masuk dengan password baru."}
 
 
 @router.get("/health")

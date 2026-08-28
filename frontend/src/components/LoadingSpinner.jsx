@@ -34,7 +34,7 @@ export function SkeletonTable({ rows = 5, cols = 4 }) {
   return (
     <div className="card overflow-hidden">
       <div className="space-y-0">
-        <div className="flex gap-4 p-4" style={{ background: 'rgba(255, 255, 255, 0.03)' }}>
+        <div className="flex gap-4 p-4" style={{ background: 'var(--color-surface-faint)' }}>
           {Array.from({ length: cols }).map((_, i) => (
             <div key={i} className="skeleton h-4 flex-1 rounded-lg" />
           ))}

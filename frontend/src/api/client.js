@@ -21,7 +21,7 @@ client.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       const path = window.location.pathname
-      const publicPaths = ['/', '/login', '/register', '/demo']
+      const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/demo']
       if (!publicPaths.includes(path)) {
         localStorage.removeItem('user')
         if (_onUnauthorized) {

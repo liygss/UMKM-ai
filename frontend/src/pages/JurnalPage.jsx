@@ -71,8 +71,8 @@ export default function JurnalPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#F1F5F9' }}>Jurnal Umum</h1>
-          <p className="text-sm" style={{ color: '#94A3B8' }}>Pencatatan transaksi harian</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-slate-heading)' }}>Jurnal Umum</h1>
+          <p className="text-sm" style={{ color: 'var(--color-slate-body)' }}>Pencatatan transaksi harian</p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary"><Plus size={16} /> Buat Jurnal</button>
       </div>
@@ -84,7 +84,7 @@ export default function JurnalPage() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)} style={{ background: 'rgba(0, 0, 0, 0.3)', backdropFilter: 'blur(8px)' }}>
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto card" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold mb-4" style={{ color: '#F1F5F9' }}>Buat Jurnal Baru</h2>
+            <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--color-slate-heading)' }}>Buat Jurnal Baru</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
@@ -130,9 +130,9 @@ export default function JurnalPage() {
                 <button type="button" onClick={addRow} className="mt-2 text-xs font-medium transition hover:opacity-80" style={{ color: '#60A5FA' }}>+ Tambah Baris</button>
               </div>
 
-              <div className="flex items-center justify-between rounded-xl p-3 text-sm" style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(148, 163, 184, 0.14)' }}>
-                <span className="text-[#CBD5E1]">Total Debit: <strong className="text-[#F1F5F9]">{formatRupiah(totalDebit)}</strong></span>
-                <span className="text-[#CBD5E1]">Total Kredit: <strong className="text-[#F1F5F9]">{formatRupiah(totalKredit)}</strong></span>
+              <div className="flex items-center justify-between rounded-xl p-3 text-sm" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)' }}>
+                <span className="text-[var(--color-slate-text)]">Total Debit: <strong className="text-[var(--color-slate-heading)]">{formatRupiah(totalDebit)}</strong></span>
+                <span className="text-[var(--color-slate-text)]">Total Kredit: <strong className="text-[var(--color-slate-heading)]">{formatRupiah(totalKredit)}</strong></span>
                 <span className="font-medium" style={{ color: isBalanced ? '#34D399' : '#F87171' }}>
                   {isBalanced ? 'Balance' : 'Tidak Balance'}
                 </span>

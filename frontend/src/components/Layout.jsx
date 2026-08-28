@@ -4,11 +4,17 @@ import Sidebar from './Sidebar'
 import FloatingChatbot from './FloatingChatbot'
 import DemoWelcomeModal from './DemoWelcomeModal'
 import NotificationsDropdown from './NotificationsDropdown'
+import ThemeToggle from './ThemeToggle'
+import GuidedTour from './GuidedTour'
+import CommandPalette from './CommandPalette'
 import client from '../api/client'
-import { Menu, Search, Download } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { TOUR_STORAGE_PREFIX } from '../data/tourSteps'
+import { Menu, Search, Download, CircleHelp } from 'lucide-react'
 
 const PAGE_TITLES = {
   '/dashboard': 'Dashboard',
+  '/chatbot': 'Chatbot',
   '/akun': 'Akun (COA)',
   '/jurnal': 'Jurnal Umum',
   '/laporan': 'Laporan Keuangan',
@@ -16,14 +22,18 @@ const PAGE_TITLES = {
   '/pajak': 'Kalkulator Pajak',
   '/spt': 'SPT Tahunan PPh OP',
   '/notif-admin': 'Kirim Notifikasi',
+  '/admin': 'Dashboard Admin',
 }
 
 export default function Layout() {
+  const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [key, setKey] = useState(0)
   const [showWelcome, setShowWelcome] = useState(false)
   const [downloadUrl, setDownloadUrl] = useState(null)
   const [downloadFile, setDownloadFile] = useState('')
+  const [tourOpen, setTourOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const title = PAGE_TITLES[location.pathname] || 'Dashboard'
@@ -35,6 +45,44 @@ export default function Layout() {
   useEffect(() => {
     if (!localStorage.getItem('demo_seen')) setShowWelcome(true)
   }, [])
+
+  // Tampilkan tutorial singkat pada login pertama (per user, per peramban).
+  // Tunggu hingga modal selamat datang tertutup agar tidak saling bertumpuk.
+  useEffect(() => {
+    if (!user?.id) return
+    if (showWelcome) return
+    try {
+      const seen = localStorage.getItem(TOUR_STORAGE_PREFIX + user.id)
+      if (seen === 'true') return
+    } catch {
+      /* ignore */
+    }
+    const t = setTimeout(() => setTourOpen(true), 900)
+    return () => clearTimeout(t)
+  }, [user?.id, showWelcome])
+
+  // Pintasan keyboard ⌘K / Ctrl+K untuk membuka pencarian.
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault()
+        setSearchOpen((o) => !o)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const startTour = () => {
+    if (user?.id) {
+      try {
+        localStorage.removeItem(TOUR_STORAGE_PREFIX + user.id)
+      } catch {
+        /* ignore */
+      }
+    }
+    setTourOpen(true)
+  }
 
   useEffect(() => {
     const platform = navigator.platform.toLowerCase()
@@ -68,26 +116,26 @@ export default function Layout() {
 
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <header className="flex h-18 items-center gap-4 px-4 lg:px-6" style={{ background: 'rgba(11, 18, 32, 0.72)', backdropFilter: 'blur(20px) saturate(160%)', borderBottom: '1px solid rgba(148, 163, 184, 0.12)' }}>
-          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2.5 rounded-xl transition-all duration-300 hover:bg-[#EFF6FF]/10" style={{ color: '#94A3B8' }}>
+        <header className="relative z-40 flex h-18 items-center gap-4 px-4 lg:px-6" style={{ background: 'var(--color-glass-bg)', backdropFilter: 'blur(20px) saturate(160%)', borderBottom: '1px solid rgba(148, 163, 184, 0.12)' }}>
+          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2.5 rounded-xl transition-all duration-300 hover:bg-[#EFF6FF]/10" style={{ color: 'var(--color-slate-body)' }}>
             <Menu size={20} />
           </button>
 
           {/* Logo - Mobile */}
           <div className="flex lg:hidden items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center overflow-hidden" style={{ borderRadius: '0.75rem', boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)' }}>
-              <img src="/logo.png" alt="AI UMKM" className="h-full w-full object-cover" />
+              <img src="/finora-logo.jpg" alt="Finora" className="h-full w-full object-cover" />
             </div>
-            <span className="text-sm font-bold" style={{ color: '#F1F5F9' }}>AI UMKM</span>
+            <span className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Finora</span>
           </div>
 
           <div className="ml-auto flex items-center gap-3">
             {/* Search */}
-            <div className="hidden md:flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm transition-all duration-300 cursor-pointer w-56 hover:shadow-md" style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(148, 163, 184, 0.14)', color: '#64748B' }}>
+            <button data-tour="header-search" onClick={() => setSearchOpen(true)} className="hidden md:flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm transition-all duration-300 cursor-pointer w-56 hover:shadow-md" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)', color: 'var(--color-slate-muted)' }}>
               <Search size={14} />
               <span>Cari...</span>
-              <kbd className="ml-auto rounded-lg px-2 py-0.5 text-[10px] font-medium" style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(148, 163, 184, 0.18)', color: '#64748B' }}>⌘K</kbd>
-            </div>
+              <kbd className="ml-auto rounded-lg px-2 py-0.5 text-[10px] font-medium" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.18)', color: 'var(--color-slate-muted)' }}>⌘K</kbd>
+            </button>
 
             {/* Download Desktop App */}
             {downloadUrl && (
@@ -110,10 +158,24 @@ export default function Layout() {
             {/* Notification bell */}
             <NotificationsDropdown />
 
+            {/* Tutorial / Bantuan */}
+            <button
+              onClick={startTour}
+              title="Tutorial penggunaan"
+              aria-label="Buka tutorial"
+              className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:scale-105"
+              style={{ background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-soft)', color: 'var(--color-slate-body)' }}
+            >
+              <CircleHelp size={18} />
+            </button>
+
+            {/* Theme toggle */}
+            <ThemeToggle />
+
             {/* Brand badge */}
             <div className="hidden sm:flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#93C5FD', border: '1px solid rgba(59, 130, 246, 0.25)' }}>
               <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: '#60A5FA' }} />
-              AI UMKM
+              Finora
             </div>
           </div>
         </header>
@@ -128,6 +190,8 @@ export default function Layout() {
 
       {showWelcome && <DemoWelcomeModal onClose={() => closeWelcome(false)} onLaunch={() => closeWelcome(true)} />}
       <FloatingChatbot />
+      <GuidedTour open={tourOpen} onClose={() => setTourOpen(false)} />
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   )
 }

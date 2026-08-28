@@ -10,6 +10,7 @@ from app.database.models import ChatRole
 class ChatRequest(BaseModel):
     session_id: str | None = None  # None = mulai sesi baru
     message: str
+    page: str | None = None  # label halaman aktif user (untuk jawaban kontekstual)
 
 
 class RetrievedSource(BaseModel):

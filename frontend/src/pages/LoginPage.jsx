@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import { extractError } from '../api/extractError'
 import { Landmark, Eye, EyeOff, ArrowRight, ArrowLeft, Sparkles, Shield, Zap, CheckCircle2 } from 'lucide-react'
+import ThemeToggle from '../components/ThemeToggle'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -28,7 +29,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen overflow-hidden" style={{ background: '#050A18' }}>
+    <div className="relative flex min-h-screen overflow-hidden" style={{ background: 'var(--color-surface-0)' }}>
       {/* Aurora background */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute top-[-15%] right-[-10%] h-[55vh] w-[55vw] rounded-full blur-3xl animate-blob" style={{ background: 'rgba(37, 99, 235, 0.18)' }} />
@@ -41,24 +42,24 @@ export default function LoginPage() {
         {/* Left decorative panel - Blue gradient */}
         <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0B1E50 0%, #1D4ED8 50%, #2563EB 100%)' }}>
           {/* Aurora blobs */}
-          <div className="absolute top-20 left-16 h-72 w-72 rounded-full blur-3xl animate-blob" style={{ background: 'rgba(255, 255, 255, 0.1)' }} />
+          <div className="absolute top-20 left-16 h-72 w-72 rounded-full blur-3xl animate-blob" style={{ background: 'rgba(255, 255, 255, 0.04)' }} />
           <div className="absolute bottom-32 right-10 h-64 w-64 rounded-full blur-3xl animate-blob delay-300" style={{ background: 'rgba(96, 165, 250, 0.25)' }} />
-          <div className="absolute top-1/2 left-1/3 h-48 w-48 rounded-full blur-3xl animate-blob delay-500" style={{ background: 'rgba(255, 255, 255, 0.08)' }} />
-          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0)', backgroundSize: '28px 28px' }} />
+          <div className="absolute top-1/2 left-1/3 h-48 w-48 rounded-full blur-3xl animate-blob delay-500" style={{ background: 'rgba(255, 255, 255, 0.04)' }} />
+          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '28px 28px' }} />
 
           {/* Floating icons */}
           <div className="absolute top-32 right-20 animate-float">
-            <div className="rounded-2xl p-3" style={{ background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)' }}>
+            <div className="rounded-2xl p-3" style={{ background: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
               <Sparkles size={20} style={{ color: 'rgba(255, 255, 255, 0.8)' }} />
             </div>
           </div>
           <div className="absolute bottom-40 left-20 animate-float-reverse">
-            <div className="rounded-2xl p-3" style={{ background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)' }}>
+            <div className="rounded-2xl p-3" style={{ background: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
               <Shield size={20} style={{ color: 'rgba(255, 255, 255, 0.8)' }} />
             </div>
           </div>
           <div className="absolute top-1/2 right-32 animate-float delay-500">
-            <div className="rounded-2xl p-3" style={{ background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)' }}>
+            <div className="rounded-2xl p-3" style={{ background: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
               <Zap size={20} style={{ color: 'rgba(255, 255, 255, 0.8)' }} />
             </div>
           </div>
@@ -90,7 +91,7 @@ export default function LoginPage() {
                 { icon: Zap, text: 'Proses Instan & Akurat' },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 text-sm" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
                     <item.icon size={14} className="text-white" />
                   </div>
                   {item.text}
@@ -103,29 +104,32 @@ export default function LoginPage() {
         {/* Right form panel - Dark glass card */}
         <div className="flex flex-1 items-center justify-center p-6">
           <div className="w-full max-w-sm">
-            <Link to="/" className="inline-flex items-center gap-2 mb-6 text-sm font-medium transition hover:opacity-80 animate-fade-in" style={{ color: '#94A3B8' }}>
-              <ArrowLeft size={16} /> Kembali ke Beranda
-            </Link>
+            <div className="flex items-center justify-between mb-6 animate-fade-in">
+              <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium transition hover:opacity-80" style={{ color: 'var(--color-slate-body)' }}>
+                <ArrowLeft size={16} /> Kembali ke Beranda
+              </Link>
+              <ThemeToggle compact />
+            </div>
             <div className="lg:hidden flex items-center gap-3 mb-8">
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-2xl"
-                style={{ background: 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)', boxShadow: '0 4px 16px rgba(37, 99, 235, 0.3)' }}
+                className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl"
+                style={{ boxShadow: '0 4px 16px rgba(37, 99, 235, 0.3)' }}
               >
-                <Landmark size={20} className="text-white" />
+                <img src="/finora-logo.jpg" alt="Finora" className="h-full w-full object-cover" />
               </div>
-              <span className="text-lg font-bold" style={{ color: '#F1F5F9' }}>AI UMKM</span>
+              <span className="text-lg font-bold" style={{ color: 'var(--color-slate-heading)' }}>Finora</span>
             </div>
 
             <div
               className="rounded-3xl p-8 animate-fade-in"
-              style={{ background: 'rgba(15, 26, 46, 0.6)', border: '1px solid rgba(148, 163, 184, 0.12)', backdropFilter: 'blur(24px)', boxShadow: '0 24px 80px rgba(0, 0, 0, 0.45)' }}
+              style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border-soft)', backdropFilter: 'blur(24px)', boxShadow: '0 24px 80px rgba(0, 0, 0, 0.2)' }}
             >
               <div className="mb-8">
                 <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-semibold mb-4" style={{ background: 'rgba(59,130,246,0.12)', color: '#93C5FD', border: '1px solid rgba(59,130,246,0.25)' }}>
                   <CheckCircle2 size={12} /> Selamat Datang Kembali
                 </div>
-                <h2 className="text-2xl font-[900] tracking-tight" style={{ color: '#F1F5F9' }}>Masuk ke Akun</h2>
-                <p className="text-sm mt-1" style={{ color: '#94A3B8' }}>Lanjutkan mengelola keuangan UMKM Anda</p>
+                <h2 className="text-2xl font-[900] tracking-tight" style={{ color: 'var(--color-slate-heading)' }}>Masuk ke Akun</h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--color-slate-body)' }}>Lanjutkan mengelola keuangan UMKM Anda</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -137,10 +141,15 @@ export default function LoginPage() {
                   <label className="label">Password</label>
                   <div className="relative">
                     <input type={showPw ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} className="input-field pr-10" placeholder="Masukkan password" />
-                    <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 transition" style={{ color: '#94A3B8' }}>
+                    <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 transition" style={{ color: 'var(--color-slate-body)' }}>
                       {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
+                </div>
+                <div className="flex justify-end -mt-2 animate-slide-up delay-150">
+                  <Link to="/forgot-password" className="text-xs font-medium transition hover:opacity-80" style={{ color: '#60A5FA' }}>
+                    Lupa password?
+                  </Link>
                 </div>
                 <button type="submit" disabled={loading} className="btn-primary w-full !py-3 animate-slide-up delay-200">
                   {loading ? (
@@ -153,7 +162,7 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <p className="mt-6 text-center text-sm animate-slide-up delay-300" style={{ color: '#94A3B8' }}>
+              <p className="mt-6 text-center text-sm animate-slide-up delay-300" style={{ color: 'var(--color-slate-body)' }}>
                 Belum punya akun?{' '}
                 <Link to="/register" className="font-semibold transition hover:opacity-80" style={{ color: '#60A5FA' }}>Daftar Gratis</Link>
               </p>

@@ -98,6 +98,29 @@ def verify_download_token(token: str, max_age: int = 3600) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Password reset token (itsdangerous) — untuk link "lupa password"
+# ---------------------------------------------------------------------------
+PASSWORD_RESET_MAX_AGE = 30 * 60  # 30 menit
+
+
+def create_password_reset_token(email: str) -> str:
+    """Buat signed token one-time untuk reset password berbasis email."""
+    return _download_serializer.dumps({"email": email}, salt="password-reset")
+
+
+def verify_password_reset_token(token: str) -> str:
+    """Verifikasi signed reset token. Mengembalikan email. Raise 401 jika tidak valid."""
+    try:
+        data = _download_serializer.loads(token, salt="password-reset", max_age=PASSWORD_RESET_MAX_AGE)
+        return data["email"]
+    except (BadSignature, SignatureExpired) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token reset password tidak valid atau sudah kedaluwarsa",
+        ) from exc
+
+
+# ---------------------------------------------------------------------------
 # FastAPI dependencies — cookie-based auth
 # ---------------------------------------------------------------------------
 def _extract_token_from_request(request: Request) -> str | None:

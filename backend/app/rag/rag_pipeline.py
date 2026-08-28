@@ -13,7 +13,7 @@ from app.database.models import ChatMessage, ChatRole, ChatSession
 from app.llm.ollama_service import chat_completion
 from app.llm.response_parser import parse_llm_response
 from app.rag.context_builder import build_context
-from app.rag.prompt_builder import build_messages
+from app.rag.prompt_builder import build_messages, detect_domain
 from app.rag.reranker import rerank
 from app.rag.retriever import RetrievedChunk, retrieve
 from app.services.data_context_service import get_financial_context
@@ -23,6 +23,7 @@ logger = get_logger(__name__)
 MAX_HISTORY_MESSAGES = 6  # jumlah pesan terakhir yang dibawa sebagai konteks percakapan
 RETRIEVAL_TOP_K = 8       # ambil agak banyak dulu dari Qdrant
 RERANK_TOP_N = 4          # baru dipangkas ke yang paling relevan setelah rerank
+CATEGORY_BOOST_TOP_K = 6  # tambahan retrieval per kategori (tax/accounting) untuk recall
 
 
 @dataclass
@@ -56,18 +57,39 @@ def _ambil_histori(db: Session, session: ChatSession) -> list[dict[str, str]]:
     return [{"role": m.role.value.lower(), "content": m.content} for m in messages]
 
 
+def merge_chunks(*chunk_lists: list[RetrievedChunk]) -> list[RetrievedChunk]:
+    """Gabungkan beberapa daftar chunk, dedupe berdasarkan qdrant_point_id (urutan pertama menang)."""
+    seen: set[str] = set()
+    hasil: list[RetrievedChunk] = []
+    for chunks in chunk_lists:
+        for chunk in chunks:
+            if chunk.qdrant_point_id in seen:
+                continue
+            seen.add(chunk.qdrant_point_id)
+            hasil.append(chunk)
+    return hasil
+
+
 def ask(
     db: Session,
     user_id: str,
     session_id: str | None,
     pertanyaan: str,
     financial_context: str | None = None,
+    page: str | None = None,
 ) -> RagAnswer:
     session = _get_or_create_session(db, user_id, session_id)
     histori = _ambil_histori(db, session)
 
     # 1. Retrieve (knowledge base dari Qdrant)
     retrieved = retrieve(pertanyaan, top_k=RETRIEVAL_TOP_K)
+
+    # 1b. Boosting kategori: kalau pertanyaan bernuansa pajak/akuntansi, cari
+    #     juga khusus kategori tsb lalu gabungkan (dedupe) dengan hasil umum.
+    domain = detect_domain(pertanyaan)
+    if domain in ("tax", "accounting"):
+        category_hits = retrieve(pertanyaan, top_k=CATEGORY_BOOST_TOP_K, category=domain)
+        retrieved = merge_chunks(retrieved, category_hits)
 
     # 2. Rerank
     reranked = rerank(pertanyaan, retrieved, top_n=RERANK_TOP_N)
@@ -80,7 +102,7 @@ def ask(
         financial_context = get_financial_context(db, user_id, pertanyaan)
 
     # 4. Prompt (gabungkan knowledge base + financial context)
-    messages = build_messages(pertanyaan, context, histori, financial_context)
+    messages = build_messages(pertanyaan, context, histori, financial_context, page)
 
     # 5. LLM
     raw_answer = chat_completion(messages)

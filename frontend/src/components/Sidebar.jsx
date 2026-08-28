@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   LayoutDashboard, BookOpen, FileText,
   BarChart3, Upload, Calculator, LogOut, X,
-  ChevronsLeft, ChevronsRight, Database, PlayCircle, FileSpreadsheet, Send
+  ChevronsLeft, ChevronsRight, Database, PlayCircle, FileSpreadsheet, Send, ShieldCheck, MessageSquare
 } from 'lucide-react'
 
 export default function Sidebar({ open, onClose }) {
@@ -19,6 +19,7 @@ export default function Sidebar({ open, onClose }) {
       label: 'Menu Utama',
       items: [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/chatbot', label: 'Chatbot', icon: MessageSquare },
       ]
     },
     {
@@ -41,10 +42,16 @@ export default function Sidebar({ open, onClose }) {
       items: [
         { to: '/demo', label: 'Lihat Demo', icon: PlayCircle },
         { to: '/upload', label: 'Upload File', icon: Upload },
-        ...(isAdmin ? [{ to: '/knowledge', label: 'Knowledge Base', icon: Database }] : []),
-        ...(isAdmin ? [{ to: '/notif-admin', label: 'Kirim Notifikasi', icon: Send }] : []),
       ]
     },
+    ...(isAdmin ? [{
+      label: 'Admin',
+      items: [
+        { to: '/admin', label: 'Dashboard Admin', icon: ShieldCheck },
+        { to: '/knowledge', label: 'Knowledge Base', icon: Database },
+        { to: '/notif-admin', label: 'Kirim Notifikasi', icon: Send },
+      ]
+    }] : []),
   ]
 
   const handleLogout = () => {
@@ -67,7 +74,7 @@ export default function Sidebar({ open, onClose }) {
       <aside
         className={`fixed inset-y-0 left-0 z-50 ${width} transition-all duration-300 lg:static lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'} flex flex-col`}
         style={{
-          background: 'rgba(10, 16, 30, 0.85)',
+          background: 'var(--color-glass-bg)',
           backdropFilter: 'blur(24px) saturate(160%)',
           borderRight: '1px solid rgba(148, 163, 184, 0.12)',
         }}
@@ -79,15 +86,15 @@ export default function Sidebar({ open, onClose }) {
               className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden"
               style={{ borderRadius: '0.75rem', boxShadow: '0 4px 18px rgba(59, 130, 246, 0.45)' }}
             >
-              <img src="/logo.png" alt="AI UMKM" className="h-full w-full object-cover" />
+              <img src="/finora-logo.jpg" alt="Finora" className="h-full w-full object-cover" />
             </div>
             {!collapsed && (
               <div className="animate-fade-in">
-                <div className="text-sm font-bold tracking-wide" style={{ color: '#F1F5F9' }}>AI UMKM</div>
+                <div className="text-sm font-bold tracking-wide" style={{ color: 'var(--color-slate-heading)' }}>Finora</div>
                 <div className="text-xs font-medium" style={{ color: '#93C5FD' }}>Asisten Cerdas</div>
               </div>
             )}
-            <button onClick={onClose} className="ml-auto lg:hidden p-1.5 rounded-xl transition-all duration-300 hover:bg-white/5" style={{ color: '#94A3B8' }}>
+            <button onClick={onClose} className="ml-auto lg:hidden p-1.5 rounded-xl transition-all duration-300 hover:bg-white/5" style={{ color: 'var(--color-slate-body)' }}>
               <X size={18} />
             </button>
           </div>
@@ -97,7 +104,7 @@ export default function Sidebar({ open, onClose }) {
             {navSections.map((section) => (
               <div key={section.label}>
                 {!collapsed && (
-                  <p className="px-4 mb-2.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#64748B' }}>
+                  <p className="px-4 mb-2.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-slate-muted)' }}>
                     {section.label}
                   </p>
                 )}
@@ -114,7 +121,7 @@ export default function Sidebar({ open, onClose }) {
                         } ${
                           isActive
                             ? 'bg-gradient-to-r from-blue-500/15 to-blue-400/5 font-semibold text-[#93C5FD] shadow-sm ring-1 ring-blue-500/20'
-                            : 'text-[#94A3B8] hover:bg-white/[0.04] hover:text-[#E2E8F0]'
+                            : 'text-[var(--color-slate-body)] hover:bg-white/[0.04] hover:text-[var(--color-slate-text)]'
                         }`
                       }
                     >
@@ -142,7 +149,7 @@ export default function Sidebar({ open, onClose }) {
             <button
               onClick={() => setCollapsed(!collapsed)}
               className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium transition-all duration-300 hover:bg-white/5 hover:text-[#93C5FD]"
-              style={{ color: '#64748B' }}
+              style={{ color: 'var(--color-slate-muted)' }}
             >
               {collapsed ? <ChevronsRight size={16} /> : <><ChevronsLeft size={16} /> <span>Tutup Sidebar</span></>}
             </button>
@@ -161,19 +168,19 @@ export default function Sidebar({ open, onClose }) {
                 >
                   {user?.full_name?.charAt(0)?.toUpperCase()}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full" style={{ background: '#10B981', border: '2px solid #0A101E' }} />
+                <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full" style={{ background: '#10B981', border: '2px solid var(--color-surface-1)' }} />
               </div>
               {!collapsed && (
                 <div className="min-w-0 flex-1 animate-fade-in">
-                  <div className="text-sm font-semibold truncate" style={{ color: '#F1F5F9' }}>{user?.full_name}</div>
-                  <div className="text-xs truncate" style={{ color: '#94A3B8' }}>{user?.email}</div>
+                  <div className="text-sm font-semibold truncate" style={{ color: 'var(--color-slate-heading)' }}>{user?.full_name}</div>
+                  <div className="text-xs truncate" style={{ color: 'var(--color-slate-body)' }}>{user?.email}</div>
                 </div>
               )}
             </div>
             <button
               onClick={handleLogout}
               className={`mt-3 flex w-full items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-300 hover:bg-red-500/10 hover:text-red-400 ${collapsed ? 'justify-center' : ''}`}
-              style={{ color: '#94A3B8' }}
+              style={{ color: 'var(--color-slate-body)' }}
               title={collapsed ? 'Keluar' : undefined}
             >
               <LogOut size={16} />

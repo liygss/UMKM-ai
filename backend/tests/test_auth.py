@@ -135,3 +135,72 @@ class TestEmailVerification:
     def test_verify_email_invalid_token(self, client):
         resp = client.get("/auth/verify-email?token=invalid_token_12345")
         assert resp.status_code in (400, 401)
+
+
+class TestPasswordReset:
+    def _seed_user(self, db, email="reset@example.com", password="OldPass1!"):
+        from app.database.models import User
+        from app.middleware.auth import hash_password
+
+        user = User(
+            email=email,
+            hashed_password=hash_password(password),
+            full_name="Reset User",
+            is_active=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+
+    def test_forgot_password_unknown_email_generic(self, client):
+        resp = client.post("/auth/forgot-password", json={"email": "nobody@example.com"})
+        assert resp.status_code == 200
+        assert "telah dikirim" in resp.json()["detail"]
+
+    def test_reset_password_flow_success(self, client, db):
+        user = self._seed_user(db)
+        resp = client.post("/auth/forgot-password", json={"email": "reset@example.com"})
+        assert resp.status_code == 200
+
+        db.refresh(user)
+        assert user.reset_password_token is not None
+
+        resp = client.post("/auth/reset-password", json={
+            "token": user.reset_password_token,
+            "password": "NewPass9!",
+        })
+        assert resp.status_code == 200
+
+        # Login harus sukses dengan password baru, gagal dengan yang lama
+        ok = client.post("/auth/login", json={"email": "reset@example.com", "password": "NewPass9!"})
+        assert ok.status_code == 200
+
+        bad = client.post("/auth/login", json={"email": "reset@example.com", "password": "OldPass1!"})
+        assert bad.status_code == 401
+
+        # Token tidak bisa dipakai dua kali
+        db.refresh(user)
+        assert user.reset_password_token is None
+        reuse = client.post("/auth/reset-password", json={
+            "token": user.reset_password_token or "stale",
+            "password": "Another9!",
+        })
+        assert reuse.status_code in (400, 401)
+
+    def test_reset_password_invalid_token(self, client):
+        resp = client.post("/auth/reset-password", json={
+            "token": "totally_invalid_token",
+            "password": "NewPass9!",
+        })
+        assert resp.status_code in (400, 401)
+
+    def test_reset_password_weak_password(self, client, db):
+        user = self._seed_user(db)
+        client.post("/auth/forgot-password", json={"email": "reset@example.com"})
+        db.refresh(user)
+        resp = client.post("/auth/reset-password", json={
+            "token": user.reset_password_token,
+            "password": "weak",
+        })
+        assert resp.status_code == 422

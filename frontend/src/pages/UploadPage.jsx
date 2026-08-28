@@ -63,11 +63,11 @@ function SummaryCard({ summary }) {
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ background: 'linear-gradient(135deg, #10B981 0%, #2563EB 100%)' }} />
       <div className="relative">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: '#F1F5F9' }}>
+          <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--color-slate-heading)' }}>
             <BarChart3 size={16} style={{ color: '#60A5FA' }} />
             Ringkasan Laba/Rugi
           </h3>
-          <span className="text-xs px-2 py-1 rounded-xl" style={{ color: '#94A3B8', background: 'rgba(255, 255, 255, 0.05)' }}>
+          <span className="text-xs px-2 py-1 rounded-xl" style={{ color: 'var(--color-slate-body)', background: 'var(--color-surface-card)' }}>
             Data per {summary.tanggal_per || '-'}
           </span>
         </div>
@@ -99,7 +99,7 @@ function SummaryCard({ summary }) {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-2 text-xs" style={{ color: '#94A3B8' }}>
+        <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-2 text-xs" style={{ color: 'var(--color-slate-body)' }}>
           {isEmpty ? (
             <span className="flex items-center gap-1.5">
               <Clock size={13} /> Belum ada data transaksi. Setelah upload selesai diproses, ringkasan ini langsung terisi.
@@ -240,8 +240,8 @@ export default function UploadPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: '#F1F5F9' }}>Upload File</h1>
-        <p className="text-sm" style={{ color: '#94A3B8' }}>Upload CSV transaksi atau PDF aturan untuk diproses ke knowledge base</p>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-slate-heading)' }}>Upload File</h1>
+        <p className="text-sm" style={{ color: 'var(--color-slate-body)' }}>Upload CSV transaksi atau PDF aturan untuk diproses ke knowledge base</p>
         <div className="mt-3 flex items-center gap-2">
           <Link to="/" className="btn-primary text-xs !py-2">
             <LayoutDashboard size={14} /> Lihat Dashboard
@@ -253,7 +253,7 @@ export default function UploadPage() {
           >
             <Trash2 size={13} /> Hapus Semua Data
           </button>
-          <span className="text-xs" style={{ color: '#64748B' }}>Semua dataset yang diupload otomatis masuk ke dashboard.</span>
+          <span className="text-xs" style={{ color: 'var(--color-slate-muted)' }}>Semua dataset yang diupload otomatis masuk ke dashboard.</span>
         </div>
       </div>
 
@@ -262,16 +262,16 @@ export default function UploadPage() {
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         className="card border-2 border-dashed cursor-pointer transition-all"
-        style={{ borderColor: dragging ? '#60A5FA' : 'rgba(148, 163, 184, 0.2)', background: dragging ? 'rgba(37, 99, 235, 0.08)' : 'rgba(255, 255, 255, 0.02)' }}
+        style={{ borderColor: dragging ? '#60A5FA' : 'rgba(148, 163, 184, 0.2)', background: dragging ? 'rgba(37, 99, 235, 0.08)' : 'var(--color-surface-faint)' }}
       >
         <label className="flex flex-col items-center gap-3 cursor-pointer">
           <div className="rounded-2xl p-4 transition-transform duration-300" style={{ background: dragging ? 'rgba(37, 99, 235, 0.15)' : 'rgba(59, 130, 246, 0.12)' }}>
             <UploadCloud size={32} style={{ color: dragging ? '#60A5FA' : '#60A5FA' }} />
           </div>
           <div className="text-center">
-            <p className="text-sm font-medium" style={{ color: '#E2E8F0' }}>{uploading ? 'Mengupload...' : 'Seret & lepas file di sini'}</p>
-            <p className="text-xs mt-1" style={{ color: '#64748B' }}>atau klik untuk memilih file</p>
-            <p className="text-xs" style={{ color: '#64748B' }}>CSV, XLSX, XLS, PDF (maks. 25 MB)</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--color-slate-text)' }}>{uploading ? 'Mengupload...' : 'Seret & lepas file di sini'}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--color-slate-muted)' }}>atau klik untuk memilih file</p>
+            <p className="text-xs" style={{ color: 'var(--color-slate-muted)' }}>CSV, XLSX, XLS, PDF (maks. 25 MB)</p>
           </div>
           <input type="file" className="hidden" accept=".csv,.xlsx,.xls,.pdf" onChange={handleFileSelect} disabled={uploading} />
           {!uploading && <span className="btn-primary text-xs"><Upload size={14} /> Pilih File</span>}
@@ -288,17 +288,17 @@ export default function UploadPage() {
       <SummaryCard summary={summary} />
 
       <div>
-        <h3 className="text-sm font-semibold mb-3" style={{ color: '#CBD5E1' }}>File yang Sudah Diupload</h3>
+        <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-slate-text)' }}>File yang Sudah Diupload</h3>
         {loading ? <LoadingSpinner className="mt-6" /> : files.length === 0 ? (
-          <div className="card text-center py-8 text-sm" style={{ color: '#64748B' }}>Belum ada file yang diupload</div>
+          <div className="card text-center py-8 text-sm" style={{ color: 'var(--color-slate-muted)' }}>Belum ada file yang diupload</div>
         ) : (
           <div className="space-y-2">
             {files.map(f => (
               <div key={f.id} className="card flex items-center gap-4 !p-4">
-                <FileText size={20} className="shrink-0" style={{ color: '#64748B' }} />
+                <FileText size={20} className="shrink-0" style={{ color: 'var(--color-slate-muted)' }} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: '#E2E8F0' }}>{f.original_filename}</p>
-                  <p className="text-xs" style={{ color: '#64748B' }}>{f.file_type} &middot; {formatSize(f.file_size_bytes)} &middot; {formatDateTime(f.created_at)}</p>
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--color-slate-text)' }}>{f.original_filename}</p>
+                  <p className="text-xs" style={{ color: 'var(--color-slate-muted)' }}>{f.file_type} &middot; {formatSize(f.file_size_bytes)} &middot; {formatDateTime(f.created_at)}</p>
                   {f.error_message && <p className="text-xs mt-0.5" style={{ color: '#F87171' }}>{f.error_message}</p>}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-medium shrink-0">
@@ -310,7 +310,7 @@ export default function UploadPage() {
                 <button
                   onClick={() => deleteFile(f.id, f.original_filename)}
                   className="shrink-0 p-1.5 rounded-xl transition hover:bg-red-500/10 hover:text-red-400"
-                  style={{ color: '#64748B' }}
+                  style={{ color: 'var(--color-slate-muted)' }}
                   title="Hapus file"
                 >
                   <Trash2 size={14} />

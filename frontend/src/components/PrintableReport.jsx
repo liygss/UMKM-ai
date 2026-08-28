@@ -24,7 +24,7 @@ function ReportHeader({ user, title, date }) {
       <div className="rpt-header-top">
         <div className="rpt-header-left">
           <div className="rpt-logo">
-            <img src="/logo.png" alt="AI UMKM" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover' }} />
+            <img src="/finora-logo.jpg" alt="Finora" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover' }} />
           </div>
           <div>
             <h1 className="rpt-company">{user?.company_name || 'Nama Perusahaan'}</h1>
@@ -32,7 +32,7 @@ function ReportHeader({ user, title, date }) {
           </div>
         </div>
         <div className="rpt-header-right">
-          <div className="rpt-badge">AI UMKM</div>
+          <div className="rpt-badge">Finora</div>
         </div>
       </div>
       <div className="rpt-divider" />
@@ -55,7 +55,7 @@ function ReportFooter() {
     <div className="rpt-footer">
       <div className="rpt-footer-line" />
       <div className="rpt-footer-content">
-        <span className="rpt-footer-text">Dibuat oleh AI UMKM - Sistem Akuntansi Cerdas</span>
+        <span className="rpt-footer-text">Dibuat oleh Finora - Sistem Akuntansi Cerdas</span>
         <span className="rpt-footer-text">{formatTanggalCetak()}</span>
       </div>
     </div>

@@ -3,12 +3,17 @@ import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import client from '../api/client'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import StatCard from '../components/StatCard'
 import { MotionBarShape, MotionActiveBar, MotionTooltip } from '../components/MotionChartShapes'
 import { formatRupiah, formatRupiahCompact } from '../utils/formatters'
 import { fadeUp, fadeIn, staggerContainer, itemStagger, EASE_GENTLE } from '../utils/motionPresets'
-import { Banknote, TrendingUp, TrendingDown, Wallet, FileText, MessageSquare, Upload, Plus, ArrowRight, Activity, Calendar, RefreshCw } from 'lucide-react'
+import { Banknote, TrendingUp, TrendingDown, Wallet, MessageSquare, Upload, Plus, ArrowRight, Activity, Calendar, RefreshCw } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts'
+import InsightCard from '../components/InsightCard'
+import KategoriPengeluaran from '../components/KategoriPengeluaran'
+import TemuanPenting from '../components/TemuanPenting'
+import RingkasanPiutangUtang from '../components/RingkasanPiutangUtang'
 
 const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444']
 const NEGATIVE_COLOR = '#EF4444'
@@ -38,8 +43,8 @@ function CustomTooltip({ active, payload, label }) {
     const net = payload[0]?.payload?.laba_rugi ?? 0
     return (
       <MotionTooltip>
-        <div className="rounded-xl p-3 shadow-xl" style={{ background: 'rgba(15, 26, 46, 0.95)', border: '1px solid rgba(148, 163, 184, 0.18)', backdropFilter: 'blur(12px)', minWidth: 200 }}>
-          <p className="text-xs font-semibold mb-1.5" style={{ color: '#94A3B8' }}>{label}</p>
+        <div className="rounded-xl p-3 shadow-xl" style={{ background: 'var(--color-tooltip-bg)', border: '1px solid var(--color-tooltip-border)', backdropFilter: 'blur(12px)', minWidth: 200 }}>
+          <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--color-slate-body)' }}>{label}</p>
           {payload.map((entry, i) => (
             <p key={i} className="flex items-center gap-1.5 text-sm font-bold" style={{ color: SERIES_COLORS[entry.dataKey] || entry.color }}>
               <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: SERIES_COLORS[entry.dataKey] || entry.color }} />
@@ -47,7 +52,7 @@ function CustomTooltip({ active, payload, label }) {
             </p>
           ))}
           <div className="mt-1.5 pt-1.5 flex items-center justify-between gap-4" style={{ borderTop: '1px solid rgba(148, 163, 184, 0.15)' }}>
-            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: '#94A3B8' }}>Laba/Rugi</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-slate-body)' }}>Laba/Rugi</span>
             <span className="text-sm font-extrabold" style={{ color: net >= 0 ? '#34D399' : '#F87171' }}>{formatRupiah(net)}</span>
           </div>
         </div>
@@ -65,7 +70,7 @@ function formatCompact(value) {
 }
 
 function BarValueLabel(props) {
-  const { x, y, width, height, value } = props
+  const { x, y, width, height, value, isLight } = props
   if (!value || !height || height < 14) return null
   return (
     <text
@@ -74,8 +79,8 @@ function BarValueLabel(props) {
       textAnchor="middle"
       fontSize={11}
       fontWeight={700}
-      fill="#FFFFFF"
-      stroke="#0B1626"
+      fill={isLight ? '#0F172A' : '#FFFFFF'}
+      stroke={isLight ? 'none' : '#0B1626'}
       strokeWidth={3}
       paintOrder="stroke"
       strokeLinejoin="round"
@@ -92,14 +97,14 @@ function PieValueLabel(props) {
   const x = cx + radius * Math.cos(-midAngle * RADIAN)
   const y = cy + radius * Math.sin(-midAngle * RADIAN)
   const anchor = x > cx ? 'start' : 'end'
-  const color = payload.isNegative ? '#F87171' : (name === 'Kas' ? '#60A5FA' : '#34D399')
+  const color = payload.isNegative ? 'var(--color-accent-red)' : (name === 'Kas' ? 'var(--color-accent-blue)' : 'var(--color-accent-emerald)')
   return (
     <text x={x} y={y} textAnchor={anchor} dominantBaseline="central">
       <tspan x={x} dy={-9} fill={color} fontSize={11} fontWeight={700}>{name}</tspan>
-      <tspan x={x} dy={16} fill="#E2E8F0" fontSize={11} fontWeight={700}>
+      <tspan x={x} dy={16} fill="var(--color-slate-text)" fontSize={11} fontWeight={700}>
         {payload.isNegative ? '-' : ''}{formatCompact(value)}
       </tspan>
-      <tspan x={x} dy={14} fill="#64748B" fontSize={9} fontWeight={600}>
+      <tspan x={x} dy={14} fill="var(--color-slate-muted)" fontSize={9} fontWeight={600}>
         {((percent || 0) * 100).toFixed(0)}%
       </tspan>
     </text>
@@ -107,7 +112,7 @@ function PieValueLabel(props) {
 }
 
 function renderActiveShape(props) {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, isLight } = props
   return (
     <Sector
       cx={cx}
@@ -118,9 +123,9 @@ function renderActiveShape(props) {
       endAngle={endAngle}
       cornerRadius={10}
       fill={fill}
-      stroke="rgba(15, 23, 42, 0.9)"
+      stroke={isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 23, 42, 0.9)'}
       strokeWidth={2}
-      filter="drop-shadow(0 0 14px rgba(96, 165, 250, 0.45))"
+      filter={isLight ? undefined : 'drop-shadow(0 0 14px rgba(96, 165, 250, 0.45))'}
     />
   )
 }
@@ -129,6 +134,8 @@ const todayStr = () => new Date().toISOString().split('T')[0]
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const { mode } = useTheme()
+  const isLight = mode === 'light'
   const [data, setData] = useState(null)
   const [monthly, setMonthly] = useState([])
   const [loading, setLoading] = useState(true)
@@ -141,6 +148,14 @@ export default function DashboardPage() {
   // Animasi grow bar hanya diputar sekali saat data pertama tampil;
   // auto-refresh diam (interval/fokus tab) tidak boleh mengulang animasinya.
   const [barAnimDone, setBarAnimDone] = useState(false)
+  const [alerts, setAlerts] = useState([])
+  const [piutangUtang, setPiutangUtang] = useState(null)
+  // Saat backend belum siap (baru dinyalakan), tampilkan pemuatan & coba ulang
+  // otomatis beberapa kali supaya user tidak salah kira dashboard gagal.
+  const [connecting, setConnecting] = useState(false)
+  const [attempt, setAttempt] = useState(0)
+  const [gaveUp, setGaveUp] = useState(false)
+  const CONNECT_MAX_ATTEMPT = 4
 
   const handleDateChange = (newDate) => {
     autoRef.current = false
@@ -174,16 +189,43 @@ export default function DashboardPage() {
     client.get('/dashboard/summary', { params })
       .then(r => {
         setData(r.data)
+        setConnecting(false)
+        setAttempt(0)
+        setGaveUp(false)
         if (autoRef.current && r.data.tanggal_per) setSelectedDate(r.data.tanggal_per)
       })
-      .catch(() => {})
+      .catch(() => setConnecting(true))
     client.get('/dashboard/monthly', { params })
       .then(r => setMonthly(r.data))
       .catch(() => {})
+    client.get('/dashboard/alerts', { params })
+      .then(r => setAlerts(r.data.alerts))
+      .catch(() => setAlerts([]))
+    client.get('/dashboard/piutang-utang', { params })
+      .then(r => setPiutangUtang(r.data))
+      .catch(() => setPiutangUtang(null))
       .finally(() => { if (!silent) setLoading(false) })
   }, [debouncedDate])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  // Retry otomatis saat koneksi gagal: backend kadang baru hidup, jangan
+  // langsung tampilkan "gagal muat". Setelah batas percobaan habis barulah
+  // muncul pesan server tidak terjangkau — bukan saat page masih rendering.
+  useEffect(() => {
+    if (connecting) {
+      if (attempt < CONNECT_MAX_ATTEMPT) {
+        const t = setTimeout(() => {
+          fetchData()
+          setAttempt(a => a + 1)
+        }, 2500)
+        return () => clearTimeout(t)
+      } else if (!data) {
+        setGaveUp(true)
+      }
+    }
+    return undefined
+  }, [connecting, attempt, data, fetchData])
 
   // Setelah animasi grow bar pertama selesai (~1.6s), matikan animasi supaya
   // refresh diam tiap 15 detik tidak membuat bar "tumbuh" ulang.
@@ -211,7 +253,9 @@ export default function DashboardPage() {
     }
   }, [fetchData])
 
-  if (loading) return (
+  // Selama data belum ada & belum menyerah, tahan skeleton — jangan pernah
+  // turun ke render dashboard saat data masih null (menghindari crash).
+  if (loading || (connecting && !gaveUp) || (!data && !gaveUp)) return (
     <div className="space-y-6">
       <div className="space-y-2">
         <div className="skeleton h-8 w-64 rounded-xl" />
@@ -228,13 +272,22 @@ export default function DashboardPage() {
     </div>
   )
 
-  if (!data) return (
+  if (!data && gaveUp) return (
     <div className="flex flex-col items-center justify-center mt-20 text-center">
       <div className="rounded-2xl p-5 mb-4" style={{ background: 'rgba(148, 163, 184, 0.1)' }}>
-        <Activity size={32} style={{ color: '#64748B' }} />
+        <Activity size={32} style={{ color: 'var(--color-slate-muted)' }} />
       </div>
-      <p className="text-lg font-semibold" style={{ color: '#F1F5F9' }}>Gagal memuat data dashboard</p>
-      <p className="text-sm mt-1" style={{ color: '#94A3B8' }}>Pastikan server backend sedang berjalan</p>
+      <p className="text-lg font-semibold" style={{ color: 'var(--color-slate-heading)' }}>Tidak dapat terhubung ke server</p>
+      <p className="text-sm mt-1 max-w-md" style={{ color: 'var(--color-slate-body)' }}>
+        Pastikan backend sudah berjalan, lalu coba lagi. Halaman ini akan otomatis dimuat ulang saat server kembali aktif.
+      </p>
+      <button
+        onClick={() => { setAttempt(0); setGaveUp(false); setConnecting(false); fetchData() }}
+        className="mt-4 px-5 py-2 rounded-xl text-sm font-semibold text-white transition hover:scale-105"
+        style={{ background: 'linear-gradient(135deg, #1D4ED8, #2563EB)', boxShadow: '0 6px 18px var(--color-brand-glow)' }}
+      >
+        Coba lagi
+      </button>
     </div>
   )
 
@@ -253,7 +306,21 @@ export default function DashboardPage() {
     { name: 'Bank', value: Math.abs(data.saldo_bank), isNegative: data.saldo_bank < 0 },
   ].filter(d => d.value > 0)
 
+  const activePieEntry = pieActiveIndex != null ? pieData[pieActiveIndex] : null
+
   const selectedMonth = new Date((selectedDate || todayStr()) + 'T00:00:00').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
+
+  // Perbandingan bulan ini vs bulan lalu (%), dari data monthly yang sudah di-fetch.
+  const delta = (key) => {
+    if (monthly.length < 2) return undefined
+    const prev = monthly[monthly.length - 2][key]
+    if (!prev) return undefined
+    const curr = monthly[monthly.length - 1][key]
+    return Math.round(((curr - prev) / prev) * 100)
+  }
+  const deltaPendapatan = delta('pendapatan')
+  const deltaBeban = delta('beban')
+  const deltaLaba = delta('laba_rugi')
 
   return (
     <div className="space-y-6">
@@ -268,24 +335,24 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-extrabold">
             <span className="gradient-text">{getGreeting()}, {user?.full_name?.split(' ')[0] || 'User'}</span>
           </h1>
-          <p className="text-sm mt-1" style={{ color: '#94A3B8' }}>Berikut ringkasan keuangan UMKM Anda</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--color-slate-body)' }}>Berikut ringkasan keuangan UMKM Anda</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl px-3 py-2 shadow-sm" style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(148, 163, 184, 0.14)', backdropFilter: 'blur(12px)' }}>
+          <div className="flex items-center gap-2 rounded-xl px-3 py-2 shadow-sm" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)', backdropFilter: 'blur(12px)' }}>
             <Calendar size={14} style={{ color: '#60A5FA' }} />
             <input
               type="date"
               value={selectedDate}
               onChange={e => handleDateChange(e.target.value)}
               className="text-sm font-medium bg-transparent outline-none cursor-pointer"
-              style={{ color: '#CBD5E1', colorScheme: 'dark' }}
+              style={{ color: 'var(--color-slate-text)' }}
             />
             <button
               onClick={handleAuto}
               className="text-xs font-medium px-2 py-1 rounded-lg transition-all duration-200"
               style={isAuto
                 ? { color: '#60A5FA', background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(96, 165, 250, 0.4)' }
-                : { color: '#94A3B8', background: 'transparent' }}
+                : { color: 'var(--color-slate-body)', background: 'transparent' }}
             >
               Otomatis
             </button>
@@ -301,7 +368,7 @@ export default function DashboardPage() {
             onClick={() => fetchData()}
             title="Segarkan data"
             className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-200 hover:bg-blue-500/10"
-            style={{ color: '#60A5FA', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(148, 163, 184, 0.14)' }}
+            style={{ color: '#60A5FA', background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)' }}
           >
             <RefreshCw size={13} />
             Segarkan
@@ -323,13 +390,13 @@ export default function DashboardPage() {
                 <action.icon size={18} style={{ color: action.textColor }} />
               </div>
               <div className="hidden sm:block">
-                <p className="text-sm font-semibold" style={{ color: '#F1F5F9' }}>{action.label}</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--color-slate-heading)' }}>{action.label}</p>
               </div>
-              <ArrowRight size={14} className="ml-auto transition hidden sm:block" style={{ color: '#64748B' }} />
+              <ArrowRight size={14} className="ml-auto transition hidden sm:block" style={{ color: 'var(--color-slate-muted)' }} />
             </>
           )
           const className = "group flex w-full items-center gap-3 rounded-xl p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-          const style = { background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(148, 163, 184, 0.14)', backdropFilter: 'blur(12px)' }
+          const style = { background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)', backdropFilter: 'blur(12px)' }
 
           return action.action === 'open-chatbot' ? (
             <motion.button
@@ -360,9 +427,9 @@ export default function DashboardPage() {
           initial="hidden"
           animate="visible"
           className="card flex items-center gap-3 text-sm"
-          style={{ color: '#94A3B8', border: '1px dashed rgba(148, 163, 184, 0.3)' }}
+          style={{ color: 'var(--color-slate-body)', border: '1px dashed rgba(148, 163, 184, 0.3)' }}
         >
-          <Activity size={16} style={{ color: '#64748B' }} />
+          <Activity size={16} style={{ color: 'var(--color-slate-muted)' }} />
           <span>Belum ada data transaksi untuk periode ini. Data yang diupload atau dihapus akan langsung terlihat di dashboard.</span>
           <Link to="/upload" className="ml-auto text-xs font-semibold whitespace-nowrap" style={{ color: '#60A5FA' }}>Upload File</Link>
         </motion.div>
@@ -373,11 +440,11 @@ export default function DashboardPage() {
         animate="visible"
         className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4"
       >
-        <StatCard title="Saldo Kas" value={formatRupiahCompact(data.saldo_kas)} icon={Wallet} color={data.saldo_kas >= 0 ? 'indigo' : 'rose'} />
-        <StatCard title="Saldo Bank" value={formatRupiahCompact(data.saldo_bank)} icon={Wallet} color={data.saldo_bank >= 0 ? 'indigo' : 'rose'} />
-        <StatCard title={`Pendapatan ${selectedMonth}`} value={formatRupiahCompact(data.pendapatan_bulan_ini)} icon={TrendingUp} color="emerald" />
-        <StatCard title={`Beban ${selectedMonth}`} value={formatRupiahCompact(data.beban_bulan_ini)} icon={TrendingDown} color="rose" />
-        <StatCard title={`Laba/Rugi ${selectedMonth}`} value={formatRupiahCompact(data.laba_rugi_bulan_ini)} icon={Banknote} color={data.laba_rugi_bulan_ini >= 0 ? 'emerald' : 'rose'} />
+        <StatCard title="Saldo Kas" value={data.saldo_kas} format={formatRupiahCompact} icon={Wallet} color={data.saldo_kas >= 0 ? 'indigo' : 'rose'} />
+        <StatCard title="Saldo Bank" value={data.saldo_bank} format={formatRupiahCompact} icon={Wallet} color={data.saldo_bank >= 0 ? 'indigo' : 'rose'} />
+        <StatCard title={`Pendapatan ${selectedMonth}`} value={data.pendapatan_bulan_ini} format={formatRupiahCompact} icon={TrendingUp} color="emerald" trend={deltaPendapatan} />
+        <StatCard title={`Beban ${selectedMonth}`} value={data.beban_bulan_ini} format={formatRupiahCompact} icon={TrendingDown} color="rose" trend={deltaBeban} trendUpIsGood={false} />
+        <StatCard title={`Laba/Rugi ${selectedMonth}`} value={data.laba_rugi_bulan_ini} format={formatRupiahCompact} icon={Banknote} color={data.laba_rugi_bulan_ini >= 0 ? 'emerald' : 'rose'} trend={deltaLaba} />
       </motion.div>
 
       {/* Charts */}
@@ -390,8 +457,8 @@ export default function DashboardPage() {
       >
         <motion.div variants={fadeUp} whileHover={{ y: -4, transition: EASE_GENTLE }} className="card lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold" style={{ color: '#F1F5F9' }}>Pendapatan vs Beban</h3>
-            <span className="text-xs px-2 py-1 rounded-xl" style={{ color: '#94A3B8', background: 'rgba(255, 255, 255, 0.05)' }}>
+            <h3 className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Pendapatan vs Beban</h3>
+            <span className="text-xs px-2 py-1 rounded-xl" style={{ color: 'var(--color-slate-body)', background: 'var(--color-surface-card)' }}>
               {monthly.length > 0 ? `${monthly[0].label} - ${monthly[monthly.length - 1].label}` : selectedMonth}
             </span>
           </div>
@@ -399,7 +466,7 @@ export default function DashboardPage() {
             <>
               <div className="flex items-center gap-5 mb-1">
                 {BAR_LEGEND.map((item) => (
-                  <span key={item.name} className="flex items-center gap-2 text-xs font-semibold" style={{ color: '#CBD5E1' }}>
+                  <span key={item.name} className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--color-slate-text)' }}>
                     <span className="w-2.5 h-2.5 rounded-full" style={{ background: item.color, boxShadow: `0 0 10px ${item.glow}` }} />
                     {item.name}
                   </span>
@@ -408,28 +475,28 @@ export default function DashboardPage() {
               <ResponsiveContainer width="100%" height={370}>
                 <BarChart data={barData} barCategoryGap="18%" barGap={8} margin={{ top: 28, right: 12, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.15)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94A3B8' }} axisLine={{ stroke: 'rgba(148, 163, 184, 0.2)' }} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} tickFormatter={(v) => formatCompact(v)} axisLine={false} tickLine={false} width={52} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--color-slate-body)' }} axisLine={{ stroke: 'rgba(148, 163, 184, 0.2)' }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: 'var(--color-slate-body)' }} tickFormatter={(v) => formatCompact(v)} axisLine={false} tickLine={false} width={52} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.06)' }} />
                   <Bar
                     dataKey="Pendapatan"
                     fill="url(#gradEmerald)"
                     radius={[8, 8, 0, 0]}
                     maxBarSize={52}
-                    label={BarValueLabel}
+                    label={(p) => <BarValueLabel {...p} isLight={isLight} />}
                     isAnimationActive={false}
-                    shape={<MotionBarShape animate={!barAnimDone} glowColor="rgba(16, 185, 129, 0.35)" />}
-                    activeBar={<MotionActiveBar glowColor="rgba(16, 185, 129, 0.55)" />}
+                    shape={<MotionBarShape animate={!barAnimDone} glowColor={isLight ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.35)'} />}
+                    activeBar={<MotionActiveBar glowColor={isLight ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.55)'} />}
                   />
                   <Bar
                     dataKey="Beban"
                     fill="url(#gradRose)"
                     radius={[8, 8, 0, 0]}
                     maxBarSize={52}
-                    label={BarValueLabel}
+                    label={(p) => <BarValueLabel {...p} isLight={isLight} />}
                     isAnimationActive={false}
-                    shape={<MotionBarShape animate={!barAnimDone} glowColor="rgba(239, 68, 68, 0.35)" />}
-                    activeBar={<MotionActiveBar glowColor="rgba(239, 68, 68, 0.55)" />}
+                    shape={<MotionBarShape animate={!barAnimDone} glowColor={isLight ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.35)'} />}
+                    activeBar={<MotionActiveBar glowColor={isLight ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.55)'} />}
                   />
                   <defs>
                     <linearGradient id="gradEmerald" x1="0" y1="0" x2="0" y2="1">
@@ -453,14 +520,14 @@ export default function DashboardPage() {
               )}
             </>
           ) : (
-            <div className="flex h-[250px] items-center justify-center text-sm" style={{ color: '#64748B' }}>Belum ada data untuk ditampilkan</div>
+            <div className="flex h-[250px] items-center justify-center text-sm" style={{ color: 'var(--color-slate-muted)' }}>Belum ada data untuk ditampilkan</div>
           )}
         </motion.div>
 
         <motion.div variants={fadeUp} whileHover={{ y: -4, transition: EASE_GENTLE }} className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold" style={{ color: '#F1F5F9' }}>Komposisi Kas & Bank</h3>
-            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(148, 163, 184, 0.1)', border: '1px solid rgba(148, 163, 184, 0.12)', color: '#94A3B8' }}>
+            <h3 className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Komposisi Kas & Bank</h3>
+            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(148, 163, 184, 0.1)', border: '1px solid rgba(148, 163, 184, 0.12)', color: 'var(--color-slate-body)' }}>
               {selectedMonth}
             </span>
           </div>
@@ -512,16 +579,16 @@ export default function DashboardPage() {
                       cornerRadius={10}
                       startAngle={90}
                       endAngle={-270}
-                      stroke="rgba(15, 23, 42, 0.9)"
+                      stroke={isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 23, 42, 0.9)'}
                       strokeWidth={2}
                       isAnimationActive
                       animationDuration={900}
                       animationEasing="ease-out"
-                      filter="url(#pieGlow)"
+                      filter={isLight ? undefined : 'url(#pieGlow)'}
                       label={PieValueLabel}
                       labelLine={{ stroke: 'rgba(148, 163, 184, 0.35)', strokeWidth: 1 }}
                       activeIndex={pieActiveIndex}
-                      activeShape={renderActiveShape}
+                      activeShape={(p) => renderActiveShape({ ...p, isLight })}
                     >
                       {pieData.map((entry, i) => (
                         <Cell
@@ -536,9 +603,9 @@ export default function DashboardPage() {
                     </Pie>
                     <Tooltip
                       formatter={(v, name, props) => `${props.payload.isNegative ? '-' : ''}${formatRupiah(v)}`}
-                      contentStyle={{ background: 'rgba(15, 26, 46, 0.95)', border: '1px solid rgba(148, 163, 184, 0.18)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
-                      labelStyle={{ color: '#F1F5F9' }}
-                      itemStyle={{ color: '#CBD5E1' }}
+                      contentStyle={{ background: 'var(--color-tooltip-bg)', border: '1px solid var(--color-tooltip-border)', borderRadius: 12, boxShadow: '0 8px 24px var(--color-shadow)' }}
+                      labelStyle={{ color: 'var(--color-slate-heading)' }}
+                      itemStyle={{ color: 'var(--color-slate-text)' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -550,12 +617,28 @@ export default function DashboardPage() {
                     transition={EASE_GENTLE}
                     className="flex flex-col items-center"
                   >
-                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#64748B' }}>
-                      Total Kas
-                    </span>
-                    <span className="text-lg font-extrabold" style={{ color: '#F1F5F9' }}>
-                      {formatRupiahCompact(data.saldo_kas)}
-                    </span>
+                    {activePieEntry ? (
+                      <>
+                        <span className="max-w-[110px] truncate text-[10px] font-bold uppercase tracking-wider" style={{ color: activePieEntry.isNegative ? 'var(--color-accent-red)' : 'var(--color-slate-muted)' }}>
+                          {activePieEntry.name}
+                        </span>
+                        <span className="text-lg font-extrabold" style={{ color: activePieEntry.isNegative ? 'var(--color-accent-red)' : 'var(--color-slate-heading)' }}>
+                          {activePieEntry.isNegative ? '-' : ''}{formatRupiahCompact(activePieEntry.value)}
+                        </span>
+                        <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md mt-0.5" style={{ background: (activePieEntry.isNegative ? NEGATIVE_COLOR : COLORS[pieActiveIndex]) + '1f', color: activePieEntry.isNegative ? 'var(--color-accent-red)' : 'var(--color-slate-text)' }}>
+                          {((activePieEntry.value / Math.max(data.total_kas_dan_bank, 1)) * 100).toFixed(0)}%
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-slate-muted)' }}>
+                          Total Kas
+                        </span>
+                        <span className="text-lg font-extrabold" style={{ color: 'var(--color-slate-heading)' }}>
+                          {formatRupiahCompact(data.saldo_kas)}
+                        </span>
+                      </>
+                    )}
                   </motion.div>
                 </div>
               </div>
@@ -577,11 +660,11 @@ export default function DashboardPage() {
                       style={{ background: 'rgba(148, 163, 184, 0.06)', border: '1px solid rgba(148, 163, 184, 0.1)' }}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: '#E2E8F0' }}>
+                        <span className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: 'var(--color-slate-text)' }}>
                           <span className="w-2.5 h-2.5 rounded-full" style={{ background: color, boxShadow: `0 0 10px ${color}66` }} />
                           {entry.name}
                         </span>
-                        <span className="text-sm font-extrabold" style={{ color: '#F8FAFC' }}>
+                        <span className="text-sm font-extrabold" style={{ color: 'var(--color-slate-heading)' }}>
                           {entry.isNegative ? '-' : ''}{formatRupiah(entry.value)}
                           <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: `${color}1f`, color }}>
                             {pct.toFixed(0)}%
@@ -603,9 +686,20 @@ export default function DashboardPage() {
               </motion.div>
             </>
           ) : (
-            <div className="flex h-[250px] items-center justify-center text-sm" style={{ color: '#64748B' }}>Belum ada data saldo</div>
+            <div className="flex h-[250px] items-center justify-center text-sm" style={{ color: 'var(--color-slate-muted)' }}>Belum ada data saldo</div>
           )}
         </motion.div>
+      </motion.div>
+
+      {/* Insight & Kategori */}
+      <motion.div
+        variants={staggerContainer(0.1, 0.15)}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+      >
+        <InsightCard debouncedDate={debouncedDate} />
+        <KategoriPengeluaran debouncedDate={debouncedDate} />
       </motion.div>
 
       {/* Summary Row */}
@@ -616,39 +710,30 @@ export default function DashboardPage() {
         className="grid grid-cols-1 sm:grid-cols-3 gap-4"
       >
         <motion.div variants={itemStagger} whileHover={{ y: -5, transition: EASE_GENTLE }} className="card">
-          <p className="text-sm font-medium" style={{ color: '#94A3B8' }}>Total Pendapatan Tahun Berjalan</p>
+          <p className="text-sm font-medium" style={{ color: 'var(--color-slate-body)' }}>Total Pendapatan Tahun Berjalan</p>
           <p className="mt-2 text-xl font-extrabold" style={{ color: '#34D399' }}>{formatRupiah(data.total_pendapatan_tahun_berjalan)}</p>
         </motion.div>
         <motion.div variants={itemStagger} whileHover={{ y: -5, transition: EASE_GENTLE }} className="card">
-          <p className="text-sm font-medium" style={{ color: '#94A3B8' }}>Total Beban Tahun Berjalan</p>
+          <p className="text-sm font-medium" style={{ color: 'var(--color-slate-body)' }}>Total Beban Tahun Berjalan</p>
           <p className="mt-2 text-xl font-extrabold" style={{ color: '#F87171' }}>{formatRupiah(data.total_beban_tahun_berjalan)}</p>
         </motion.div>
         <motion.div variants={itemStagger} whileHover={{ y: -5, transition: EASE_GENTLE }} className="card">
-          <p className="text-sm font-medium" style={{ color: '#94A3B8' }}>Laba/Rugi Tahun Berjalan</p>
+          <p className="text-sm font-medium" style={{ color: 'var(--color-slate-body)' }}>Laba/Rugi Tahun Berjalan</p>
           <p className="mt-2 text-xl font-extrabold" style={{ color: data.laba_rugi_tahun_berjalan >= 0 ? '#34D399' : '#F87171' }}>
             {formatRupiah(data.laba_rugi_tahun_berjalan)}
           </p>
         </motion.div>
       </motion.div>
 
-      {/* Transaction Count */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" whileHover={{ y: -4, transition: EASE_GENTLE }} className="card flex items-center gap-4">
-        <div
-          className="rounded-2xl p-3 text-white shadow-lg"
-          style={{
-            background: 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)',
-            boxShadow: '0 8px 24px rgba(37, 99, 235, 0.3)',
-          }}
-        >
-          <FileText size={20} />
-        </div>
-        <div>
-          <span className="text-sm font-medium" style={{ color: '#CBD5E1' }}>Transaksi {selectedMonth}</span>
-          <p className="text-2xl font-extrabold" style={{ color: '#F1F5F9' }}>{data.jumlah_transaksi_bulan_ini}</p>
-        </div>
-        <Link to="/jurnal" className="ml-auto btn-ghost text-xs !px-3 !py-1.5">
-          Lihat Jurnal <ArrowRight size={12} />
-        </Link>
+      {/* Temuan Penting & Piutang/Utang */}
+      <motion.div
+        variants={staggerContainer(0.1, 0.15)}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+      >
+        <TemuanPenting alerts={alerts} />
+        <RingkasanPiutangUtang data={piutangUtang} />
       </motion.div>
     </div>
   )

@@ -133,6 +133,49 @@ class MonthlyTrendResponse(BaseModel):
     laba_rugi: float
 
 
+class KategoriBreakdown(ORMCompatibleModel):
+    kode_akun: str
+    nama_akun: str
+    nilai: float
+
+
+class DashboardInsightResponse(BaseModel):
+    insight: str
+    generated_at: date
+    has_data: bool
+
+
+class AlertItem(BaseModel):
+    level: str  # danger | warning | info
+    judul: str
+    deskripsi: str
+
+
+class DashboardAlertsResponse(BaseModel):
+    alerts: list[AlertItem]
+
+
+class PiutangUtangResponse(BaseModel):
+    tanggal_per: date
+    piutang_usaha: float
+    utang_usaha: float
+    utang_pajak: float
+    utang_bank: float
+    selisih: float
+
+
+class ProyeksiBulan(BaseModel):
+    bulan: str  # YYYY-MM
+    label: str
+    proyeksi_laba: float
+    kas_akhir: float
+
+
+class ProyeksiResponse(BaseModel):
+    tanggal_per: date
+    proyeksi: list[ProyeksiBulan]
+
+
 # ---------------------------------------------------------------------------
 # Jurnal Penyesuaian (input)
 # ---------------------------------------------------------------------------

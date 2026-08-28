@@ -23,7 +23,7 @@ from app.config.settings import settings
 from app.database.database import check_db_connection, check_qdrant_connection
 from app.middleware.auth import require_admin
 from app.middleware.cors import setup_cors
-from app.routers import accounting, authentication, chatbot, dashboard, downloads, notifications, spt, upload
+from app.routers import accounting, admin, authentication, chatbot, dashboard, downloads, notifications, spt, upload
 
 setup_logging()
 logger = get_logger(__name__)
@@ -49,10 +49,11 @@ _seed_status = {
 async def lifespan(app: FastAPI):
     logger.info("Starting %s (env=%s)...", settings.APP_NAME, settings.ENV)
     # Pastikan tabel & chart of accounts tersedia (aman dijalankan tiap start).
-    from app.database.migration import create_tables, seed_chart_of_accounts
+    from app.database.migration import create_tables, seed_bootstrap_admin, seed_chart_of_accounts
 
     create_tables()
     seed_chart_of_accounts()
+    seed_bootstrap_admin()
     db_ok = check_db_connection()
     qdrant_ok = check_qdrant_connection()
     if not db_ok:
@@ -100,6 +101,7 @@ setup_cors(app)
 # Routers
 # ---------------------------------------------------------------------------
 app.include_router(authentication.router)
+app.include_router(admin.router)
 app.include_router(accounting.router)
 app.include_router(spt.router)
 app.include_router(upload.router)

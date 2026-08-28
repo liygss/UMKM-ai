@@ -85,8 +85,8 @@ export default function NotifAdminPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <p className="text-lg font-bold" style={{ color: '#F1F5F9' }}>Akses Ditolak</p>
-          <p className="text-sm mt-2" style={{ color: '#64748B' }}>Halaman ini hanya untuk admin.</p>
+          <p className="text-lg font-bold" style={{ color: 'var(--color-slate-heading)' }}>Akses Ditolak</p>
+          <p className="text-sm mt-2" style={{ color: 'var(--color-slate-muted)' }}>Halaman ini hanya untuk admin.</p>
         </div>
       </div>
     )
@@ -103,8 +103,8 @@ export default function NotifAdminPage() {
           <Send size={20} className="text-white" />
         </div>
         <div>
-          <h1 className="text-xl font-bold" style={{ color: '#F1F5F9' }}>Kirim Notifikasi</h1>
-          <p className="text-sm" style={{ color: '#64748B' }}>Kirim pesan ke user tertentu — muncul di lonceng notifikasi mereka</p>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--color-slate-heading)' }}>Kirim Notifikasi</h1>
+          <p className="text-sm" style={{ color: 'var(--color-slate-muted)' }}>Kirim pesan ke user tertentu — muncul di lonceng notifikasi mereka</p>
         </div>
       </div>
 
@@ -113,7 +113,7 @@ export default function NotifAdminPage() {
         <div>
           <label className="label">Penerima</label>
           <div className="relative">
-            <Users size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#64748B' }} />
+            <Users size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-slate-muted)' }} />
             <select
               value={form.user_id}
               onChange={(e) => setForm({ ...form, user_id: e.target.value })}
@@ -181,9 +181,9 @@ export default function NotifAdminPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Sparkles size={16} style={{ color: '#6EE7B7' }} />
-              <h3 className="text-sm font-bold" style={{ color: '#F1F5F9' }}>Ringkasan Bulanan</h3>
+              <h3 className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Ringkasan Bulanan</h3>
             </div>
-            <p className="text-xs" style={{ color: '#64748B' }}>
+            <p className="text-xs" style={{ color: 'var(--color-slate-muted)' }}>
               Buat ringkasan otomatis (pendapatan/beban/laba rugi bulan lalu) untuk semua user sekaligus. Hanya dibuat bila belum ada untuk bulan itu dan user punya transaksi.
             </p>
           </div>

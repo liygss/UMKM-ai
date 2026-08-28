@@ -28,7 +28,7 @@ export default function SptPreview({ formType, data, calc, lang = 'bilingual', o
             Download PDF
           </button>
         </div>
-        <div style={{ fontSize: '12px', color: '#64748B' }}>
+        <div style={{ fontSize: '12px', color: 'var(--color-slate-muted)' }}>
           Preview - Page {pages.length} halaman
         </div>
       </div>

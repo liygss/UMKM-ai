@@ -76,6 +76,11 @@ class RoleUser(str, enum.Enum):
     STAFF = "STAFF"
 
 
+class PlanUser(str, enum.Enum):
+    FREE = "FREE"                    # paket gratis
+    MAINTENANCE = "MAINTENANCE"      # paket berbayar / jasa maintenance pembukuan
+
+
 class ChatRole(str, enum.Enum):
     USER = "USER"
     ASSISTANT = "ASSISTANT"
@@ -95,7 +100,14 @@ class User(Base):
     company_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    plan: Mapped[PlanUser] = mapped_column(Enum(PlanUser), default=PlanUser.FREE)
+    # Kapan user bergabung paket maintenance (diisi saat plan diubah ke MAINTENANCE).
+    maintenance_joined_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Terakhir kali user aktif (login) — untuk indikator aktivitas non-sensitif di dashboard admin.
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     verification_token: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    reset_password_token: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    reset_password_expires: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now

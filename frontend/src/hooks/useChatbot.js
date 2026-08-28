@@ -1,11 +1,28 @@
 import { useState, useCallback, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import client from '../api/client'
+
+const PAGE_LABELS = {
+  '/dashboard': 'Dashboard',
+  '/chatbot': 'Chatbot',
+  '/akun': 'Akun (COA)',
+  '/jurnal': 'Jurnal Umum',
+  '/laporan': 'Laporan Keuangan',
+  '/upload': 'Upload File',
+  '/pajak': 'Kalkulator Pajak',
+  '/spt': 'SPT Tahunan',
+  '/knowledge': 'Knowledge Base',
+  '/notif-admin': 'Kirim Notifikasi',
+  '/admin': 'Dashboard Admin',
+  '/demo': 'Demo',
+}
 
 function formatTime() {
   return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
 }
 
 export default function useChatbot() {
+  const location = useLocation()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [sessionId, setSessionId] = useState(null)
@@ -20,7 +37,8 @@ export default function useChatbot() {
     setLoading(true)
 
     try {
-      const { data } = await client.post('/chatbot/ask', { message, session_id: sessionRef.current })
+      const page = PAGE_LABELS[location.pathname] || 'Aplikasi Finora'
+      const { data } = await client.post('/chatbot/ask', { message, session_id: sessionRef.current, page })
       sessionRef.current = data.session_id
       setSessionId(data.session_id)
       setMessages(prev => [...prev, {
@@ -36,7 +54,7 @@ export default function useChatbot() {
       setLoading(false)
     }
     return true
-  }, [input, loading])
+  }, [input, loading, location.pathname])
 
   const reset = useCallback(() => {
     setMessages([])

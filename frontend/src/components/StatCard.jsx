@@ -20,13 +20,12 @@ const SHADOW = {
   blue: '0 8px 24px rgba(59, 130, 246, 0.35)',
 }
 
-export default function StatCard({ title, value, icon: Icon, trend, color = 'indigo', animate = true }) {
-  const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]/g, '')) : value
-  const isNumeric = typeof numericValue === 'number' && !isNaN(numericValue)
-
-  const displayValue = isNumeric && animate
-    ? <MotionNumber value={numericValue} format={formatRupiah} />
+export default function StatCard({ title, value, icon: Icon, trend, color = 'indigo', animate = true, trendUpIsGood = true, format = formatRupiah }) {
+  const displayValue = animate && typeof value === 'number' && isFinite(value)
+    ? <MotionNumber value={value} format={format} />
     : value
+
+  const trendGood = trend > 0 ? trendUpIsGood : !trendUpIsGood
 
   return (
     <motion.div
@@ -36,10 +35,10 @@ export default function StatCard({ title, value, icon: Icon, trend, color = 'ind
     >
       <div className="absolute inset-0 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-300" style={{ background: GRADIENT_BG[color] }} />
       <div className="relative">
-        <p className="text-sm font-medium" style={{ color: '#94A3B8' }}>{title}</p>
-        <p className="mt-2 text-2xl font-extrabold" style={{ color: '#F1F5F9' }}>{displayValue}</p>
+        <p className="text-sm font-medium" style={{ color: 'var(--color-slate-body)' }}>{title}</p>
+        <p className="mt-2 text-xl lg:text-2xl font-extrabold whitespace-nowrap" style={{ color: 'var(--color-slate-heading)' }}>{displayValue}</p>
         {trend !== undefined && (
-          <div className="mt-2 flex items-center gap-1 text-xs font-semibold" style={{ color: trend > 0 ? '#34D399' : trend < 0 ? '#F87171' : '#94A3B8' }}>
+          <div className="mt-2 flex items-center gap-1 text-xs font-semibold" style={{ color: trendGood ? '#34D399' : '#F87171' }} title="Dibanding bulan sebelumnya">
             {trend > 0 ? <TrendingUp size={12} /> : trend < 0 ? <TrendingDown size={12} /> : <Minus size={12} />}
             {Math.abs(trend)}%
           </div>

@@ -33,11 +33,11 @@ export default class ErrorBoundary extends Component {
           minHeight: '100vh',
           padding: '2rem',
           fontFamily: 'system-ui, -apple-system, sans-serif',
-          background: '#0f172a',
-          color: '#f1f5f9',
+          background: 'var(--color-surface-1)',
+          color: 'var(--color-slate-heading)',
         }}>
           <div style={{
-            background: '#1e293b',
+            background: 'var(--color-surface-2)',
             borderRadius: '1rem',
             padding: '2rem',
             maxWidth: '500px',
@@ -54,7 +54,7 @@ export default class ErrorBoundary extends Component {
               <details style={{
                 marginBottom: '1.5rem',
                 textAlign: 'left',
-                background: '#0b1220',
+                background: 'var(--color-surface-0)',
                 padding: '1rem',
                 borderRadius: '0.5rem',
                 fontSize: '0.85rem',
@@ -74,7 +74,7 @@ export default class ErrorBoundary extends Component {
                 style={{
                   background: 'transparent',
                   border: '1px solid rgba(148, 163, 184, 0.3)',
-                  color: '#f1f5f9',
+                  color: 'var(--color-slate-heading)',
                   padding: '0.75rem 1.5rem',
                   borderRadius: '0.5rem',
                   cursor: 'pointer',

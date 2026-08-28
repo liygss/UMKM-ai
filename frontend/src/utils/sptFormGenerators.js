@@ -73,10 +73,10 @@ export const INDUK1770_CSS = `
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { background: white; }
 body { font-family: 'Times New Roman', Times, Georgia, serif; color: #000; font-size: 9pt; line-height: 1.25; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-@page { size: 216mm 330mm; margin: 8mm 8mm; }
+@page { size: A4; margin: 8mm; }
 
 /* ---- Page containers ---- */
-.sp-page { width: 100%; min-height: 314mm; page-break-after: always; padding: 0; position: relative; display: flex; flex-direction: column; }
+.sp-page { width: 100%; min-height: 281mm; page-break-after: always; padding: 0; position: relative; display: flex; flex-direction: column; }
 .sp-body { flex: 1; display: flex; flex-direction: column; }
 .sp-body > .sp-pernyataan { margin-top: auto; }
 
@@ -140,7 +140,7 @@ body { font-family: 'Times New Roman', Times, Georgia, serif; color: #000; font-
 .sp-foot { font-size: 6.5pt; color: #333; border: 1px solid #000; border-top: none; padding: 2px 5px; margin-top: 0; }
 
 /* ---- GI Page ---- */
-.sp-gi-page { width: 100%; min-height: 314mm; page-break-after: always; padding: 0; position: relative; display: flex; flex-direction: column; }
+.sp-gi-page { width: 100%; min-height: 281mm; page-break-after: always; padding: 0; position: relative; display: flex; flex-direction: column; }
 .sp-gi-body { padding: 0 4mm; font-size: 7.5pt; line-height: 1.45; flex: 1; }
 .sp-gi-hdr { border: 1.5px solid #000; margin-bottom: 3mm; }
 .sp-gi-hdr-top { display: flex; justify-content: space-between; align-items: stretch; border-bottom: 1.5px solid #000; }
@@ -179,7 +179,10 @@ body { font-family: 'Times New Roman', Times, Georgia, serif; color: #000; font-
 .sp-note { font-size: 6.8pt; margin-top: 1mm; }
 .sp-en { display: block; font-weight: normal; font-size: 6.5pt; color: #333; }
 
-@media print { @page { size: 216mm 330mm; margin: 8mm; } body { font-family: 'Times New Roman', Times, serif; } }
+.sp-page:last-child, .sp-gi-page:last-child { page-break-after: auto; }
+.sp-table, .sp-pernyataan, .sp-sign-row, .sp-foot, .sp-gi-item, .sp-gi-table { page-break-inside: avoid; }
+
+@media print { @page { size: A4; margin: 8mm; } body { font-family: 'Times New Roman', Times, serif; } }
 `
 
 export const PREVIEW_CSS = `
@@ -1130,8 +1133,8 @@ export function buildPages(formType, data, calc, lang = 'bilingual') {
   if (!data || !calc) return []
   
   if (formType === '1770S') {
-    return [generalInstructions1770S(lang), INDUK1770S(data, calc, lang), LAMPIRAN_S_I(data, calc, lang), LAMPIRAN_S_II(data, calc, lang)]
+    return [INDUK1770S(data, calc, lang), LAMPIRAN_S_I(data, calc, lang), LAMPIRAN_S_II(data, calc, lang)]
   } else {
-    return [generalInstructions1770(lang), INDUK1770(data, calc, lang), LAMPIRAN_I_1770(data, calc, lang), LAMPIRAN_II_1770(data, calc, lang), LAMPIRAN_III_1770(data, calc, lang), LAMPIRAN_IV_1770(data, calc, lang)]
+    return [INDUK1770(data, calc, lang), LAMPIRAN_I_1770(data, calc, lang), LAMPIRAN_II_1770(data, calc, lang), LAMPIRAN_III_1770(data, calc, lang), LAMPIRAN_IV_1770(data, calc, lang)]
   }
 }

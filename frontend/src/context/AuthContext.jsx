@@ -39,8 +39,14 @@ export function AuthProvider({ children }) {
     return data
   }
 
-  const register = async (email, password, full_name, company_name) => {
-    const { data } = await client.post('/auth/register', { email, password, full_name, company_name })
+  const register = async (email, password, full_name, company_name, plan) => {
+    const { data } = await client.post('/auth/register', {
+      email,
+      password,
+      full_name,
+      company_name,
+      plan: plan || 'FREE',
+    })
     return data
   }
 

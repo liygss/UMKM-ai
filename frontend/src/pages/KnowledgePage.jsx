@@ -91,8 +91,8 @@ export default function KnowledgePage() {
     return (
       <div className="card text-center py-16">
         <XCircle size={40} className="mx-auto mb-4" style={{ color: '#F87171' }} />
-        <p className="text-lg font-bold" style={{ color: '#F1F5F9' }}>Akses Ditolak</p>
-        <p className="text-sm mt-2" style={{ color: '#94A3B8' }}>Hanya admin yang bisa mengakses halaman ini</p>
+        <p className="text-lg font-bold" style={{ color: 'var(--color-slate-heading)' }}>Akses Ditolak</p>
+        <p className="text-sm mt-2" style={{ color: 'var(--color-slate-body)' }}>Hanya admin yang bisa mengakses halaman ini</p>
       </div>
     )
   }
@@ -104,7 +104,7 @@ export default function KnowledgePage() {
           <h1 className="text-2xl font-extrabold">
             <span className="gradient-text">Knowledge Base</span>
           </h1>
-          <p className="text-sm mt-1" style={{ color: '#94A3B8' }}>Input pengetahuan baru untuk AI chatbot</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--color-slate-body)' }}>Input pengetahuan baru untuk AI chatbot</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -155,7 +155,7 @@ export default function KnowledgePage() {
               placeholder="Tulis atau paste konten pengetahuan di sini...&#10;&#10;Contoh:&#10;## PPh Final UMKM&#10;PPh Final UMKM dikenakan tarif 0,5% dari omzet bruto..."
               required
             />
-            <p className="text-xs mt-1.5" style={{ color: '#64748B' }}>
+            <p className="text-xs mt-1.5" style={{ color: 'var(--color-slate-muted)' }}>
               Gunakan heading markdown (##, ###) untuk memisahkan bagian konten
             </p>
           </div>
@@ -181,13 +181,13 @@ export default function KnowledgePage() {
 
       {/* Daftar knowledge */}
       <div>
-        <h3 className="text-sm font-semibold mb-3" style={{ color: '#CBD5E1' }}>
+        <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-slate-text)' }}>
           Knowledge yang Sudah Diinput ({items.length})
         </h3>
         {loading ? <LoadingSpinner className="mt-6" /> : items.length === 0 ? (
           <div className="card text-center py-10">
             <BookOpen size={32} className="mx-auto mb-3" style={{ color: '#475569' }} />
-            <p className="text-sm" style={{ color: '#64748B' }}>Belum ada knowledge yang diinput</p>
+            <p className="text-sm" style={{ color: 'var(--color-slate-muted)' }}>Belum ada knowledge yang diinput</p>
             <button onClick={() => setShowForm(true)} className="btn-primary text-sm mt-4">
               <Plus size={14} /> Tambah Knowledge Pertama
             </button>
@@ -201,14 +201,14 @@ export default function KnowledgePage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold truncate" style={{ color: '#F1F5F9' }}>
+                    <p className="text-sm font-bold truncate" style={{ color: 'var(--color-slate-heading)' }}>
                       {item.original_filename.replace('.md', '')}
                     </p>
                     <span className="badge text-[10px] shrink-0" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#93C5FD' }}>
                       {item.file_size_bytes} bytes
                     </span>
                   </div>
-                  <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--color-slate-muted)' }}>
                     {formatDateTime(item.created_at)}
                     {item.chunk_count > 0 && <> &middot; {item.chunk_count} chunks</>}
                   </p>
@@ -223,7 +223,7 @@ export default function KnowledgePage() {
                 <button
                   onClick={() => handleDelete(item.id, item.original_filename.replace('.md', ''))}
                   className="shrink-0 p-1.5 rounded-xl transition hover:bg-red-500/10 hover:text-red-400"
-                  style={{ color: '#64748B' }}
+                  style={{ color: 'var(--color-slate-muted)' }}
                   title="Hapus knowledge"
                 >
                   <Trash2 size={14} />
