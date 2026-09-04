@@ -5,6 +5,7 @@ berjalan, laba/rugi berjalan, dan jumlah transaksi.
 
 from dataclasses import dataclass, field
 from datetime import date, timedelta
+import re
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -12,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.accounting.laporan_laba_rugi import get_laporan_laba_rugi
 from app.accounting.neraca_saldo import get_neraca_saldo
 from app.config.settings import settings
-from app.database.models import Akun, JurnalDetail, JurnalUmum, KategoriAkun
+from app.database.models import Akun, JurnalDetail, JurnalUmum, JenisJurnal, KategoriAkun
 
 KODE_AKUN_KAS = "1-1000"
 KODE_AKUN_BANK = "1-1100"
@@ -47,9 +48,13 @@ def get_dashboard_summary(
     db: Session,
     tanggal_per: date | None = None,
     user_id: str | None = None,
+    tanggal_mulai: date | None = None,
 ) -> DashboardSummary:
     tanggal_per = tanggal_per or date.today()
-    awal_bulan = tanggal_per.replace(day=1)
+    if tanggal_mulai:
+        awal_bulan = tanggal_mulai
+    else:
+        awal_bulan = tanggal_per.replace(day=1)
     awal_tahun = tanggal_per.replace(month=1, day=1)
     akhir_bulan_lalu = awal_bulan - timedelta(days=1)
     akhir_tahun_lalu = awal_tahun - timedelta(days=1)
@@ -204,3 +209,76 @@ def get_pendapatan_beban_bulanan(
             )
         cursor = _geser_bulan(cursor, 1)
     return hasil
+
+
+@dataclass
+class StatistikProduk:
+    produk: str
+    nilai: float = 0.0
+    jumlah: int = 0
+
+
+# Awalan kata kerja transaksi yang dipangkas dari deskripsi untuk mengekstrak
+# produk/barang (mis. "Penjualan Rokok" -> "Rokok").
+_PRODUK_PREFIX_PATTERN = re.compile(
+    r"^(?:\s*(?:penjualan|pembelian|pembayaran|setoran|penerimaan|pengeluaran|"
+    r"pendapatan|beban|belanja)\s+)+",
+    re.IGNORECASE,
+)
+
+
+def _normalisasi_produk(deskripsi: str) -> str:
+    """Ekstrak nama produk/barang dari deskripsi transaksi dengan memangkas
+    awalan kata kerja (penjualan/pembelian/pembayaran/dst.). Bila hasil kosong,
+    gunakan deskripsi utuh supaya tidak kehilangan informasi."""
+    if not deskripsi:
+        return "Transaksi"
+    bersih = _PRODUK_PREFIX_PATTERN.sub("", deskripsi).strip()
+    return bersih or deskripsi.strip()
+
+
+def get_statistik_produk(
+    db: Session,
+    tanggal_per: date | None = None,
+    user_id: str | None = None,
+    limit: int = 10,
+) -> list[StatistikProduk]:
+    """
+    Ranking produk/barang (diekstrak dari deskripsi transaksi) berdasarkan:
+      - nilai  : total nominal transaksi yang memuat produk tsb (terbesar)
+      - jumlah : frekuensi transaksi produk tsb (terbanyak)
+
+    Nilai per jurnal = total debit (setara kredit untuk jurnal seimbang), jadi
+    transaksi multi-baris tidak menggandakan nominal. Hanya jurnal UMUM yang
+    dihitung (penyesuaian/penutup diabaikan).
+    """
+    tanggal_per = tanggal_per or date.today()
+    sub = (
+        db.query(
+            JurnalUmum.id.label("jurnal_id"),
+            JurnalUmum.deskripsi.label("deskripsi"),
+            func.coalesce(func.sum(JurnalDetail.debit), 0).label("amt"),
+        )
+        .join(JurnalDetail, JurnalDetail.jurnal_id == JurnalUmum.id)
+        .filter(JurnalUmum.jenis == JenisJurnal.UMUM, JurnalUmum.tanggal <= tanggal_per)
+    )
+    if user_id:
+        sub = sub.filter(JurnalUmum.created_by_id == user_id)
+    rows = sub.group_by(JurnalUmum.id).all()
+
+    agregat: dict[str, dict] = {}
+    for r in rows:
+        amt = float(r.amt)
+        if amt <= 0:
+            continue
+        nama = _normalisasi_produk(str(r.deskripsi or ""))
+        agg = agregat.setdefault(nama, {"nilai": 0.0, "jumlah": 0})
+        agg["nilai"] += amt
+        agg["jumlah"] += 1
+
+    hasil = [
+        StatistikProduk(produk=nama, nilai=round(agg["nilai"], 2), jumlah=agg["jumlah"])
+        for nama, agg in agregat.items()
+    ]
+    hasil.sort(key=lambda p: p.nilai, reverse=True)
+    return hasil[:limit]

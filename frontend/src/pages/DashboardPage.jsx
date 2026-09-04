@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import client from '../api/client'
@@ -6,12 +6,16 @@ import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import StatCard from '../components/StatCard'
 import { MotionBarShape, MotionActiveBar, MotionTooltip } from '../components/MotionChartShapes'
-import { formatRupiah, formatRupiahCompact } from '../utils/formatters'
+import { formatRupiah, formatRupiahCompact, formatDate } from '../utils/formatters'
+import DatePickerField from '../components/DatePickerField'
+import DateRangeField from '../components/DateRangeField'
+import { getDashboardState, setDashboardState, clearDashboard } from '../utils/dashboardStore'
 import { fadeUp, fadeIn, staggerContainer, itemStagger, EASE_GENTLE } from '../utils/motionPresets'
 import { Banknote, TrendingUp, TrendingDown, Wallet, MessageSquare, Upload, Plus, ArrowRight, Activity, Calendar, RefreshCw } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts'
 import InsightCard from '../components/InsightCard'
 import KategoriPengeluaran from '../components/KategoriPengeluaran'
+import ProdukBarang from '../components/ProdukBarang'
 import TemuanPenting from '../components/TemuanPenting'
 import RingkasanPiutangUtang from '../components/RingkasanPiutangUtang'
 
@@ -79,8 +83,8 @@ function BarValueLabel(props) {
       textAnchor="middle"
       fontSize={11}
       fontWeight={700}
-      fill={isLight ? '#0F172A' : '#FFFFFF'}
-      stroke={isLight ? 'none' : '#0B1626'}
+      fill={isLight ? '#0F172A' : '#F4F8FD'}
+      stroke={isLight ? 'none' : '#050A14'}
       strokeWidth={3}
       paintOrder="stroke"
       strokeLinejoin="round"
@@ -130,26 +134,342 @@ function renderActiveShape(props) {
   )
 }
 
-const todayStr = () => new Date().toISOString().split('T')[0]
+function localDateStr(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+const todayStr = () => localDateStr(new Date())
+
+// "2026-08" → "2026-08-31" (hari terakhir pada bulan tersebut)
+function monthEnd(ym) {
+  const [y, m] = ym.split('-').map(Number)
+  const last = new Date(y, m, 0).getDate()
+  return `${ym}-${String(last).padStart(2, '0')}`
+}
+
+// "2026-08" → "Agustus 2026" (nama bulan & tahun, tanpa masalah timezone)
+function formatMonthLabel(ym) {
+  if (!ym) return ''
+  const [y, m] = ym.split('-').map(Number)
+  return new Date(y, m - 1, 1).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
+}
+
+function BarTrendCardInner({ monthly, monthLabel, isLight, barAnimDone }) {
+  const barData = useMemo(
+    () => monthly.map(m => ({ name: m.label, Pendapatan: m.pendapatan, Beban: m.beban, laba_rugi: m.laba_rugi })),
+    [monthly],
+  )
+  const totalBebanPeriode = useMemo(() => monthly.reduce((s, m) => s + m.beban, 0), [monthly])
+  const totalPendapatanPeriode = useMemo(() => monthly.reduce((s, m) => s + m.pendapatan, 0), [monthly])
+  return (
+    <motion.div variants={fadeUp} whileHover={{ y: -4, transition: EASE_GENTLE }} className="card lg:col-span-2">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Pendapatan vs Beban</h3>
+        <span className="text-xs px-2 py-1 rounded-xl" style={{ color: 'var(--color-slate-body)', background: 'var(--color-surface-card)' }}>
+          {monthly.length > 0 ? `${monthly[0].label} - ${monthly[monthly.length - 1].label}` : monthLabel}
+        </span>
+      </div>
+      {barData.length > 0 ? (
+        <>
+          <div className="flex items-center gap-5 mb-1">
+            {BAR_LEGEND.map((item) => (
+              <span key={item.name} className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--color-slate-text)' }}>
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: item.color, boxShadow: `0 0 10px ${item.glow}` }} />
+                {item.name}
+              </span>
+            ))}
+          </div>
+          <ResponsiveContainer width="100%" height={370}>
+            <BarChart data={barData} barCategoryGap="18%" barGap={8} margin={{ top: 28, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.15)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--color-slate-body)' }} axisLine={{ stroke: 'rgba(148, 163, 184, 0.2)' }} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--color-slate-body)' }} tickFormatter={(v) => formatCompact(v)} axisLine={false} tickLine={false} width={52} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.06)' }} />
+              <Bar
+                dataKey="Pendapatan"
+                fill="url(#gradEmerald)"
+                radius={[8, 8, 0, 0]}
+                maxBarSize={52}
+                label={(p) => <BarValueLabel {...p} isLight={isLight} />}
+                isAnimationActive={false}
+                shape={<MotionBarShape animate={!barAnimDone} glowColor={isLight ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.35)'} />}
+                activeBar={<MotionActiveBar glowColor={isLight ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.55)'} />}
+              />
+              <Bar
+                dataKey="Beban"
+                fill="url(#gradRose)"
+                radius={[8, 8, 0, 0]}
+                maxBarSize={52}
+                label={(p) => <BarValueLabel {...p} isLight={isLight} />}
+                isAnimationActive={false}
+                shape={<MotionBarShape animate={!barAnimDone} glowColor={isLight ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.35)'} />}
+                activeBar={<MotionActiveBar glowColor={isLight ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.55)'} />}
+              />
+              <defs>
+                <linearGradient id="gradEmerald" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#4ADE80" />
+                  <stop offset="45%" stopColor="#10B981" />
+                  <stop offset="100%" stopColor="#047857" />
+                </linearGradient>
+                <linearGradient id="gradRose" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#F87171" />
+                  <stop offset="45%" stopColor="#EF4444" />
+                  <stop offset="100%" stopColor="#B91C1C" />
+                </linearGradient>
+              </defs>
+            </BarChart>
+          </ResponsiveContainer>
+          {totalPendapatanPeriode > 0 && totalBebanPeriode === 0 && (
+            <p className="text-xs mt-3" style={{ color: '#FBBF24', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '8px 12px', borderRadius: 12 }}>
+              Belum ada <strong>beban</strong> tercatat pada periode ini — bar beban tidak tampil karena nilainya 0.
+              Upload juga data pengeluaran (mis. pembelian bahan, gaji, sewa) supaya perbandingan pendapatan vs beban terlihat lengkap.
+            </p>
+          )}
+        </>
+      ) : (
+        <div className="flex h-[250px] items-center justify-center text-sm" style={{ color: 'var(--color-slate-muted)' }}>Belum ada data untuk ditampilkan</div>
+      )}
+    </motion.div>
+  )
+}
+const BarTrendCard = memo(BarTrendCardInner)
+
+function KasBankPieCardInner({ data, monthLabel, isLight }) {
+  // State hover dipindah ke dalam kartu supaya hover pie tidak me-render ulang
+  // seluruh dashboard (hanya kartu ini yang berubah).
+  const [pieActiveIndex, setPieActiveIndex] = useState(null)
+  const saldoKas = data.saldo_kas || 0
+  const saldoBank = data.saldo_bank || 0
+  const hasNegative = saldoKas < 0 || saldoBank < 0
+  // Denominator share: jumlah MAGNITUDE (nilai absolut) tiap komponen. Dipakai
+  // untuk persentase legend karena doughnut/bar digambar dari nilai absolut —
+  // memakai total_kas_dan_bank yang bisa negatif → menyebabkan persen raksasa.
+  const absTotal = Math.abs(saldoKas) + Math.abs(saldoBank)
+  const totalForPct = absTotal > 0 ? absTotal : 1
+  const kasPct = absTotal > 0 ? (Math.abs(saldoKas) / absTotal) * 100 : 0
+  const bankPct = absTotal > 0 ? (Math.abs(saldoBank) / absTotal) * 100 : 0
+  const pieData = useMemo(
+    () => [
+      { name: 'Kas', value: Math.abs(saldoKas), isNegative: saldoKas < 0 },
+      { name: 'Bank', value: Math.abs(saldoBank), isNegative: saldoBank < 0 },
+    ].filter(d => d.value > 0),
+    [saldoKas, saldoBank],
+  )
+  const activePieEntry = pieActiveIndex != null ? pieData[pieActiveIndex] : null
+  return (
+    <motion.div variants={fadeUp} whileHover={{ y: -4, transition: EASE_GENTLE }} className="card">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Komposisi Kas & Bank</h3>
+        <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(148, 163, 184, 0.1)', border: '1px solid rgba(148, 163, 184, 0.12)', color: 'var(--color-slate-body)' }}>
+          {monthLabel}
+        </span>
+      </div>
+      {pieData.length > 0 ? (
+        <>
+          <div className="relative">
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <defs>
+                  <linearGradient id="gradKas" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#38BDF8" />
+                    <stop offset="100%" stopColor="#1D4ED8" />
+                  </linearGradient>
+                  <linearGradient id="gradBank" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#2DD4BF" />
+                    <stop offset="100%" stopColor="#0D9488" />
+                  </linearGradient>
+                  <linearGradient id="gradNeg" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#FB7185" />
+                    <stop offset="100%" stopColor="#DC2626" />
+                  </linearGradient>
+                  <filter id="pieGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+                <Pie
+                  data={[{ value: 1 }]}
+                  dataKey="value"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={62}
+                  outerRadius={86}
+                  fill="rgba(148, 163, 184, 0.07)"
+                  stroke="none"
+                  isAnimationActive={false}
+                />
+                <Pie
+                  data={pieData}
+                  dataKey="value"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={62}
+                  outerRadius={86}
+                  paddingAngle={4}
+                  cornerRadius={10}
+                  startAngle={90}
+                  endAngle={-270}
+                  stroke={isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 23, 42, 0.9)'}
+                  strokeWidth={2}
+                  isAnimationActive
+                  animationDuration={900}
+                  animationEasing="ease-out"
+                  filter={isLight ? undefined : 'url(#pieGlow)'}
+                  label={PieValueLabel}
+                  labelLine={{ stroke: 'rgba(148, 163, 184, 0.35)', strokeWidth: 1 }}
+                  activeIndex={pieActiveIndex}
+                  activeShape={(p) => renderActiveShape({ ...p, isLight })}
+                >
+                  {pieData.map((entry, i) => (
+                    <Cell
+                      key={i}
+                      fill={entry.isNegative
+                        ? 'url(#gradNeg)'
+                        : entry.name === 'Kas' ? 'url(#gradKas)' : 'url(#gradBank)'}
+                      onMouseEnter={() => setPieActiveIndex(i)}
+                      onMouseLeave={() => setPieActiveIndex(null)}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(v, name, props) => formatRupiah(v)}
+                  contentStyle={{ background: 'var(--color-tooltip-bg)', border: '1px solid var(--color-tooltip-border)', borderRadius: 12, boxShadow: '0 8px 24px var(--color-shadow)' }}
+                  labelStyle={{ color: 'var(--color-slate-heading)' }}
+                  itemStyle={{ color: 'var(--color-slate-text)' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+              <motion.div
+                key="total"
+                initial={{ opacity: 0, y: 6, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={EASE_GENTLE}
+                className="flex flex-col items-center"
+              >
+                {activePieEntry ? (
+                  <>
+                    <span className="max-w-[110px] truncate text-[10px] font-bold uppercase tracking-wider" style={{ color: activePieEntry.isNegative ? 'var(--color-accent-red)' : 'var(--color-slate-muted)' }}>
+                      {activePieEntry.name}
+                    </span>
+                    <span className="text-lg font-extrabold" style={{ color: activePieEntry.isNegative ? 'var(--color-accent-red)' : 'var(--color-slate-heading)' }}>
+                      {formatRupiahCompact(activePieEntry.value)}
+                    </span>
+                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md mt-0.5" style={{ background: COLORS[pieActiveIndex] + '1f', color: 'var(--color-slate-text)' }}>
+                      {((activePieEntry.value / totalForPct) * 100).toFixed(0)}%
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-slate-muted)' }}>
+                      Total Kas & Bank
+                    </span>
+                    <span className="text-lg font-extrabold" style={{ color: 'var(--color-slate-heading)' }}>
+                      {formatRupiahCompact(data.total_kas_dan_bank)}
+                    </span>
+                  </>
+                )}
+              </motion.div>
+            </div>
+          </div>
+          <motion.div
+            variants={staggerContainer(0.12, 0.2)}
+            initial="hidden"
+            animate="visible"
+            className="mt-4 space-y-2.5"
+          >
+            {(saldoKas !== 0 || saldoBank !== 0) && [
+              { name: 'Kas', value: Math.abs(saldoKas), isNegative: saldoKas < 0, pct: kasPct },
+              { name: 'Bank', value: Math.abs(saldoBank), isNegative: saldoBank < 0, pct: bankPct },
+            ].filter(d => d.value > 0).map((entry, i) => {
+              const color = entry.isNegative ? NEGATIVE_COLOR : COLORS[i]
+              return (
+                <motion.div
+                  key={entry.name}
+                  variants={itemStagger}
+                  whileHover={{ x: 6, transition: EASE_GENTLE }}
+                  className="rounded-xl px-3.5 py-2.5 transition-all duration-200 hover:bg-white/[0.03]"
+                  style={{ background: 'rgba(148, 163, 184, 0.06)', border: '1px solid rgba(148, 163, 184, 0.1)' }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: 'var(--color-slate-text)' }}>
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: color, boxShadow: `0 0 10px ${color}66` }} />
+                      {entry.name}{entry.isNegative ? ' (Overdraft)' : ''}
+                    </span>
+                    <span className="text-sm font-extrabold" style={{ color: entry.isNegative ? 'var(--color-accent-red)' : 'var(--color-slate-heading)' }}>
+                      {entry.isNegative ? '-' : ''}{formatRupiah(Math.abs(entry.value))}
+                      <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: `${color}1f`, color }}>
+                        {entry.pct.toFixed(0)}%
+                      </span>
+                    </span>
+                  </div>
+                  <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(148, 163, 184, 0.12)' }}>
+                    <motion.div
+                      className="h-full rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${entry.pct}%` }}
+                      transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      style={{ background: `linear-gradient(90deg, ${color}cc, ${color})` }}
+                    />
+                  </div>
+                </motion.div>
+              )
+            })}
+          </motion.div>
+        </>
+      ) : (
+        <div className="flex h-[250px] items-center justify-center text-sm" style={{ color: 'var(--color-slate-muted)' }}>Belum ada data saldo</div>
+      )}
+    </motion.div>
+  )
+}
+const KasBankPieCard = memo(KasBankPieCardInner)
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const { mode } = useTheme()
   const isLight = mode === 'light'
-  const [data, setData] = useState(null)
-  const [monthly, setMonthly] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [selectedDate, setSelectedDate] = useState('')
-  const [debouncedDate, setDebouncedDate] = useState(null)
-  const [isAuto, setIsAuto] = useState(true)
-  const autoRef = useRef(true)
+  // Satu response /dashboard/overview berisi summary + monthly + alerts +
+  // piutang/utang + kategori → 1 request saja (yang dulu 5 paralel).
+  // State di-hidrasi dari cache level-modul supaya balik dari halaman lain
+  // langsung tampil tanpa skeleton & tanpa fetch ulang (kecuali data baru).
+  const cachedInit = useRef(null)
+  if (cachedInit.current === null) cachedInit.current = getDashboardState()
+  const cachedData = cachedInit.current?.data ?? null
+  const [overview, setOverview] = useState(cachedData)
+  const data = overview?.summary ?? null
+  const [loading, setLoading] = useState(!cachedData)
+  // Referensi turunan stabil dari satu response overview supaya widget memo
+  // (StatCard, TemuanPenting, dll.) hanya re-render saat data aslinya berubah.
+  // Dideklarasikan sebelum effect/useMemo lain yang memakainya (TDZ aman).
+  const monthly = useMemo(() => overview?.monthly ?? [], [overview])
+  const alerts = useMemo(() => overview?.alerts ?? [], [overview])
+  const piutangUtang = useMemo(() => overview?.piutang_utang ?? null, [overview])
+  const kategori = useMemo(() => overview?.kategori ?? [], [overview])
+  const produk = useMemo(() => overview?.produk ?? [], [overview])
+  // Periode dashboard = bulan (format "YYYY-MM"). Manual mengirim tanggal_per
+  // = hari terakhir bulan tsb supaya angka mewakili full bulan; Otomatis ikut
+  // tanggal data terbaru dari backend.
+  const [selectedMonth, setSelectedMonth] = useState(cachedInit.current?.selectedMonth ?? '')
+  const [debouncedMonth, setDebouncedMonth] = useState(
+    cachedInit.current && !cachedInit.current.isAuto ? cachedInit.current.selectedMonth : null,
+  )
+  const [isAuto, setIsAuto] = useState(cachedInit.current?.isAuto ?? true)
+  const autoRef = useRef(cachedInit.current?.isAuto ?? true)
   const debounceRef = useRef(null)
-  const [pieActiveIndex, setPieActiveIndex] = useState(null)
+  // Tandai navigasi periode dari aksi user (ganti bulan / Otomatis / Bulan Ini) —
+  // dipakai memutuskan apakah fetch perlu jalan saat debouncedMonth berubah.
+  const monthNavRef = useRef(false)
+  const initDoneRef = useRef(false)
   // Animasi grow bar hanya diputar sekali saat data pertama tampil;
   // auto-refresh diam (interval/fokus tab) tidak boleh mengulang animasinya.
-  const [barAnimDone, setBarAnimDone] = useState(false)
-  const [alerts, setAlerts] = useState([])
-  const [piutangUtang, setPiutangUtang] = useState(null)
+  const [barAnimDone, setBarAnimDone] = useState(cachedInit.current?.barAnimDone ?? false)
   // Saat backend belum siap (baru dinyalakan), tampilkan pemuatan & coba ulang
   // otomatis beberapa kali supaya user tidak salah kira dashboard gagal.
   const [connecting, setConnecting] = useState(false)
@@ -157,57 +477,129 @@ export default function DashboardPage() {
   const [gaveUp, setGaveUp] = useState(false)
   const CONNECT_MAX_ATTEMPT = 4
 
-  const handleDateChange = (newDate) => {
+  // Date range state untuk custom period view
+  const [rangeStartDate, setRangeStartDate] = useState('')
+  const [rangeEndDate, setRangeEndDate] = useState('')
+  const [debouncedRangeStart, setDebouncedRangeStart] = useState('')
+  const [debouncedRangeEnd, setDebouncedRangeEnd] = useState('')
+  const rangeDebounceRef = useRef(null)
+
+  const handleDateChange = (newMonth) => {
+    monthNavRef.current = true
     autoRef.current = false
     setIsAuto(false)
-    setSelectedDate(newDate)
+    setSelectedMonth(newMonth)
+    setRangeStartDate('')
+    setRangeEndDate('')
+    setDebouncedRangeStart('')
+    setDebouncedRangeEnd('')
     clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => setDebouncedDate(newDate), 300)
+    debounceRef.current = setTimeout(() => setDebouncedMonth(newMonth), 300)
   }
 
   const handleAuto = () => {
+    monthNavRef.current = true
     autoRef.current = true
     setIsAuto(true)
-    setSelectedDate('')
+    setSelectedMonth('')
+    setRangeStartDate('')
+    setRangeEndDate('')
+    setDebouncedRangeStart('')
+    setDebouncedRangeEnd('')
     clearTimeout(debounceRef.current)
-    setDebouncedDate(null)
+    setDebouncedMonth(null)
   }
 
   const handleToday = () => {
+    monthNavRef.current = true
     autoRef.current = false
     setIsAuto(false)
-    const t = todayStr()
-    setSelectedDate(t)
-    setDebouncedDate(t)
+    const ym = todayStr().slice(0, 7)
+    setSelectedMonth(ym)
+    setRangeStartDate('')
+    setRangeEndDate('')
+    setDebouncedRangeStart('')
+    setDebouncedRangeEnd('')
+    setDebouncedMonth(ym)
+  }
+
+  const handleRangeStartChange = (v) => {
+    monthNavRef.current = true
+    autoRef.current = false
+    setIsAuto(false)
+    setSelectedMonth('')
+    setDebouncedMonth(null)
+    setRangeStartDate(v)
+    clearTimeout(rangeDebounceRef.current)
+    rangeDebounceRef.current = setTimeout(() => setDebouncedRangeStart(v), 300)
+  }
+
+  const handleRangeEndChange = (v) => {
+    monthNavRef.current = true
+    autoRef.current = false
+    setIsAuto(false)
+    setSelectedMonth('')
+    setDebouncedMonth(null)
+    setRangeEndDate(v)
+    clearTimeout(rangeDebounceRef.current)
+    rangeDebounceRef.current = setTimeout(() => setDebouncedRangeEnd(v), 300)
   }
 
   const openChatbot = () => window.dispatchEvent(new Event('open-chatbot'))
 
   const fetchData = useCallback((silent = false) => {
     if (!silent) setLoading(true)
-    const params = debouncedDate ? { tanggal_per: debouncedDate } : {}
-    client.get('/dashboard/summary', { params })
+    let params = {}
+    if (debouncedRangeStart && debouncedRangeEnd) {
+      params = { tanggal_mulai: debouncedRangeStart, tanggal_per: debouncedRangeEnd }
+    } else if (debouncedMonth) {
+      params = { tanggal_per: monthEnd(debouncedMonth) }
+    }
+    client.get('/dashboard/overview', { params })
       .then(r => {
-        setData(r.data)
+        setOverview(r.data)
         setConnecting(false)
         setAttempt(0)
         setGaveUp(false)
-        if (autoRef.current && r.data.tanggal_per) setSelectedDate(r.data.tanggal_per)
+        const autoMonth = autoRef.current && r.data.summary.tanggal_per
+          ? r.data.summary.tanggal_per.slice(0, 7)
+          : ''
+        if (autoRef.current) setSelectedMonth(autoMonth)
+        // Simpan ke cache supaya balik dari halaman lain tidak perlu fetch ulang.
+        setDashboardState({
+          key: debouncedMonth || 'auto',
+          data: r.data,
+          isAuto: autoRef.current,
+          selectedMonth: autoRef.current ? autoMonth : (debouncedMonth || ''),
+          barAnimDone: getDashboardState().barAnimDone,
+        })
       })
       .catch(() => setConnecting(true))
-    client.get('/dashboard/monthly', { params })
-      .then(r => setMonthly(r.data))
-      .catch(() => {})
-    client.get('/dashboard/alerts', { params })
-      .then(r => setAlerts(r.data.alerts))
-      .catch(() => setAlerts([]))
-    client.get('/dashboard/piutang-utang', { params })
-      .then(r => setPiutangUtang(r.data))
-      .catch(() => setPiutangUtang(null))
       .finally(() => { if (!silent) setLoading(false) })
-  }, [debouncedDate])
+  }, [debouncedMonth])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  // Mount sekali: kalau cache periode tersedia (balik dari halaman lain),
+  // jangan fetch ulang sama sekali. Fetch hanya saat belum ada cache
+  // (kunjungan pertama / ada data baru sementara dashboard tidak aktif).
+  useEffect(() => {
+    if (initDoneRef.current) return undefined
+    initDoneRef.current = true
+    if (cachedInit.current?.data) {
+      autoRef.current = cachedInit.current.isAuto
+      return undefined
+    }
+    fetchData()
+    return undefined
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Ganti periode lewat aksi user (pilih bulan / Otomatis / Bulan Ini) →
+  // fetch data periode tersebut. Navigasi dari halaman lain (mount) tidak
+  // pernah memicu fetch di sini karena monthNavRef masih false.
+  useEffect(() => {
+    if (monthNavRef.current) fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedMonth])
 
   // Retry otomatis saat koneksi gagal: backend kadang baru hidup, jangan
   // langsung tampilkan "gagal muat". Setelah batas percobaan habis barulah
@@ -228,30 +620,53 @@ export default function DashboardPage() {
   }, [connecting, attempt, data, fetchData])
 
   // Setelah animasi grow bar pertama selesai (~1.6s), matikan animasi supaya
-  // refresh diam tiap 15 detik tidak membuat bar "tumbuh" ulang.
+  // navigasi balik tidak mengulang animasi (flag ikut disimpan di cache).
   useEffect(() => {
     if (loading || barAnimDone || monthly.length === 0) return undefined
     const t = setTimeout(() => setBarAnimDone(true), 1600)
     return () => clearTimeout(t)
   }, [loading, monthly, barAnimDone])
 
-  // Auto-refresh: muat ulang data saat tab fokus/terlihat kembali + interval,
-  // dan saat ada event 'data-changed' (misal data diupload/dihapus dari halaman lain)
-  // supaya dashboard selalu sinkron dan ikut kosong saat semua data dihapus.
+  // Sinkronkan flag animasi ke cache level-modul.
   useEffect(() => {
-    const refresh = () => { if (document.visibilityState === 'visible') fetchData(true) }
-    const onDataChanged = () => fetchData(true)
-    window.addEventListener('focus', refresh)
-    window.addEventListener('data-changed', onDataChanged)
-    document.addEventListener('visibilitychange', refresh)
-    const timer = setInterval(() => fetchData(true), 15000)
-    return () => {
-      window.removeEventListener('focus', refresh)
-      window.removeEventListener('data-changed', onDataChanged)
-      document.removeEventListener('visibilitychange', refresh)
-      clearInterval(timer)
+    const cached = getDashboardState()
+    if (cached?.data && cached.barAnimDone !== barAnimDone) {
+      setDashboardState({ barAnimDone })
     }
+  }, [barAnimDone])
+
+  // Refresh hanya saat data benar-benar berubah (upload/jurnal baru/hapus file):
+  // buang cache lalu fetch diam-diam. Tidak ada auto-refresh interval/fokus —
+  // balik dari halaman lain tidak boleh memicu render ulang.
+  useEffect(() => {
+    const onDataChanged = () => {
+      clearDashboard()
+      fetchData(true)
+    }
+    window.addEventListener('data-changed', onDataChanged)
+    return () => window.removeEventListener('data-changed', onDataChanged)
   }, [fetchData])
+
+  // Bulan periode terpilih: manual ("YYYY-MM") atau bulan dari data otomatis.
+  const periodMonth = debouncedMonth || (data?.tanggal_per ? data.tanggal_per.slice(0, 7) : todayStr().slice(0, 7))
+  const monthLabel = formatMonthLabel(periodMonth)
+  // Tanggal penuh yang dikirim ke backend (akhir bulan saat manual).
+  const periodDateKey = debouncedMonth ? monthEnd(debouncedMonth) : null
+  const periodCaption = isAuto
+    ? `Periode otomatis · ringkasan s/d ${data ? formatDate(data.tanggal_per) : '…'}`
+    : `Periode: ${monthLabel}`
+
+  // Perbandingan bulan ini vs bulan lalu (%), dari data monthly yang sudah di-fetch.
+  const { deltaPendapatan, deltaBeban, deltaLaba } = useMemo(() => {
+    const delta = (key) => {
+      if (monthly.length < 2) return undefined
+      const prev = monthly[monthly.length - 2][key]
+      if (!prev) return undefined
+      const curr = monthly[monthly.length - 1][key]
+      return Math.round(((curr - prev) / prev) * 100)
+    }
+    return { deltaPendapatan: delta('pendapatan'), deltaBeban: delta('beban'), deltaLaba: delta('laba_rugi') }
+  }, [monthly])
 
   // Selama data belum ada & belum menyerah, tahan skeleton — jangan pernah
   // turun ke render dashboard saat data masih null (menghindari crash).
@@ -293,35 +708,6 @@ export default function DashboardPage() {
 
   const isEmpty = data.jumlah_transaksi_bulan_ini === 0 && data.total_kas_dan_bank === 0
 
-  const barData = monthly.map(m => ({
-    name: m.label,
-    Pendapatan: m.pendapatan,
-    Beban: m.beban,
-    laba_rugi: m.laba_rugi,
-  }))
-  const totalBebanPeriode = monthly.reduce((s, m) => s + m.beban, 0)
-  const totalPendapatanPeriode = monthly.reduce((s, m) => s + m.pendapatan, 0)
-  const pieData = [
-    { name: 'Kas', value: Math.abs(data.saldo_kas), isNegative: data.saldo_kas < 0 },
-    { name: 'Bank', value: Math.abs(data.saldo_bank), isNegative: data.saldo_bank < 0 },
-  ].filter(d => d.value > 0)
-
-  const activePieEntry = pieActiveIndex != null ? pieData[pieActiveIndex] : null
-
-  const selectedMonth = new Date((selectedDate || todayStr()) + 'T00:00:00').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
-
-  // Perbandingan bulan ini vs bulan lalu (%), dari data monthly yang sudah di-fetch.
-  const delta = (key) => {
-    if (monthly.length < 2) return undefined
-    const prev = monthly[monthly.length - 2][key]
-    if (!prev) return undefined
-    const curr = monthly[monthly.length - 1][key]
-    return Math.round(((curr - prev) / prev) * 100)
-  }
-  const deltaPendapatan = delta('pendapatan')
-  const deltaBeban = delta('beban')
-  const deltaLaba = delta('laba_rugi')
-
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
@@ -337,42 +723,44 @@ export default function DashboardPage() {
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--color-slate-body)' }}>Berikut ringkasan keuangan UMKM Anda</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl px-3 py-2 shadow-sm" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)', backdropFilter: 'blur(12px)' }}>
-            <Calendar size={14} style={{ color: '#60A5FA' }} />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={e => handleDateChange(e.target.value)}
-              className="text-sm font-medium bg-transparent outline-none cursor-pointer"
-              style={{ color: 'var(--color-slate-text)' }}
-            />
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2 shadow-sm" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.16)', backdropFilter: 'blur(12px)' }}>
+              <Calendar size={14} style={{ color: 'var(--color-brand-soft)' }} />
+              <DateRangeField
+                startDate={rangeStartDate}
+                endDate={rangeEndDate}
+                onStartChange={handleRangeStartChange}
+                onEndChange={handleRangeEndChange}
+              />
+              <button
+                onClick={handleAuto}
+                className="text-xs font-medium px-2 py-1 rounded-lg transition-all duration-200"
+                style={isAuto
+                  ? { color: 'var(--color-brand-soft)', background: 'rgba(59, 130, 246, 0.16)', border: '1px solid rgba(125, 180, 255, 0.4)' }
+                  : { color: 'var(--color-slate-body)', background: 'transparent' }}
+              >
+                Otomatis
+              </button>
+              <button
+                onClick={handleToday}
+                className="text-xs font-medium px-2 py-1 rounded-lg transition-all duration-200"
+                style={{ color: 'var(--color-brand-soft)', background: 'rgba(59, 130, 246, 0.14)' }}
+              >
+                Bulan Ini
+              </button>
+            </div>
             <button
-              onClick={handleAuto}
-              className="text-xs font-medium px-2 py-1 rounded-lg transition-all duration-200"
-              style={isAuto
-                ? { color: '#60A5FA', background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(96, 165, 250, 0.4)' }
-                : { color: 'var(--color-slate-body)', background: 'transparent' }}
+              onClick={() => fetchData()}
+              title="Segarkan data"
+              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-200 hover:bg-blue-500/10"
+              style={{ color: 'var(--color-brand-soft)', background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.16)' }}
             >
-              Otomatis
-            </button>
-            <button
-              onClick={handleToday}
-              className="text-xs font-medium px-2 py-1 rounded-lg transition-all duration-200"
-              style={{ color: '#60A5FA', background: 'rgba(59, 130, 246, 0.12)' }}
-            >
-              Hari Ini
+              <RefreshCw size={13} />
+              Segarkan
             </button>
           </div>
-          <button
-            onClick={() => fetchData()}
-            title="Segarkan data"
-            className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-200 hover:bg-blue-500/10"
-            style={{ color: '#60A5FA', background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)' }}
-          >
-            <RefreshCw size={13} />
-            Segarkan
-          </button>
+          <p className="text-[11px] font-medium" style={{ color: 'var(--color-slate-muted)' }}>{periodCaption}</p>
         </div>
       </motion.div>
 
@@ -431,7 +819,7 @@ export default function DashboardPage() {
         >
           <Activity size={16} style={{ color: 'var(--color-slate-muted)' }} />
           <span>Belum ada data transaksi untuk periode ini. Data yang diupload atau dihapus akan langsung terlihat di dashboard.</span>
-          <Link to="/upload" className="ml-auto text-xs font-semibold whitespace-nowrap" style={{ color: '#60A5FA' }}>Upload File</Link>
+          <Link to="/upload" className="ml-auto text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--color-brand-soft)' }}>Upload File</Link>
         </motion.div>
       )}
       <motion.div
@@ -440,269 +828,20 @@ export default function DashboardPage() {
         animate="visible"
         className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4"
       >
-        <StatCard title="Saldo Kas" value={data.saldo_kas} format={formatRupiahCompact} icon={Wallet} color={data.saldo_kas >= 0 ? 'indigo' : 'rose'} />
-        <StatCard title="Saldo Bank" value={data.saldo_bank} format={formatRupiahCompact} icon={Wallet} color={data.saldo_bank >= 0 ? 'indigo' : 'rose'} />
-        <StatCard title={`Pendapatan ${selectedMonth}`} value={data.pendapatan_bulan_ini} format={formatRupiahCompact} icon={TrendingUp} color="emerald" trend={deltaPendapatan} />
-        <StatCard title={`Beban ${selectedMonth}`} value={data.beban_bulan_ini} format={formatRupiahCompact} icon={TrendingDown} color="rose" trend={deltaBeban} trendUpIsGood={false} />
-        <StatCard title={`Laba/Rugi ${selectedMonth}`} value={data.laba_rugi_bulan_ini} format={formatRupiahCompact} icon={Banknote} color={data.laba_rugi_bulan_ini >= 0 ? 'emerald' : 'rose'} trend={deltaLaba} />
+        <StatCard title="Saldo Kas" value={data.saldo_kas} format={formatRupiahCompact} icon={Wallet} color="indigo" />
+        <StatCard
+          title={data.saldo_bank < 0 ? 'Overdraft Bank' : 'Saldo Bank'}
+          value={Math.abs(data.saldo_bank)}
+          format={formatRupiahCompact}
+          icon={Wallet}
+          color={data.saldo_bank < 0 ? 'rose' : 'indigo'}
+        />
+        <StatCard title={`Pendapatan ${monthLabel}`} value={data.pendapatan_bulan_ini} format={formatRupiahCompact} icon={TrendingUp} color="emerald" trend={deltaPendapatan} />
+        <StatCard title={`Beban ${monthLabel}`} value={data.beban_bulan_ini} format={formatRupiahCompact} icon={TrendingDown} color="rose" trend={deltaBeban} trendUpIsGood={false} />
+        <StatCard title={`Laba/Rugi ${monthLabel}`} value={data.laba_rugi_bulan_ini} format={formatRupiahCompact} icon={Banknote} color={data.laba_rugi_bulan_ini >= 0 ? 'emerald' : 'rose'} trend={deltaLaba} />
       </motion.div>
 
-      {/* Charts */}
-      <motion.div
-        key={debouncedDate || 'auto'}
-        variants={staggerContainer(0.1, 0.05)}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
-      >
-        <motion.div variants={fadeUp} whileHover={{ y: -4, transition: EASE_GENTLE }} className="card lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Pendapatan vs Beban</h3>
-            <span className="text-xs px-2 py-1 rounded-xl" style={{ color: 'var(--color-slate-body)', background: 'var(--color-surface-card)' }}>
-              {monthly.length > 0 ? `${monthly[0].label} - ${monthly[monthly.length - 1].label}` : selectedMonth}
-            </span>
-          </div>
-          {barData.length > 0 ? (
-            <>
-              <div className="flex items-center gap-5 mb-1">
-                {BAR_LEGEND.map((item) => (
-                  <span key={item.name} className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--color-slate-text)' }}>
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: item.color, boxShadow: `0 0 10px ${item.glow}` }} />
-                    {item.name}
-                  </span>
-                ))}
-              </div>
-              <ResponsiveContainer width="100%" height={370}>
-                <BarChart data={barData} barCategoryGap="18%" barGap={8} margin={{ top: 28, right: 12, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.15)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--color-slate-body)' }} axisLine={{ stroke: 'rgba(148, 163, 184, 0.2)' }} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: 'var(--color-slate-body)' }} tickFormatter={(v) => formatCompact(v)} axisLine={false} tickLine={false} width={52} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.06)' }} />
-                  <Bar
-                    dataKey="Pendapatan"
-                    fill="url(#gradEmerald)"
-                    radius={[8, 8, 0, 0]}
-                    maxBarSize={52}
-                    label={(p) => <BarValueLabel {...p} isLight={isLight} />}
-                    isAnimationActive={false}
-                    shape={<MotionBarShape animate={!barAnimDone} glowColor={isLight ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.35)'} />}
-                    activeBar={<MotionActiveBar glowColor={isLight ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.55)'} />}
-                  />
-                  <Bar
-                    dataKey="Beban"
-                    fill="url(#gradRose)"
-                    radius={[8, 8, 0, 0]}
-                    maxBarSize={52}
-                    label={(p) => <BarValueLabel {...p} isLight={isLight} />}
-                    isAnimationActive={false}
-                    shape={<MotionBarShape animate={!barAnimDone} glowColor={isLight ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.35)'} />}
-                    activeBar={<MotionActiveBar glowColor={isLight ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.55)'} />}
-                  />
-                  <defs>
-                    <linearGradient id="gradEmerald" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#4ADE80" />
-                      <stop offset="45%" stopColor="#10B981" />
-                      <stop offset="100%" stopColor="#047857" />
-                    </linearGradient>
-                    <linearGradient id="gradRose" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#F87171" />
-                      <stop offset="45%" stopColor="#EF4444" />
-                      <stop offset="100%" stopColor="#B91C1C" />
-                    </linearGradient>
-                  </defs>
-                </BarChart>
-              </ResponsiveContainer>
-              {totalPendapatanPeriode > 0 && totalBebanPeriode === 0 && (
-                <p className="text-xs mt-3" style={{ color: '#FBBF24', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '8px 12px', borderRadius: 12 }}>
-                  Belum ada <strong>beban</strong> tercatat pada periode ini — bar beban tidak tampil karena nilainya 0.
-                  Upload juga data pengeluaran (mis. pembelian bahan, gaji, sewa) supaya perbandingan pendapatan vs beban terlihat lengkap.
-                </p>
-              )}
-            </>
-          ) : (
-            <div className="flex h-[250px] items-center justify-center text-sm" style={{ color: 'var(--color-slate-muted)' }}>Belum ada data untuk ditampilkan</div>
-          )}
-        </motion.div>
-
-        <motion.div variants={fadeUp} whileHover={{ y: -4, transition: EASE_GENTLE }} className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Komposisi Kas & Bank</h3>
-            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(148, 163, 184, 0.1)', border: '1px solid rgba(148, 163, 184, 0.12)', color: 'var(--color-slate-body)' }}>
-              {selectedMonth}
-            </span>
-          </div>
-          {pieData.length > 0 ? (
-            <>
-              <div className="relative">
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
-                    <defs>
-                      <linearGradient id="gradKas" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#38BDF8" />
-                        <stop offset="100%" stopColor="#1D4ED8" />
-                      </linearGradient>
-                      <linearGradient id="gradBank" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#2DD4BF" />
-                        <stop offset="100%" stopColor="#0D9488" />
-                      </linearGradient>
-                      <linearGradient id="gradNeg" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#FB7185" />
-                        <stop offset="100%" stopColor="#DC2626" />
-                      </linearGradient>
-                      <filter id="pieGlow" x="-20%" y="-20%" width="140%" height="140%">
-                        <feGaussianBlur stdDeviation="3" result="blur" />
-                        <feMerge>
-                          <feMergeNode in="blur" />
-                          <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                      </filter>
-                    </defs>
-                    <Pie
-                      data={[{ value: 1 }]}
-                      dataKey="value"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={62}
-                      outerRadius={86}
-                      fill="rgba(148, 163, 184, 0.07)"
-                      stroke="none"
-                      isAnimationActive={false}
-                    />
-                    <Pie
-                      data={pieData}
-                      dataKey="value"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={62}
-                      outerRadius={86}
-                      paddingAngle={4}
-                      cornerRadius={10}
-                      startAngle={90}
-                      endAngle={-270}
-                      stroke={isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 23, 42, 0.9)'}
-                      strokeWidth={2}
-                      isAnimationActive
-                      animationDuration={900}
-                      animationEasing="ease-out"
-                      filter={isLight ? undefined : 'url(#pieGlow)'}
-                      label={PieValueLabel}
-                      labelLine={{ stroke: 'rgba(148, 163, 184, 0.35)', strokeWidth: 1 }}
-                      activeIndex={pieActiveIndex}
-                      activeShape={(p) => renderActiveShape({ ...p, isLight })}
-                    >
-                      {pieData.map((entry, i) => (
-                        <Cell
-                          key={i}
-                          fill={entry.isNegative
-                            ? 'url(#gradNeg)'
-                            : entry.name === 'Kas' ? 'url(#gradKas)' : 'url(#gradBank)'}
-                          onMouseEnter={() => setPieActiveIndex(i)}
-                          onMouseLeave={() => setPieActiveIndex(null)}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(v, name, props) => `${props.payload.isNegative ? '-' : ''}${formatRupiah(v)}`}
-                      contentStyle={{ background: 'var(--color-tooltip-bg)', border: '1px solid var(--color-tooltip-border)', borderRadius: 12, boxShadow: '0 8px 24px var(--color-shadow)' }}
-                      labelStyle={{ color: 'var(--color-slate-heading)' }}
-                      itemStyle={{ color: 'var(--color-slate-text)' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <motion.div
-                    key="total"
-                    initial={{ opacity: 0, y: 6, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={EASE_GENTLE}
-                    className="flex flex-col items-center"
-                  >
-                    {activePieEntry ? (
-                      <>
-                        <span className="max-w-[110px] truncate text-[10px] font-bold uppercase tracking-wider" style={{ color: activePieEntry.isNegative ? 'var(--color-accent-red)' : 'var(--color-slate-muted)' }}>
-                          {activePieEntry.name}
-                        </span>
-                        <span className="text-lg font-extrabold" style={{ color: activePieEntry.isNegative ? 'var(--color-accent-red)' : 'var(--color-slate-heading)' }}>
-                          {activePieEntry.isNegative ? '-' : ''}{formatRupiahCompact(activePieEntry.value)}
-                        </span>
-                        <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md mt-0.5" style={{ background: (activePieEntry.isNegative ? NEGATIVE_COLOR : COLORS[pieActiveIndex]) + '1f', color: activePieEntry.isNegative ? 'var(--color-accent-red)' : 'var(--color-slate-text)' }}>
-                          {((activePieEntry.value / Math.max(data.total_kas_dan_bank, 1)) * 100).toFixed(0)}%
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-slate-muted)' }}>
-                          Total Kas
-                        </span>
-                        <span className="text-lg font-extrabold" style={{ color: 'var(--color-slate-heading)' }}>
-                          {formatRupiahCompact(data.saldo_kas)}
-                        </span>
-                      </>
-                    )}
-                  </motion.div>
-                </div>
-              </div>
-              <motion.div
-                variants={staggerContainer(0.12, 0.2)}
-                initial="hidden"
-                animate="visible"
-                className="mt-4 space-y-2.5"
-              >
-                {pieData.map((entry, i) => {
-                  const pct = (entry.value / Math.max(data.total_kas_dan_bank, 1)) * 100
-                  const color = entry.isNegative ? NEGATIVE_COLOR : COLORS[i]
-                  return (
-                    <motion.div
-                      key={i}
-                      variants={itemStagger}
-                      whileHover={{ x: 6, transition: EASE_GENTLE }}
-                      className="rounded-xl px-3.5 py-2.5 transition-all duration-200 hover:bg-white/[0.03]"
-                      style={{ background: 'rgba(148, 163, 184, 0.06)', border: '1px solid rgba(148, 163, 184, 0.1)' }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: 'var(--color-slate-text)' }}>
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ background: color, boxShadow: `0 0 10px ${color}66` }} />
-                          {entry.name}
-                        </span>
-                        <span className="text-sm font-extrabold" style={{ color: 'var(--color-slate-heading)' }}>
-                          {entry.isNegative ? '-' : ''}{formatRupiah(entry.value)}
-                          <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: `${color}1f`, color }}>
-                            {pct.toFixed(0)}%
-                          </span>
-                        </span>
-                      </div>
-                      <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(148, 163, 184, 0.12)' }}>
-                        <motion.div
-                          className="h-full rounded-full"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                          style={{ background: `linear-gradient(90deg, ${color}cc, ${color})` }}
-                        />
-                      </div>
-                    </motion.div>
-                  )
-                })}
-              </motion.div>
-            </>
-          ) : (
-            <div className="flex h-[250px] items-center justify-center text-sm" style={{ color: 'var(--color-slate-muted)' }}>Belum ada data saldo</div>
-          )}
-        </motion.div>
-      </motion.div>
-
-      {/* Insight & Kategori */}
-      <motion.div
-        variants={staggerContainer(0.1, 0.15)}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 lg:grid-cols-2 gap-4"
-      >
-        <InsightCard debouncedDate={debouncedDate} />
-        <KategoriPengeluaran debouncedDate={debouncedDate} />
-      </motion.div>
-
-      {/* Summary Row */}
+      {/* Summary Tahun Berjalan */}
       <motion.div
         variants={staggerContainer(0.1, 0.15)}
         initial="hidden"
@@ -725,7 +864,31 @@ export default function DashboardPage() {
         </motion.div>
       </motion.div>
 
-      {/* Temuan Penting & Piutang/Utang */}
+      {/* Charts */}
+      <motion.div
+        key={periodDateKey || 'auto'}
+        variants={staggerContainer(0.1, 0.05)}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+      >
+        <BarTrendCard monthly={monthly} monthLabel={monthLabel} isLight={isLight} barAnimDone={barAnimDone} />
+        <KasBankPieCard data={data} monthLabel={monthLabel} isLight={isLight} />
+      </motion.div>
+
+      {/* Ringkasan Piutang/Utang & Kategori & Produk */}
+      <motion.div
+        variants={staggerContainer(0.1, 0.15)}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+      >
+        <RingkasanPiutangUtang data={piutangUtang} />
+        <KategoriPengeluaran debouncedDate={periodDateKey} items={kategori} />
+        <ProdukBarang items={produk} />
+      </motion.div>
+
+      {/* Temuan Penting & Insight AI */}
       <motion.div
         variants={staggerContainer(0.1, 0.15)}
         initial="hidden"
@@ -733,7 +896,7 @@ export default function DashboardPage() {
         className="grid grid-cols-1 lg:grid-cols-3 gap-4"
       >
         <TemuanPenting alerts={alerts} />
-        <RingkasanPiutangUtang data={piutangUtang} />
+        <InsightCard debouncedDate={periodDateKey} />
       </motion.div>
     </div>
   )

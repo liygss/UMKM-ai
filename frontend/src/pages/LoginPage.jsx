@@ -125,7 +125,7 @@ export default function LoginPage() {
               style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border-soft)', backdropFilter: 'blur(24px)', boxShadow: '0 24px 80px rgba(0, 0, 0, 0.2)' }}
             >
               <div className="mb-8">
-                <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-semibold mb-4" style={{ background: 'rgba(59,130,246,0.12)', color: '#93C5FD', border: '1px solid rgba(59,130,246,0.25)' }}>
+                <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-semibold mb-4" style={{ background: 'rgba(59,130,246,0.14)', color: 'var(--color-accent-blue)', border: '1px solid rgba(96,165,250,0.28)' }}>
                   <CheckCircle2 size={12} /> Selamat Datang Kembali
                 </div>
                 <h2 className="text-2xl font-[900] tracking-tight" style={{ color: 'var(--color-slate-heading)' }}>Masuk ke Akun</h2>
@@ -147,7 +147,7 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <div className="flex justify-end -mt-2 animate-slide-up delay-150">
-                  <Link to="/forgot-password" className="text-xs font-medium transition hover:opacity-80" style={{ color: '#60A5FA' }}>
+                  <Link to="/forgot-password" className="text-xs font-medium transition hover:opacity-80" style={{ color: 'var(--color-brand-soft)' }}>
                     Lupa password?
                   </Link>
                 </div>
@@ -164,7 +164,7 @@ export default function LoginPage() {
 
               <p className="mt-6 text-center text-sm animate-slide-up delay-300" style={{ color: 'var(--color-slate-body)' }}>
                 Belum punya akun?{' '}
-                <Link to="/register" className="font-semibold transition hover:opacity-80" style={{ color: '#60A5FA' }}>Daftar Gratis</Link>
+                <Link to="/register" className="font-semibold transition hover:opacity-80" style={{ color: 'var(--color-brand-soft)' }}>Daftar Gratis</Link>
               </p>
             </div>
           </div>

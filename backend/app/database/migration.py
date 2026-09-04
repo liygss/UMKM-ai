@@ -133,11 +133,44 @@ def _repair_plan_column() -> None:
         ))
 
 
+def _ensure_indexes() -> None:
+    """Pastikan index penting ada (idempotent) — terutama untuk DB lama yang
+    dibuat sebelum index deklaratif ditambahkan di model.
+
+    Dashboard & laporan hampir selalu memfilter (created_by_id, tanggal),
+    jadi index komposit ini mencegah full-scan jurnal_umum per request.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    if not inspector.has_table("jurnal_umum"):
+        return
+    with engine.begin() as conn:
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_jurnal_umum_created_tanggal "
+            "ON jurnal_umum (created_by_id, tanggal)"
+        ))
+    if not inspector.has_table("jurnal_detail"):
+        return
+    with engine.begin() as conn:
+        # Jurnal detail selalu di-join via jurnal_id & di-agregasi per akun_id;
+        # tanpa index ini query dashboard/laporan full-scan puluhan ribu baris.
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_jurnal_detail_jurnal_id "
+            "ON jurnal_detail (jurnal_id)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_jurnal_detail_akun_id "
+            "ON jurnal_detail (akun_id)"
+        ))
+
+
 def create_tables() -> None:
     logger.info("Membuat tabel database (jika belum ada)...")
     Base.metadata.create_all(bind=engine)
     _auto_migrate()
     _repair_plan_column()
+    _ensure_indexes()
     logger.info("Tabel database siap.")
 
 

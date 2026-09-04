@@ -243,16 +243,23 @@ def neraca_saldo(
 @router.get("/laporan/laba-rugi", response_model=LaporanLabaRugiResponse)
 def laporan_laba_rugi(
     tanggal_per: date | None = None,
+    tanggal_mulai: date | None = None,
+    tanggal_akhir: date | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_active_user),
 ) -> LaporanLabaRugiResponse:
     try:
-        hasil = laba_rugi_engine.get_laporan_laba_rugi(db, tanggal_per, user_id=current_user.id)
+        hasil = laba_rugi_engine.get_laporan_laba_rugi(
+            db, tanggal_per, user_id=current_user.id,
+            tanggal_mulai=tanggal_mulai, tanggal_akhir=tanggal_akhir,
+        )
     except Exception as exc:
         logger.error("Gagal menghitung laporan laba rugi: %s", exc)
         raise HTTPException(status_code=500, detail=f"Gagal menghitung laporan laba rugi: {exc}") from exc
     return LaporanLabaRugiResponse(
         tanggal_per=hasil.tanggal_per,
+        tanggal_mulai=tanggal_mulai,
+        tanggal_akhir=tanggal_akhir,
         pendapatan=hasil.pendapatan,
         hpp=hasil.hpp,
         beban_operasional=hasil.beban_operasional,

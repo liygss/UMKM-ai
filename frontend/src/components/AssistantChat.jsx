@@ -48,7 +48,7 @@ export default function AssistantChat({
   return (
     <div className={`relative flex flex-col ${className}`}>
       {/* Top brand glow line */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-24" style={{ background: 'linear-gradient(180deg, rgba(59,130,246,0.16), transparent)' }} />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-24" style={{ background: 'linear-gradient(180deg, rgba(59,130,246,0.2), transparent)' }} />
 
       {/* Header */}
       {!hideHeader && (
@@ -105,8 +105,8 @@ export default function AssistantChat({
               transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.08 }}
               className="mb-5"
             >
-              <div className="rounded-2xl p-3.5" style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.16), rgba(59,130,246,0.06))', border: '1px solid rgba(59,130,246,0.22)', boxShadow: '0 8px 26px var(--color-brand-glow)' }}>
-                <Sparkles size={20} style={{ color: '#60A5FA' }} />
+              <div className="rounded-2xl p-3.5" style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.2), rgba(59,130,246,0.08))', border: '1px solid rgba(96, 165, 250, 0.28)', boxShadow: '0 8px 26px var(--color-brand-glow)' }}>
+                <Sparkles size={20} style={{ color: 'var(--color-brand-soft)' }} />
               </div>
             </motion.div>
             <h2 className="text-xl font-extrabold" style={{ color: 'var(--color-slate-heading)' }}>Halo, ada yang bisa saya bantu?</h2>

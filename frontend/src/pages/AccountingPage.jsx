@@ -67,13 +67,13 @@ export default function AccountingPage() {
   }
 
   const columns = [
-    { header: 'Kode', accessor: 'kode_akun', render: r => <span className="font-mono font-semibold" style={{ color: '#60A5FA' }}>{r.kode_akun}</span> },
+    { header: 'Kode', accessor: 'kode_akun', render: r => <span className="font-mono font-semibold" style={{ color: 'var(--color-brand-soft)' }}>{r.kode_akun}</span> },
     { header: 'Nama Akun', accessor: 'nama_akun', render: r => <span className="font-medium" style={{ color: 'var(--color-slate-heading)' }}>{r.nama_akun}</span> },
     { header: 'Kategori', accessor: 'kategori', render: r => (
       <span className={`badge ${KATEGORI_BADGE[r.kategori] || ''}`} style={!KATEGORI_BADGE[r.kategori] ? { background: 'rgba(148,163,184,0.12)', color: 'var(--color-slate-body)' } : undefined}>{r.kategori}</span>
     )},
     { header: 'Saldo Normal', accessor: 'saldo_normal', render: r => (
-      <span className="badge" style={{ background: r.saldo_normal === 'DEBIT' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(59, 130, 246, 0.12)', color: r.saldo_normal === 'DEBIT' ? '#34D399' : '#93C5FD' }}>{r.saldo_normal}</span>
+      <span className="badge" style={{ background: r.saldo_normal === 'DEBIT' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(59, 130, 246, 0.12)', color: r.saldo_normal === 'DEBIT' ? '#34D399' : 'var(--color-accent-blue)' }}>{r.saldo_normal}</span>
     )},
     {
       header: 'Saldo', accessor: 'saldo', render: r => {
@@ -84,7 +84,7 @@ export default function AccountingPage() {
         const isDebit = s.debit > 0
         const nilai = isDebit ? s.debit : s.kredit
         return (
-          <span className="inline-flex items-center font-mono tabular-nums text-sm font-semibold num-cell" style={{ color: isDebit ? '#34D399' : '#93C5FD' }}>
+          <span className="inline-flex items-center font-mono tabular-nums text-sm font-semibold num-cell" style={{ color: isDebit ? '#34D399' : 'var(--color-accent-blue)' }}>
             {formatRupiah(nilai)}
           </span>
         )

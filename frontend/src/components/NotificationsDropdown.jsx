@@ -10,7 +10,7 @@ const ICON_BY_TYPE = {
   SYSTEM: Info,
 }
 const COLOR_BY_TYPE = {
-  ADMIN: { bg: 'rgba(59,130,246,0.12)', fg: '#93C5FD', ring: 'rgba(59,130,246,0.25)' },
+  ADMIN: { bg: 'rgba(59,130,246,0.14)', fg: 'var(--color-accent-blue)', ring: 'rgba(96,165,250,0.28)' },
   MONTHLY: { bg: 'rgba(16,185,129,0.12)', fg: '#6EE7B7', ring: 'rgba(16,185,129,0.25)' },
   SYSTEM: { bg: 'rgba(148,163,184,0.12)', fg: 'var(--color-slate-text)', ring: 'rgba(148,163,184,0.25)' },
 }
@@ -150,7 +150,7 @@ export default function NotificationsDropdown() {
               <button
                 onClick={markAllRead}
                 className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-lg transition-all hover:bg-white/5"
-                style={{ color: '#93C5FD' }}
+                style={{ color: 'var(--color-accent-blue)' }}
               >
                 <CheckCheck size={13} /> Tandai semua dibaca
               </button>

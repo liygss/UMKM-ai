@@ -247,7 +247,7 @@ export default function LandingPage() {
                 style={{ borderRadius: '1rem', boxShadow: '0 8px 24px rgba(59,130,246,0.4)' }}
               >
                 <img src="/finora-logo.jpg" alt="Finora" className="h-full w-full object-cover relative z-10" />
-                <div className="absolute inset-0 rounded-2xl opacity-50 animate-pulse" style={{ background: 'linear-gradient(135deg, #2563EB, #60A5FA)', filter: 'blur(12px)' }} />
+                <div className="absolute inset-0 rounded-2xl opacity-50 animate-pulse" style={{ background: 'linear-gradient(135deg, #2563EB, #7DB4FF)', filter: 'blur(12px)' }} />
               </div>
               <div className="leading-tight">
                 <div className="text-lg font-[900] tracking-tight" style={{ color: 'var(--color-slate-heading)' }}>
@@ -482,7 +482,7 @@ export default function LandingPage() {
                   {/* Chart placeholder */}
                   <div className="col-span-2 rounded-2xl p-4 flex items-end gap-2 h-36" style={{ background: 'var(--color-surface-faint)', border: '1px solid rgba(148,163,184,0.1)' }}>
                     {[45, 62, 38, 74, 52, 88, 66, 95].map((h, i) => (
-                      <div key={i} className="flex-1 rounded-t-lg" style={{ height: `${h}%`, background: 'linear-gradient(180deg, #60A5FA, rgba(60,130,246,0.2))', opacity: 0.7 + (i * 0.04) }} />
+                      <div key={i} className="flex-1 rounded-t-lg" style={{ height: `${h}%`, background: 'linear-gradient(180deg, #7DB4FF, rgba(60,130,246,0.2))', opacity: 0.7 + (i * 0.04) }} />
                     ))}
                   </div>
                 </div>
@@ -492,7 +492,7 @@ export default function LandingPage() {
                   {/* Chat header */}
                   <div className="flex items-center gap-2.5 px-4 py-3" style={{ borderBottom: '1px solid rgba(148,163,184,0.12)', background: 'var(--color-surface-faint)' }}>
                     <div className="relative">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: 'linear-gradient(135deg, #2563EB, #60A5FA)', boxShadow: '0 4px 14px rgba(59,130,246,0.4)' }}>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: 'linear-gradient(135deg, #2563EB, #7DB4FF)', boxShadow: '0 4px 14px rgba(59,130,246,0.4)' }}>
                         <Bot size={16} className="text-white" />
                       </div>
                       <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2" style={{ background: '#10B981', borderColor: 'var(--color-surface-2)' }} />
@@ -515,7 +515,7 @@ export default function LandingPage() {
                     </div>
                     {/* Assistant answer (left, with avatar) */}
                     <div className="flex items-start gap-2">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg mt-0.5" style={{ background: 'linear-gradient(135deg, #2563EB, #60A5FA)' }}>
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg mt-0.5" style={{ background: 'linear-gradient(135deg, #2563EB, #7DB4FF)' }}>
                         <Bot size={13} className="text-white" />
                       </div>
                       <div className="max-w-[85%] rounded-2xl rounded-bl-md px-3.5 py-2 text-xs leading-relaxed" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148,163,184,0.14)', color: 'var(--color-slate-text)', boxShadow: '0 4px 14px rgba(0,0,0,0.18)' }}>
@@ -558,7 +558,7 @@ export default function LandingPage() {
               {STATS.map((stat, i) => (
                 <div key={i} className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.15)' }}>
-                    <stat.icon size={16} style={{ color: '#60A5FA' }} />
+                    <stat.icon size={16} style={{ color: 'var(--color-brand-soft)' }} />
                   </div>
                   <div className="text-left">
                     <div className="text-xl font-[900] leading-none" style={{ color: 'var(--color-slate-heading)' }}>
@@ -608,7 +608,7 @@ export default function LandingPage() {
                 onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(148,163,184,0.12)' }}
               >
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl mb-4" style={{ background: 'rgba(59,130,246,0.12)' }}>
-                  <stat.icon size={22} style={{ color: '#60A5FA' }} />
+                  <stat.icon size={22} style={{ color: 'var(--color-brand-soft)' }} />
                 </div>
                 <div className="text-3xl lg:text-4xl font-[900] gradient-text">
                   <AnimatedCounter target={stat.value} suffix={stat.suffix} />
@@ -655,7 +655,7 @@ export default function LandingPage() {
               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(148,163,184,0.12)' }}
             >
               <div className="absolute top-0 right-0 h-64 w-64 rounded-bl-[120px] opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500" style={{ background: 'linear-gradient(135deg, #3B82F6, transparent)' }} />
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl mb-6 transition-transform duration-500 group-hover:scale-110" style={{ background: 'linear-gradient(135deg, #2563EB, #60A5FA)', boxShadow: '0 8px 32px rgba(59,130,246,0.4)' }}>
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl mb-6 transition-transform duration-500 group-hover:scale-110" style={{ background: 'linear-gradient(135deg, #2563EB, #7DB4FF)', boxShadow: '0 8px 32px rgba(59,130,246,0.4)' }}>
                 <Bot size={28} className="text-white" />
               </div>
               <h3 className="text-2xl font-bold mb-3" style={{ color: 'var(--color-slate-heading)' }}>AI Chatbot Akuntansi</h3>
@@ -665,7 +665,7 @@ export default function LandingPage() {
               {/* Mini chat preview */}
               <div className="rounded-2xl p-4" style={{ background: 'var(--color-surface-faint)', border: '1px solid rgba(148,163,184,0.15)' }}>
                 <div className="flex gap-3 mb-3">
-                  <div className="h-7 w-7 rounded-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, #2563EB, #60A5FA)' }} />
+                  <div className="h-7 w-7 rounded-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, #2563EB, #7DB4FF)' }} />
                   <div className="rounded-xl rounded-tl-none px-3.5 py-2 text-xs" style={{ background: 'rgba(59,130,246,0.15)', color: 'var(--color-slate-text)', border: '1px solid rgba(59,130,246,0.15)' }}>
                     Bagaimana cara menghitung PPh Final UMKM?
                   </div>
@@ -757,7 +757,7 @@ export default function LandingPage() {
               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(148,163,184,0.12)' }}
             >
               <div className="flex items-start gap-5">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-500 group-hover:scale-110" style={{ background: 'linear-gradient(135deg, #2563EB, #60A5FA)', boxShadow: '0 8px 24px rgba(59,130,246,0.3)' }}>
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-500 group-hover:scale-110" style={{ background: 'linear-gradient(135deg, #2563EB, #7DB4FF)', boxShadow: '0 8px 24px rgba(59,130,246,0.3)' }}>
                   <LayoutDashboard size={24} className="text-white" />
                 </div>
                 <div>
@@ -947,7 +947,7 @@ export default function LandingPage() {
                       transform: openFaq === i ? 'rotate(180deg)' : 'rotate(0deg)',
                     }}
                   >
-                    <ChevronDown size={16} style={{ color: openFaq === i ? '#93C5FD' : 'var(--color-slate-muted)' }} />
+                    <ChevronDown size={16} style={{ color: openFaq === i ? 'var(--color-accent-blue)' : 'var(--color-slate-muted)' }} />
                   </div>
                 </button>
                 <div
@@ -1061,7 +1061,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-5xl">
           <div
             className={`relative overflow-hidden rounded-[2rem] px-8 py-16 text-center transition-all duration-1000 lg:px-16 lg:py-20 ${ctaVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-            style={{ background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 45%, #3B82F6 75%, #60A5FA 100%)', boxShadow: '0 32px 80px rgba(37,99,235,0.35)' }}
+            style={{ background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 45%, #3B82F6 75%, #7DB4FF 100%)', boxShadow: '0 32px 80px rgba(37,99,235,0.4)' }}
           >
             {/* Decorative */}
             <div className="pointer-events-none absolute inset-0">
@@ -1080,7 +1080,7 @@ export default function LandingPage() {
               <Link
                 to="/register"
                 className="group inline-flex items-center gap-2.5 rounded-full px-10 py-4 text-base font-bold transition-all duration-400 hover:-translate-y-1.5"
-                style={{ background: 'white', color: '#1D4ED8', boxShadow: '0 12px 40px rgba(0,0,0,0.25)' }}
+                style={{ background: '#F4F8FD', color: '#1D4ED8', boxShadow: '0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(125,180,255,0.3)' }}
               >
                 Daftar Gratis Sekarang
                 <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
@@ -1146,7 +1146,7 @@ export default function LandingPage() {
                         href="#"
                         className="text-sm transition-colors duration-200 hover:translate-x-0.5 inline-block"
                         style={{ color: 'var(--color-slate-body)' }}
-                        onMouseEnter={(e) => e.target.style.color = '#93C5FD'}
+                        onMouseEnter={(e) => e.target.style.color = 'var(--color-accent-blue)'}
                         onMouseLeave={(e) => e.target.style.color = 'var(--color-slate-body)'}
                       >
                         {link}

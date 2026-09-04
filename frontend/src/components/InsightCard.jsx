@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'motion/react'
 import { Sparkles, RefreshCw, AlertCircle, Lightbulb } from 'lucide-react'
 import client from '../api/client'
+import { getInsight, setInsight as setInsightCache } from '../utils/dashboardStore'
 import { fadeUp, EASE_GENTLE } from '../utils/motionPresets'
 
 function parseInsight(text) {
@@ -21,26 +22,70 @@ function parseInsight(text) {
 }
 
 export default function InsightCard({ debouncedDate }) {
-  const [insight, setInsight] = useState(null)
+  const cacheKey = debouncedDate || 'auto'
+  // Balik dari halaman lain: tampilkan insight periode ini dari cache tanpa
+  // fetch ulang (tidak ada skeleton). Perbarui tetap bisa fetch manual.
+  const cachedInsight = getInsight(cacheKey)
+  const [insight, setInsight] = useState(cachedInsight)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
+  const cardRef = useRef(null)
+  // Jangan panggil LLM saat halaman pertama dimuat: kartu ini berada di bawah
+  // fold, jadi fetch didefer sampai mendekati viewport (sekali saja).
+  const startedRef = useRef(false)
 
   const fetchInsight = useCallback(() => {
     setLoading(true)
     setError(false)
     const params = debouncedDate ? { tanggal_per: debouncedDate } : {}
     client.get('/dashboard/insight', { params })
-      .then((r) => setInsight(r.data))
+      .then((r) => {
+        setInsight(r.data)
+        setInsightCache(cacheKey, r.data)
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [debouncedDate])
+  }, [debouncedDate, cacheKey])
 
-  useEffect(() => { fetchInsight() }, [fetchInsight])
+  const handleFetch = useCallback(() => {
+    startedRef.current = true
+    fetchInsight()
+  }, [fetchInsight])
+
+  useEffect(() => {
+    const el = cardRef.current
+    if (startedRef.current || !el) return undefined
+    // Sudah punya insight tersimpan utk periode ini → pakai langsung, jangan fetch.
+    if (getInsight(cacheKey)) {
+      startedRef.current = true
+      return undefined
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          startedRef.current = true
+          observer.disconnect()
+          fetchInsight()
+        }
+      },
+      { rootMargin: '250px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [fetchInsight, cacheKey])
+
+  // Kalau periode berubah setelah insight pernah di-fetch, muat ulang —
+  // kecuali periode barunya masih punya cache (transisi singkat antarbulan).
+  useEffect(() => {
+    if (!startedRef.current) return undefined
+    if (getInsight(cacheKey)) return undefined
+    fetchInsight()
+  }, [fetchInsight, cacheKey])
 
   const { bullets, saran } = parseInsight(insight?.insight || '')
 
   return (
-    <motion.div variants={fadeUp} whileHover={{ y: -4, transition: EASE_GENTLE }} className="card flex flex-col">
+    <motion.div ref={cardRef} variants={fadeUp} whileHover={{ y: -4, transition: EASE_GENTLE }} className="card flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           <div
@@ -55,7 +100,7 @@ export default function InsightCard({ debouncedDate }) {
           </div>
         </div>
         <button
-          onClick={fetchInsight}
+          onClick={handleFetch}
           disabled={loading}
           title="Perbarui insight"
           className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all duration-200 hover:bg-violet-500/10 disabled:opacity-50"
@@ -80,7 +125,7 @@ export default function InsightCard({ debouncedDate }) {
             Layanan AI sedang sibuk. Coba lagi sebentar lagi.
           </p>
           <button
-            onClick={fetchInsight}
+            onClick={handleFetch}
             className="btn-ghost text-xs !px-3 !py-1.5"
           >
             Coba Lagi
@@ -95,7 +140,7 @@ export default function InsightCard({ debouncedDate }) {
             <ul className="space-y-2">
               {bullets.map((b, i) => (
                 <li key={i} className="flex gap-2 text-sm leading-relaxed" style={{ color: 'var(--color-slate-text)' }}>
-                  <span className="mt-2 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'linear-gradient(135deg, #A78BFA, #60A5FA)' }} />
+                  <span className="mt-2 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'linear-gradient(135deg, #A78BFA, #7DB4FF)' }} />
                   <span>{b}</span>
                 </li>
               ))}

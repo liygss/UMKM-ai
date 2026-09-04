@@ -39,6 +39,8 @@ def get_neraca_saldo(
     db: Session,
     tanggal_per: date | None = None,
     user_id: str | None = None,
+    tanggal_mulai: date | None = None,
+    tanggal_akhir: date | None = None,
 ) -> NeracaSaldo:
     """
     Hitung neraca saldo per tanggal tertentu (default: semua transaksi s/d hari ini).
@@ -46,7 +48,18 @@ def get_neraca_saldo(
     (lebih efisien daripada memuat semua baris jurnal ke Python).
 
     Kalau user_id diberikan, hanya jurnal milik user tersebut yang dihitung.
+    tanggal_mulai/tanggal_akhir: filter rentang transaksi (opsional).
+
+    Hasil di-cache per-request pada session (db.info) karena laporan lain
+    (laba rugi, posisi keuangan, dashboard) kerap memanggil fungsi ini dengan
+    kombinasi (tanggal_per, user_id) yang sama. Session request read-only,
+    jadi cache tidak pernah basi di dalam satu request.
     """
+    cache = db.info.setdefault("neraca_saldo_cache", {})
+    key = (tanggal_per, user_id, tanggal_mulai, tanggal_akhir)
+    if key in cache:
+        return cache[key]
+
     query = (
         db.query(
             Akun.id,
@@ -65,7 +78,11 @@ def get_neraca_saldo(
         query = query.filter(
             (JurnalUmum.created_by_id == user_id) | (JurnalUmum.created_by_id.is_(None))
         )
-    if tanggal_per:
+    if tanggal_mulai:
+        query = query.filter((JurnalUmum.tanggal >= tanggal_mulai) | (JurnalUmum.tanggal.is_(None)))
+    if tanggal_akhir:
+        query = query.filter((JurnalUmum.tanggal <= tanggal_akhir) | (JurnalUmum.tanggal.is_(None)))
+    elif tanggal_per:
         # baris akun tanpa transaksi tetap ikut (outer join), makanya filter tanggal
         # digabung dengan OR is NULL supaya tidak ke-exclude
         query = query.filter((JurnalUmum.tanggal <= tanggal_per) | (JurnalUmum.tanggal.is_(None)))
@@ -110,9 +127,11 @@ def get_neraca_saldo(
         total_debit += debit_col
         total_kredit += kredit_col
 
-    return NeracaSaldo(
+    hasil = NeracaSaldo(
         tanggal_per=tanggal_per,
         baris=baris_list,
         total_debit=round(total_debit, 2),
         total_kredit=round(total_kredit, 2),
     )
+    cache[key] = hasil
+    return hasil

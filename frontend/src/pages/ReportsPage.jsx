@@ -3,7 +3,9 @@ import client from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { buildAllReportsFullHtml } from '../utils/reportPdfBuilder'
-import { formatRupiah } from '../utils/formatters'
+import { formatRupiah, localDateStr } from '../utils/formatters'
+import DatePickerField from '../components/DatePickerField'
+import DateRangeField from '../components/DateRangeField'
 import toast from 'react-hot-toast'
 import { extractError } from '../api/extractError'
 import { FileDown, FileSpreadsheet, FileText, TrendingUp, TrendingDown, Scale, AlertCircle, Loader2 } from 'lucide-react'
@@ -15,7 +17,7 @@ const TABS = [
   { key: 'calk', label: 'CALK', icon: AlertCircle },
 ]
 
-function usePdfDownload(date, user) {
+function usePdfDownload(date, user, startDate, endDate) {
   const [generating, setGenerating] = useState(false)
 
   const handleDownload = useCallback(async () => {
@@ -24,7 +26,14 @@ function usePdfDownload(date, user) {
     try {
       const reports = ['neraca-saldo', 'laba-rugi', 'posisi-keuangan', 'calk']
       const results = await Promise.all(
-        reports.map(rt => client.get(`/accounting/laporan/${rt}`, { params: { tanggal_per: date } }).then(r => [rt, r.data]))
+        reports.map(rt => {
+          const params = { tanggal_per: date }
+          if (rt === 'laba-rugi' && startDate && endDate) {
+            params.tanggal_mulai = startDate
+            params.tanggal_akhir = endDate
+          }
+          return client.get(`/accounting/laporan/${rt}`, { params }).then(r => [rt, r.data])
+        })
       )
       const allData = Object.fromEntries(results)
 
@@ -70,12 +79,12 @@ function usePdfDownload(date, user) {
       toast.error('Gagal membuat PDF. Coba lagi.')
       setGenerating(false)
     }
-  }, [date, user])
+  }, [date, user, startDate, endDate])
 
   return { handleDownload, generating }
 }
 
-function useExportDownload(date) {
+function useExportDownload(date, startDate, endDate) {
   const [exporting, setExporting] = useState(false)
 
   const handleExport = useCallback(async (format) => {
@@ -84,7 +93,11 @@ function useExportDownload(date) {
       const token = localStorage.getItem('token') || ''
       const baseURL = import.meta.env.VITE_API_URL || '/api'
       const ext = format === 'xlsx' ? 'xlsx' : 'csv'
-      const url = `${baseURL}/accounting/laporan/export-all?format=${format}&tanggal_per=${date}&token=${encodeURIComponent(token)}`
+      let url = `${baseURL}/accounting/laporan/export-all?format=${format}&tanggal_per=${date}`
+      if (startDate && endDate) {
+        url += `&tanggal_mulai=${startDate}&tanggal_akhir=${endDate}`
+      }
+      url += `&token=${encodeURIComponent(token)}`
 
       // Pakai direct <a> link (bukan blob) — otomatis trigger download
       // di browser maupun Electron (lewat will-download handler).
@@ -104,7 +117,7 @@ function useExportDownload(date) {
       toast.error(`Gagal export ${format.toUpperCase()}. Coba lagi.`)
       setExporting(false)
     }
-  }, [date])
+  }, [date, startDate, endDate])
 
   return { handleExport, exporting }
 }
@@ -112,12 +125,17 @@ function useExportDownload(date) {
 export default function ReportsPage() {
   const { user } = useAuth()
   const [tab, setTab] = useState('neraca-saldo')
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(localDateStr(new Date()))
   const [debouncedDate, setDebouncedDate] = useState(date)
   const debounceRef = useRef(null)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [debouncedStart, setDebouncedStart] = useState('')
+  const [debouncedEnd, setDebouncedEnd] = useState('')
 
   const handleDateChange = (newDate) => {
     setDate(newDate)
@@ -125,15 +143,32 @@ export default function ReportsPage() {
     debounceRef.current = setTimeout(() => setDebouncedDate(newDate), 300)
   }
 
-  const { handleDownload: downloadPdf, generating: pdfGenerating } = usePdfDownload(debouncedDate, user)
-  const { handleExport, exporting } = useExportDownload(debouncedDate)
+  const handleStartDateChange = (v) => {
+    setStartDate(v)
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => setDebouncedStart(v), 300)
+  }
+
+  const handleEndDateChange = (v) => {
+    setEndDate(v)
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => setDebouncedEnd(v), 300)
+  }
+
+  const { handleDownload: downloadPdf, generating: pdfGenerating } = usePdfDownload(debouncedDate, user, debouncedStart, debouncedEnd)
+  const { handleExport, exporting } = useExportDownload(debouncedDate, debouncedStart, debouncedEnd)
 
   const load = useCallback(() => {
     setLoading(true)
     setData(null)
     setError(null)
-    const url = `/accounting/laporan/${tab}?tanggal_per=${debouncedDate}`
-    client.get(url)
+    const params = { tanggal_per: debouncedDate }
+    if (tab === 'laba-rugi' && debouncedStart && debouncedEnd) {
+      params.tanggal_mulai = debouncedStart
+      params.tanggal_akhir = debouncedEnd
+    }
+    const url = `/accounting/laporan/${tab}`
+    client.get(url, { params })
       .then(r => setData(r.data))
       .catch((err) => {
         const msg = extractError(err, 'Gagal memuat laporan')
@@ -141,7 +176,7 @@ export default function ReportsPage() {
         toast.error(msg)
       })
       .finally(() => setLoading(false))
-  }, [tab, debouncedDate])
+  }, [tab, debouncedDate, debouncedStart, debouncedEnd])
 
   useEffect(() => { load() }, [load])
 
@@ -156,12 +191,25 @@ export default function ReportsPage() {
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--color-slate-body)' }}>Neraca saldo, laba rugi, posisi keuangan & CALK</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <label className="text-sm font-medium" style={{ color: 'var(--color-slate-text)' }}>Tanggal:</label>
-          <input type="date" value={date} onChange={e => handleDateChange(e.target.value)} className="input-field w-auto !py-2" />
+        <div className="flex items-center gap-3 flex-wrap">
+          <DatePickerField
+            value={date}
+            onChange={v => handleDateChange(v)}
+            compact
+            className="w-auto"
+          />
+          {tab === 'laba-rugi' && (
+            <DateRangeField
+              startDate={startDate}
+              endDate={endDate}
+              onStartChange={handleStartDateChange}
+              onEndChange={handleEndDateChange}
+              className="w-auto"
+            />
+          )}
           <button
             onClick={() => {
-              const today = new Date().toISOString().split('T')[0]
+              const today = localDateStr(new Date())
               setDate(today)
               setDebouncedDate(today)
             }}

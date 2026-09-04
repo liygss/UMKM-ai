@@ -84,7 +84,7 @@ export default function FloatingChatbot() {
         style={{
           background: 'linear-gradient(135deg, #1D4ED8, #2563EB 50%, #3B82F6)',
           boxShadow: '0 10px 34px var(--color-brand-glow), inset 0 1px 1px rgba(255,255,255,0.35)',
-          border: '1px solid rgba(147, 197, 253, 0.35)',
+          border: '1px solid rgba(125, 180, 255, 0.4)',
         }}
         aria-label="Buka chatbot"
       >

@@ -1,14 +1,15 @@
 import { motion } from 'motion/react'
+import { memo } from 'react'
 import { BellRing, ShieldAlert, AlertTriangle, Info, CheckCircle2 } from 'lucide-react'
 import { fadeUp, EASE_GENTLE } from '../utils/motionPresets'
 
 const LEVEL_META = {
   danger: { icon: ShieldAlert, color: '#F87171', bg: 'rgba(239, 68, 68, 0.12)', border: 'rgba(239, 68, 68, 0.28)' },
   warning: { icon: AlertTriangle, color: '#FBBF24', bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.28)' },
-  info: { icon: Info, color: '#60A5FA', bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.28)' },
+  info: { icon: Info, color: 'var(--color-brand-soft)', bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.28)' },
 }
 
-export default function TemuanPenting({ alerts = [] }) {
+function TemuanPenting({ alerts = [] }) {
   return (
     <motion.div variants={fadeUp} whileHover={{ y: -4, transition: EASE_GENTLE }} className="card flex flex-col lg:col-span-2">
       <div className="flex items-center justify-between mb-4">
@@ -65,3 +66,5 @@ export default function TemuanPenting({ alerts = [] }) {
     </motion.div>
   )
 }
+
+export default memo(TemuanPenting)

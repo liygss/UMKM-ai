@@ -189,10 +189,10 @@ function PPNCard() {
           </div>
           <div className="pt-3 flex items-center justify-between" style={{ borderTop: '1px solid rgba(59, 130, 246, 0.2)' }}>
             <span className="font-bold flex items-center gap-1.5" style={{ color: 'var(--color-slate-heading)' }}>
-              <CheckCircle2 size={14} style={{ color: '#60A5FA' }} />
+              <CheckCircle2 size={14} style={{ color: 'var(--color-brand-soft)' }} />
               PPN Terutang
             </span>
-            <span className="font-mono font-extrabold text-lg" style={{ color: '#60A5FA' }}>{formatRupiah(result.ppn)}</span>
+            <span className="font-mono font-extrabold text-lg" style={{ color: 'var(--color-brand-soft)' }}>{formatRupiah(result.ppn)}</span>
           </div>
           <div className="flex items-center justify-between rounded-xl p-2.5" style={{ background: 'var(--color-surface-card)' }}>
             <span className="font-medium" style={{ color: 'var(--color-slate-body)' }}>Harga Termasuk PPN</span>

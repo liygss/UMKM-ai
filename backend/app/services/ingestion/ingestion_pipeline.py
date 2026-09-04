@@ -162,14 +162,20 @@ def process_uploaded_file(db: Session, uploaded_file: UploadedFile) -> UploadedF
         if uploaded_file.file_type in ("csv", "xlsx"):
             raw_df = doc.get_transaction_dataframe()
             if raw_df is not None and not raw_df.empty:
-                jumlah_jurnal = auto_journal_from_dataframe(
+                jumlah_jurnal, warnings = auto_journal_from_dataframe(
                     db=db,
                     dataframe=raw_df,
                     uploaded_file_id=uploaded_file.id,
                     user_id=uploaded_file.uploaded_by_id,
                     filename_stem=judul,
                 )
-                _update_status(db, uploaded_file, StatusUpload.POSTED)
+                error_msg = None
+                if warnings:
+                    shown = warnings[:8]
+                    error_msg = "Diproses dengan catatan; " + "; ".join(shown)
+                    if len(warnings) > len(shown):
+                        error_msg += f" (+{len(warnings) - len(shown)} baris lagi)"
+                _update_status(db, uploaded_file, StatusUpload.POSTED, error=error_msg)
                 logger.info(
                     "Auto-jurnal selesai untuk '%s': %d jurnal dibuat.",
                     uploaded_file.original_filename,

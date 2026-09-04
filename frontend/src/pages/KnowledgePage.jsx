@@ -197,14 +197,14 @@ export default function KnowledgePage() {
             {items.map(item => (
               <div key={item.id} className="card flex items-center gap-4 !p-4">
                 <div className="rounded-xl p-2.5 shrink-0" style={{ background: 'rgba(59, 130, 246, 0.12)' }}>
-                  <BookOpen size={18} style={{ color: '#60A5FA' }} />
+                  <BookOpen size={18} style={{ color: 'var(--color-brand-soft)' }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-bold truncate" style={{ color: 'var(--color-slate-heading)' }}>
                       {item.original_filename.replace('.md', '')}
                     </p>
-                    <span className="badge text-[10px] shrink-0" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#93C5FD' }}>
+                    <span className="badge text-[10px] shrink-0" style={{ background: 'rgba(59, 130, 246, 0.12)', color: 'var(--color-accent-blue)' }}>
                       {item.file_size_bytes} bytes
                     </span>
                   </div>

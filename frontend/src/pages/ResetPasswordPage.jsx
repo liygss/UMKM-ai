@@ -71,7 +71,7 @@ export default function ResetPasswordPage() {
           ) : (
             <>
               <div className="mb-8">
-                <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-semibold mb-4" style={{ background: 'rgba(59,130,246,0.12)', color: '#93C5FD', border: '1px solid rgba(59,130,246,0.25)' }}>
+                <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-semibold mb-4" style={{ background: 'rgba(59,130,246,0.14)', color: 'var(--color-accent-blue)', border: '1px solid rgba(96,165,250,0.28)' }}>
                   <Lock size={12} /> Buat Kata Sandi Baru
                 </div>
                 <h2 className="text-2xl font-[900] tracking-tight" style={{ color: 'var(--color-slate-heading)' }}>Atur Ulang Kata Sandi</h2>
@@ -120,7 +120,7 @@ export default function ResetPasswordPage() {
 
               <p className="mt-6 text-center text-sm" style={{ color: 'var(--color-slate-body)' }}>
                 Sudah ingat?{' '}
-                <Link to="/login" className="font-semibold transition hover:opacity-80" style={{ color: '#60A5FA' }}>Masuk</Link>
+                <Link to="/login" className="font-semibold transition hover:opacity-80" style={{ color: 'var(--color-brand-soft)' }}>Masuk</Link>
               </p>
             </>
           )}

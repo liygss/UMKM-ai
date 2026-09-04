@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, memo } from 'react'
 import { motion } from 'motion/react'
 import { PieChart as PieIcon } from 'lucide-react'
 import client from '../api/client'
@@ -9,12 +9,17 @@ const CATEGORY_COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
 
 const TOP_N = 5
 
-export default function KategoriPengeluaran({ debouncedDate }) {
+function KategoriPengeluaran({ debouncedDate, items: externalItems }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
+  // DashboardPage sudah mengirim data lewat /dashboard/overview → komponen ini
+  // tidak perlu fetch lagi. Dipakai tanpa `items` sebagai fallback mandiri.
+  const hasExternal = externalItems !== undefined
+
   useEffect(() => {
+    if (hasExternal) return undefined
     let cancelled = false
     setLoading(true)
     setError(false)
@@ -24,11 +29,16 @@ export default function KategoriPengeluaran({ debouncedDate }) {
       .catch(() => { if (!cancelled) setError(true) })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [debouncedDate])
+  }, [debouncedDate, hasExternal])
 
-  const total = items.reduce((s, i) => s + i.nilai, 0)
-  const top = items.slice(0, TOP_N)
-  const sisa = items.slice(TOP_N).reduce((s, i) => s + i.nilai, 0)
+  const list = useMemo(() => {
+    const src = hasExternal ? externalItems : items
+    return (src || []).map((i) => ({ name: i.nama_akun, nilai: i.nilai, kode_akun: i.kode_akun }))
+  }, [hasExternal, externalItems, items])
+
+  const total = list.reduce((s, i) => s + i.nilai, 0)
+  const top = list.slice(0, TOP_N)
+  const sisa = list.slice(TOP_N).reduce((s, i) => s + i.nilai, 0)
   const rows = sisa > 0 ? [...top, { name: 'Lainnya', nilai: sisa, isOther: true }] : top
 
   return (
@@ -45,7 +55,7 @@ export default function KategoriPengeluaran({ debouncedDate }) {
         </div>
       </div>
 
-      {loading ? (
+      {!hasExternal && loading ? (
         <div className="space-y-3 flex-1">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="space-y-1.5">
@@ -54,7 +64,7 @@ export default function KategoriPengeluaran({ debouncedDate }) {
             </div>
           ))}
         </div>
-      ) : error ? (
+      ) : !hasExternal && error ? (
         <div className="flex flex-1 items-center justify-center text-sm" style={{ color: 'var(--color-slate-muted)' }}>
           Gagal memuat data kategori
         </div>
@@ -93,3 +103,5 @@ export default function KategoriPengeluaran({ debouncedDate }) {
     </motion.div>
   )
 }
+
+export default memo(KategoriPengeluaran)

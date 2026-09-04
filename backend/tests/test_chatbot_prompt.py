@@ -2,7 +2,7 @@
 
 from app.llm.prompt_template import get_system_prompt
 from app.rag.context_builder import build_context
-from app.rag.prompt_builder import build_messages, detect_domain
+from app.rag.prompt_builder import build_messages, detect_domain, is_out_of_topic
 from app.rag.rag_pipeline import merge_chunks
 from app.rag.retriever import RetrievedChunk
 from app.schemas.chatbot_schema import ChatRequest
@@ -24,13 +24,13 @@ def _chunk(pid: str) -> RetrievedChunk:
     )
 
 
-def test_system_prompt_memungkinkan_jawaban_umum():
+def test_system_prompt_membatasi_topik_akuntansi():
     prompt = get_system_prompt().lower()
     assert "asisten finora" in prompt
-    # boleh menjawab pertanyaan umum, bukan hanya dari konteks
-    assert "pertanyaan umum" in prompt
-    # tidak lagi melarang tegas "jawab hanya berdasarkan konteks"
-    assert "jawab hanya berdasarkan konteks" not in prompt
+    # hanya membantu pertanyaan akuntansi/keuangan/pajak
+    assert "hanya" in prompt and "membantu pertanyaan" in prompt
+    # menolak pertanyaan di luar topik
+    assert "tolak dengan sopan" in prompt
 
 
 def test_build_messages_termasuk_lokasi_halaman():
@@ -46,11 +46,11 @@ def test_build_messages_tanpa_page_tidak_menambah_lokasi():
     assert "Lokasi pengguna saat ini" not in messages[0]["content"]
 
 
-def test_build_messages_tanpa_konteks_mengarahkan_jawaban_umum():
+def test_build_messages_tanpa_konteks_mengarahkan_tolak_topik_lain():
     messages = build_messages("jelaskan apa itu inflasi", _empty_context())
     system = messages[0]["content"]
-    assert "pengetahuan umummu" in system
-    assert "katakan terus terang bahwa informasinya tidak tersedia" not in system
+    assert "tolak dengan sopan" in system
+    assert "di luar topik akuntansi" in system
 
 
 def test_chat_request_menerima_page():
@@ -78,3 +78,18 @@ def test_merge_chunks_dedupe():
     gabungan = merge_chunks([_chunk("a"), _chunk("b")], [_chunk("b"), _chunk("c")])
     ids = [c.qdrant_point_id for c in gabungan]
     assert ids == ["a", "b", "c"]
+
+
+def test_is_out_of_topic_menolak_topik_di_luar_akuntansi():
+    assert is_out_of_topic("aku lapar") is True
+    assert is_out_of_topic("cuaca hari ini") is True
+    assert is_out_of_topic("resep nasi goreng") is True
+    assert is_out_of_topic("siapa presiden Indonesia") is True
+
+
+def test_is_out_of_topic_menerima_topik_akuntansi():
+    assert is_out_of_topic("jurnal transaksi") is False
+    assert is_out_of_topic("pajak ppn") is False
+    assert is_out_of_topic("laporan laba rugi") is False
+    assert is_out_of_topic("neraca saldo") is False
+    assert is_out_of_topic("cara pembukuan") is False

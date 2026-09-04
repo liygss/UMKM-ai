@@ -166,7 +166,7 @@ export default function RegisterPage() {
 
               <p className="mt-6 text-center text-sm animate-slide-up delay-500" style={{ color: 'var(--color-slate-body)' }}>
                 Sudah punya akun?{' '}
-                <Link to="/login" className="font-semibold transition hover:opacity-80" style={{ color: '#60A5FA' }}>Masuk</Link>
+                <Link to="/login" className="font-semibold transition hover:opacity-80" style={{ color: 'var(--color-brand-soft)' }}>Masuk</Link>
               </p>
             </div>
           </div>

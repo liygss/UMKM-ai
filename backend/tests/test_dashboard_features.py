@@ -168,6 +168,40 @@ class TestAlerts:
         # Beban bulan ini; debit kas menampung selisih supaya balance.
         _jurnal("ALRT-CURR", today, beban_curr, pendapatan + (beban_curr - beban_prev))
 
+    @staticmethod
+    def _seed_tanpa_hpp(db, user_id, pendapatan=5_000_000):
+        """Pendapatan ada tapi tidak ada HPP (hanya beban operasional) — skenario
+        margin tidak realistis yang sering terjadi di data UMKM."""
+        from app.database.models import (
+            Akun,
+            JenisJurnal,
+            JurnalDetail,
+            JurnalUmum,
+            KategoriAkun,
+            SaldoNormal,
+        )
+
+        kas = Akun(kode_akun="1-1000", nama_akun="Kas", kategori=KategoriAkun.ASET,
+                   saldo_normal=SaldoNormal.DEBIT, is_active=True)
+        pend = Akun(kode_akun="4-1000", nama_akun="Pendapatan Usaha", kategori=KategoriAkun.PENDAPATAN,
+                    saldo_normal=SaldoNormal.KREDIT, is_active=True)
+        beban_gaji = Akun(kode_akun="5-2100", nama_akun="Beban Gaji", kategori=KategoriAkun.BEBAN,
+                          saldo_normal=SaldoNormal.DEBIT, is_active=True)
+        db.add_all([kas, pend, beban_gaji])
+        db.commit()
+        for a in (kas, pend, beban_gaji):
+            db.refresh(a)
+
+        jurnal = JurnalUmum(
+            no_bukti="NOHPP-001", tanggal=date.today(), deskripsi="Penjualan tanpa HPP",
+            jenis=JenisJurnal.UMUM, created_by_id=user_id,
+        )
+        jurnal.detail.append(JurnalDetail(akun=kas, urutan=1, debit=pendapatan, kredit=0))
+        jurnal.detail.append(JurnalDetail(akun=beban_gaji, urutan=2, debit=100_000, kredit=0))
+        jurnal.detail.append(JurnalDetail(akun=pend, urutan=3, debit=0, kredit=pendapatan))
+        db.add(jurnal)
+        db.commit()
+
     def test_alerts_warning_beban_naik(self, auth_client, db):
         TestAlerts._seed_dua_bulan(db, _get_user_id(db), beban_prev=1_000_000, beban_curr=1_500_000, pendapatan=2_000_000)
         resp = auth_client.get("/dashboard/alerts")
@@ -181,6 +215,21 @@ class TestAlerts:
         assert resp.status_code == 200
         judul = {a["judul"] for a in resp.json()["alerts"]}
         assert "Usaha rugi beruntun" in judul
+
+    def test_alerts_hpp_kosong_saat_ada_pendapatan(self, auth_client, db):
+        """Pendapatan tercatat tapi HPP tidak ada → alert margin tidak realistis."""
+        TestAlerts._seed_tanpa_hpp(db, _get_user_id(db))
+        resp = auth_client.get("/dashboard/alerts")
+        assert resp.status_code == 200
+        judul = {a["judul"] for a in resp.json()["alerts"]}
+        assert any("HPP belum dicatat" in j for j in judul)
+
+    def test_alerts_no_hpp_alert_when_data_empty(self, auth_client):
+        """Tanpa data sama sekali, tidak boleh muncul alert HPP."""
+        resp = auth_client.get("/dashboard/alerts")
+        assert resp.status_code == 200
+        judul = {a["judul"] for a in resp.json()["alerts"]}
+        assert not any("HPP" in j for j in judul)
 
 
 class TestPiutangUtang:
@@ -253,6 +302,68 @@ class TestPiutangUtang:
         assert body["selisih"] == -3_000_000.0
 
 
+class TestDashboardOverview:
+    def test_overview_requires_auth(self, client):
+        resp = client.get("/dashboard/overview")
+        assert resp.status_code == 401
+
+    def test_overview_empty_for_new_user(self, auth_client):
+        resp = auth_client.get("/dashboard/overview")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["summary"]["pendapatan_bulan_ini"] == 0.0
+        assert body["summary"]["beban_bulan_ini"] == 0.0
+        assert {m["pendapatan"] for m in body["monthly"]} == {0.0}
+        assert body["alerts"] == []
+        assert body["kategori"] == []
+        assert body["produk"] == []
+        assert body["piutang_utang"]["piutang_usaha"] == 0.0
+        assert body["piutang_utang"]["utang_usaha"] == 0.0
+
+    def test_overview_matches_individual_endpoints(self, auth_client):
+        """/overview harus konsisten dengan endpoint terpisah yang sudah ada."""
+        overview = auth_client.get("/dashboard/overview").json()
+
+        summary = auth_client.get("/dashboard/summary").json()
+        assert overview["summary"] == summary
+
+        monthly = auth_client.get("/dashboard/monthly").json()
+        assert overview["monthly"] == monthly
+
+        alerts = auth_client.get("/dashboard/alerts").json()["alerts"]
+        assert overview["alerts"] == alerts
+
+        piutang = auth_client.get("/dashboard/piutang-utang").json()
+        assert overview["piutang_utang"] == piutang
+
+        kategori = auth_client.get("/dashboard/kategori").json()
+        assert overview["kategori"] == kategori
+
+    def test_overview_with_data_summary_and_kategori(self, auth_client, db):
+        _seed_laba_rugi(db, _get_user_id(db))
+        resp = auth_client.get("/dashboard/overview")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["summary"]["pendapatan_bulan_ini"] == 5_000_000.0
+        assert body["summary"]["beban_bulan_ini"] == 3_000_000.0
+        assert body["summary"]["laba_rugi_bulan_ini"] == 2_000_000.0
+        assert [(k["nama_akun"], k["nilai"]) for k in body["kategori"]] == [
+            ("Beban Pembelian", 2_000_000.0),
+            ("Beban Gaji", 1_000_000.0),
+        ]
+        assert len(body["monthly"]) >= 1
+
+    def test_overview_respects_tanggal_per(self, auth_client, db):
+        from datetime import timedelta
+
+        _seed_laba_rugi(db, _get_user_id(db))
+        tgl = (date.today() - timedelta(days=1)).isoformat()
+        resp = auth_client.get("/dashboard/overview", params={"tanggal_per": tgl})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["summary"]["tanggal_per"] == tgl
+
+
 class TestProyeksi:
     def test_proyeksi_requires_auth(self, client):
         resp = client.get("/dashboard/proyeksi")
@@ -273,3 +384,119 @@ class TestProyeksi:
         assert [r["proyeksi_laba"] for r in rows] == [2_000_000.0, 2_000_000.0, 2_000_000.0]
         assert [r["kas_akhir"] for r in rows] == [4_000_000.0, 6_000_000.0, 8_000_000.0]
         assert [r["bulan"] for r in rows] == sorted(r["bulan"] for r in rows)
+
+
+def _seed_produk(db, user_id):
+    """Seed jurnal berimbang dengan deskripsi produk yang bervariasi:
+    Rokok 3x (total 450rb), Mie Instan 2x (total 1jt), Bahan Baku 1x (1,2jt)."""
+    from app.database.models import (
+        Akun,
+        JenisJurnal,
+        JurnalDetail,
+        JurnalUmum,
+        KategoriAkun,
+        SaldoNormal,
+    )
+
+    kas = db.query(Akun).filter_by(kode_akun="1-1000").first()
+    pend = db.query(Akun).filter_by(kode_akun="4-1000").first()
+    if kas is None or pend is None:
+        kas = Akun(kode_akun="1-1000", nama_akun="Kas", kategori=KategoriAkun.ASET,
+                   saldo_normal=SaldoNormal.DEBIT, is_active=True)
+        pend = Akun(kode_akun="4-1000", nama_akun="Pendapatan Usaha", kategori=KategoriAkun.PENDAPATAN,
+                    saldo_normal=SaldoNormal.KREDIT, is_active=True)
+        db.add_all([kas, pend])
+        db.commit()
+        for a in (kas, pend):
+            db.refresh(a)
+
+    def _jurnal(no_bukti, deskripsi, amt):
+        j = JurnalUmum(
+            no_bukti=f"PRD-{user_id[:8]}-{no_bukti}", tanggal=date.today(), deskripsi=deskripsi,
+            jenis=JenisJurnal.UMUM, created_by_id=user_id,
+        )
+        j.detail.append(JurnalDetail(akun=kas, urutan=1, debit=amt, kredit=0))
+        j.detail.append(JurnalDetail(akun=pend, urutan=2, debit=0, kredit=amt))
+        db.add(j)
+        db.commit()
+
+    _jurnal("PRD-001", "Penjualan Rokok", 100_000)
+    _jurnal("PRD-002", "Penjualan Rokok", 150_000)
+    _jurnal("PRD-003", "Penjualan Rokok", 200_000)
+    _jurnal("PRD-004", "Penjualan Mie Instan", 500_000)
+    _jurnal("PRD-005", "Penjualan Mie Instan", 500_000)
+    _jurnal("PRD-006", "Pembelian Bahan Baku", 1_200_000)
+
+
+class TestProduk:
+    def test_normalisasi_produk(self):
+        from app.accounting.dashboard_metrics import _normalisasi_produk
+
+        assert _normalisasi_produk("Penjualan Rokok") == "Rokok"
+        assert _normalisasi_produk("Pembelian Bahan Baku") == "Bahan Baku"
+        assert _normalisasi_produk("Pembayaran sewa bulanan") == "sewa bulanan"
+        assert _normalisasi_produk("Setoran modal awal pemilik") == "modal awal pemilik"
+        assert _normalisasi_produk("Penjualan") == "Penjualan"
+        assert _normalisasi_produk("") == "Transaksi"
+
+    def test_produk_empty_for_new_user(self, auth_client):
+        resp = auth_client.get("/dashboard/overview")
+        assert resp.status_code == 200
+        assert resp.json()["produk"] == []
+
+    def test_produk_ranking_terbesar(self, auth_client, db):
+        _seed_produk(db, _get_user_id(db))
+        resp = auth_client.get("/dashboard/overview")
+        assert resp.status_code == 200
+        produk = resp.json()["produk"]
+        assert [(p["produk"], p["nilai"], p["jumlah"]) for p in produk] == [
+            ("Bahan Baku", 1_200_000.0, 1),
+            ("Mie Instan", 1_000_000.0, 2),
+            ("Rokok", 450_000.0, 3),
+        ]
+
+    def test_produk_ranking_terbanyak_is_client_side_sort(self, auth_client, db):
+        """Backend mengembalikan jumlah per produk; frontend mengurutkannya untuk
+        tab 'Terbanyak' (frekuensi). Data yang tersedia harus benar."""
+        _seed_produk(db, _get_user_id(db))
+        produk = auth_client.get("/dashboard/overview").json()["produk"]
+        by_jumlah = sorted(produk, key=lambda p: p["jumlah"], reverse=True)
+        assert [(p["produk"], p["jumlah"]) for p in by_jumlah] == [
+            ("Rokok", 3),
+            ("Mie Instan", 2),
+            ("Bahan Baku", 1),
+        ]
+
+    def test_produk_sorted_by_nilai_even_when_seeded_out_of_order(self, auth_client, db):
+        _seed_produk(db, _get_user_id(db))
+        resp = auth_client.get("/dashboard/overview")
+        assert resp.status_code == 200
+        nilai = [p["nilai"] for p in resp.json()["produk"]]
+        assert nilai == sorted(nilai, reverse=True)
+
+    def test_produk_isolated_per_user(self, auth_client, db):
+        from datetime import timedelta
+        from app.database.models import RoleUser, User
+
+        _seed_produk(db, _get_user_id(db))
+
+        # User lain dengan jurnal sendiri — tidak boleh menambah produk miliknya.
+        other = User(
+            email="other@example.com",
+            hashed_password="x",
+            full_name="Other",
+            company_name="O",
+            role=RoleUser.OWNER,
+            is_active=True,
+            email_verified=True,
+        )
+        db.add(other)
+        db.commit()
+        db.refresh(other)
+        _seed_produk(db, other.id)
+
+        produk = auth_client.get("/dashboard/overview").json()["produk"]
+        names = {p["produk"] for p in produk}
+        assert names == {"Bahan Baku", "Mie Instan", "Rokok"}
+        total = sum(p["nilai"] for p in produk)
+        assert total == 1_200_000.0 + 1_000_000.0 + 450_000.0

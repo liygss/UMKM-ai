@@ -27,7 +27,7 @@ export default function DataTable({ columns, data, emptyMessage = 'Tidak ada dat
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.12)' }}>
+            <tr style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.14)' }}>
               {columns.map((col, i) => (
                 <th key={i} className="tbl-header">{col.header}</th>
               ))}
@@ -52,7 +52,7 @@ export default function DataTable({ columns, data, emptyMessage = 'Tidak ada dat
       </div>
 
       {showPagination && totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid rgba(148, 163, 184, 0.12)', background: 'var(--color-surface-faint)' }}>
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid rgba(148, 163, 184, 0.14)', background: 'var(--color-surface-faint)' }}>
           <p className="text-xs" style={{ color: 'var(--color-slate-body)' }}>
             Menampilkan {page * pageSize + 1}-{Math.min((page + 1) * pageSize, data.length)} dari {data.length} data
           </p>
@@ -61,7 +61,7 @@ export default function DataTable({ columns, data, emptyMessage = 'Tidak ada dat
               onClick={() => setPage(p => Math.max(0, p - 1))}
               disabled={page === 0}
               className="p-1.5 rounded-xl transition hover:bg-blue-500/15 disabled:hover:bg-transparent"
-              style={{ color: page === 0 ? '#475569' : '#60A5FA' }}
+              style={{ color: page === 0 ? '#475569' : 'var(--color-brand-soft)' }}
             >
               <ChevronLeft size={16} />
             </button>
@@ -93,7 +93,7 @@ export default function DataTable({ columns, data, emptyMessage = 'Tidak ada dat
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
               className="p-1.5 rounded-xl transition hover:bg-blue-500/15 disabled:hover:bg-transparent"
-              style={{ color: page >= totalPages - 1 ? '#475569' : '#60A5FA' }}
+              style={{ color: page >= totalPages - 1 ? '#475569' : 'var(--color-brand-soft)' }}
             >
               <ChevronRight size={16} />
             </button>

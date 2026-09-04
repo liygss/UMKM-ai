@@ -11,8 +11,10 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.accounting.dashboard_metrics import (
+    DashboardSummary,
     get_dashboard_summary,
     get_pendapatan_beban_bulanan,
+    get_statistik_produk,
 )
 from app.accounting.laporan_laba_rugi import get_laporan_laba_rugi
 from app.accounting.laporan_posisi_keuangan import get_laporan_posisi_keuangan
@@ -25,12 +27,14 @@ from app.schemas.report_schema import (
     AlertItem,
     DashboardAlertsResponse,
     DashboardInsightResponse,
+    DashboardOverviewResponse,
     DashboardSummaryResponse,
     KategoriBreakdown,
     MonthlyTrendResponse,
     PiutangUtangResponse,
     ProyeksiBulan,
     ProyeksiResponse,
+    StatistikProdukItem,
 )
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -364,26 +368,24 @@ def proyeksi(
     return ProyeksiResponse(tanggal_per=tanggal_per, proyeksi=hasil)
 
 
-@router.get("/alerts", response_model=DashboardAlertsResponse)
-def alerts(
-    tanggal_per: date | None = None,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_active_user),
-) -> DashboardAlertsResponse:
+def _build_alerts(
+    db: Session,
+    summary: DashboardSummary,
+    user_id: str,
+) -> list[AlertItem]:
     """Temuan penting (smart alerts) berbasis aturan sederhana pada akuntansi.
 
     Prioritas: danger → warning → info. Tidak ada data sama sekali → kosong.
+    Memakai summary yang sudah dihitung supaya /alerts dan /overview berbagi
+    satu sumber yang sama (tidak menghitung ulang).
     """
-    if tanggal_per is None:
-        tanggal_per = _latest_data_date(db, current_user.id)
-
-    summary = get_dashboard_summary(db, tanggal_per, user_id=current_user.id)
+    tanggal_per = summary.tanggal_per
     hasil: list[AlertItem] = []
     if summary.jumlah_transaksi_bulan_ini == 0 and summary.total_kas_dan_bank == 0:
-        return DashboardAlertsResponse(alerts=[])
+        return hasil
 
     tren = get_pendapatan_beban_bulanan(
-        db, tanggal_per, user_id=current_user.id, jumlah_bulan=4
+        db, tanggal_per, user_id=user_id, jumlah_bulan=4
     )
 
     # danger: laba negatif 2 bulan beruntun
@@ -413,6 +415,40 @@ def alerts(
                 ),
             )
         )
+
+    # warning: pendapatan ada tapi HPP tidak tercatat -> margin tidak realistis
+    laporan_rugi = get_laporan_laba_rugi(db, tanggal_per, user_id=user_id)
+    total_hpp = laporan_rugi.total_hpp
+    if summary.pendapatan_bulan_ini > 0 and total_hpp <= 0:
+        hasil.append(
+            AlertItem(
+                level="warning",
+                judul="HPP belum dicatat — margin tampak tidak realistis",
+                deskripsi=(
+                    f"Pendapatan bulan ini {_fmt_rp(summary.pendapatan_bulan_ini)} tercatat, "
+                    "tetapi tidak ada Harga Pokok Penjualan (HPP) sama sekali. "
+                    "Akibatnya laba bisa tampak sangat tinggi. Untuk usaha dagang, catat HPP "
+                    "pada saat barang terjual: Debit HPP (5-1000), Kredit Persediaan (1-1300) "
+                    "sebesar harga pokok barang yang terjual."
+                ),
+            )
+        )
+    elif summary.pendapatan_bulan_ini > 0 and total_hpp > 0:
+        # cek margin kotor tidak realistis (>=95%) sebagai tanda HPP sangat kecil
+        margin_kotor = (summary.pendapatan_bulan_ini - total_hpp) / summary.pendapatan_bulan_ini * 100
+        if margin_kotor >= 95:
+            hasil.append(
+                AlertItem(
+                    level="warning",
+                    judul="Margin kotor tidak realistis",
+                    deskripsi=(
+                        f"Margin kotor bulan ini {margin_kotor:.0f}% "
+                        f"(Pendapatan {_fmt_rp(summary.pendapatan_bulan_ini)} vs HPP "
+                        f"{_fmt_rp(total_hpp)}). Periksa kembali apakah HPP sudah dicatat "
+                        "lengkap sesuai barang yang terjual."
+                    ),
+                )
+            )
 
     # warning: beban naik >20% vs bulan lalu
     if len(tren) >= 2 and tren[-2].beban > 0:
@@ -446,7 +482,7 @@ def alerts(
         )
 
     # info: satu kategori beban mendominasi >40%
-    rincian = _beban_per_akun_bulan_ini(db, tanggal_per, current_user.id, limit=10)
+    rincian = _beban_per_akun_bulan_ini(db, tanggal_per, user_id, limit=10)
     total_beban = sum(b.nilai for b in rincian)
     if rincian and total_beban > 0:
         top = rincian[0]
@@ -464,7 +500,7 @@ def alerts(
             )
 
     # info: ada kewajiban utang pajak
-    piutang_utang = _hitung_piutang_utang(db, tanggal_per, current_user.id)
+    piutang_utang = _hitung_piutang_utang(db, tanggal_per, user_id)
     if piutang_utang.utang_pajak > 0:
         hasil.append(
             AlertItem(
@@ -477,4 +513,74 @@ def alerts(
             )
         )
 
-    return DashboardAlertsResponse(alerts=hasil[:5])
+    return hasil[:5]
+
+
+@router.get("/alerts", response_model=DashboardAlertsResponse)
+def alerts(
+    tanggal_per: date | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_active_user),
+) -> DashboardAlertsResponse:
+    """Temuan penting (smart alerts). Ringkasan dihitung sekali per request."""
+    if tanggal_per is None:
+        tanggal_per = _latest_data_date(db, current_user.id)
+
+    summary = get_dashboard_summary(db, tanggal_per, user_id=current_user.id)
+    return DashboardAlertsResponse(alerts=_build_alerts(db, summary, current_user.id))
+
+
+@router.get("/overview", response_model=DashboardOverviewResponse)
+def overview(
+    tanggal_per: date | None = None,
+    tanggal_mulai: date | None = None,
+    jumlah_bulan: int = 6,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_active_user),
+) -> DashboardOverviewResponse:
+    """Satu panggilan untuk seluruh widget dashboard (kecuali Insight AI).
+
+    Menghabiskan 1 request saja sehingga halaman tidak menunggu banyak
+    endpoint paralel. Semua perhitungan berbagi memo neraca saldo per request,
+    jadi query database yang sama tidak dihitung ulang.
+    """
+    if tanggal_per is None:
+        tanggal_per = _latest_data_date(db, current_user.id)
+
+    summary = get_dashboard_summary(db, tanggal_per, user_id=current_user.id, tanggal_mulai=tanggal_mulai)
+    tren = get_pendapatan_beban_bulanan(
+        db, tanggal_per, user_id=current_user.id, jumlah_bulan=jumlah_bulan
+    )
+
+    return DashboardOverviewResponse(
+        summary=DashboardSummaryResponse(
+            tanggal_per=summary.tanggal_per,
+            saldo_kas=summary.saldo_kas,
+            saldo_bank=summary.saldo_bank,
+            total_kas_dan_bank=summary.total_kas_dan_bank,
+            pendapatan_bulan_ini=summary.pendapatan_bulan_ini,
+            beban_bulan_ini=summary.beban_bulan_ini,
+            laba_rugi_bulan_ini=summary.laba_rugi_bulan_ini,
+            total_pendapatan_tahun_berjalan=summary.total_pendapatan_tahun_berjalan,
+            total_beban_tahun_berjalan=summary.total_beban_tahun_berjalan,
+            laba_rugi_tahun_berjalan=summary.laba_rugi_tahun_berjalan,
+            jumlah_transaksi_bulan_ini=summary.jumlah_transaksi_bulan_ini,
+        ),
+        monthly=[
+            MonthlyTrendResponse(
+                bulan=h.bulan,
+                label=h.label,
+                pendapatan=h.pendapatan,
+                beban=h.beban,
+                laba_rugi=h.laba_rugi,
+            )
+            for h in tren
+        ],
+        alerts=_build_alerts(db, summary, current_user.id),
+        piutang_utang=_hitung_piutang_utang(db, tanggal_per, current_user.id),
+        kategori=_beban_per_akun_bulan_ini(db, tanggal_per, current_user.id),
+        produk=[
+            StatistikProdukItem(produk=p.produk, nilai=p.nilai, jumlah=p.jumlah)
+            for p in get_statistik_produk(db, tanggal_per, current_user.id)
+        ],
+    )

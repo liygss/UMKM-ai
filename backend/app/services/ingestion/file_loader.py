@@ -5,7 +5,7 @@ supaya markdown_generator.py tidak perlu tahu format aslinya.
 
 import re
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 
 import pandas as pd
 from pypdf import PdfReader
@@ -41,15 +41,21 @@ class LoadedDocument:
 
 
 def _looks_like_date_series(series) -> bool:
-    """Cek apakah suatu kolom berisi tanggal."""
-    sample = [str(v).strip() for v in series.dropna().head(20) if str(v).strip()]
+    """Cek apakah suatu kolom berisi tanggal (termasuk sel datetime/date dari Excel)."""
+    sample = [v for v in series.dropna().head(20)]
     if not sample:
         return False
-    date_formats = ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d")
+    date_formats = (
+        "%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%d.%m.%Y",
+        "%d/%m/%Y %H:%M", "%d-%m-%Y %H:%M", "%Y-%m-%d %H:%M",
+    )
     for raw in sample:
-        if raw.lower() in ("nan", "none", "nat"):
+        if isinstance(raw, (datetime, date)):
             continue
-        if not any(_try_parse_date(raw, fmt) for fmt in date_formats):
+        s = str(raw).strip().replace("T", " ").replace("Z", "")
+        if s.lower() in ("nan", "none", "nat", "na", "null"):
+            continue
+        if not any(_try_parse_date(s, fmt) for fmt in date_formats):
             return False
     return True
 

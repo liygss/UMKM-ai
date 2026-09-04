@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { motion } from 'motion/react'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { formatRupiah } from '../utils/formatters'
@@ -20,7 +21,7 @@ const SHADOW = {
   blue: '0 8px 24px rgba(59, 130, 246, 0.35)',
 }
 
-export default function StatCard({ title, value, icon: Icon, trend, color = 'indigo', animate = true, trendUpIsGood = true, format = formatRupiah }) {
+function StatCard({ title, value, icon: Icon, trend, color = 'indigo', animate = true, trendUpIsGood = true, format = formatRupiah }) {
   const displayValue = animate && typeof value === 'number' && isFinite(value)
     ? <MotionNumber value={value} format={format} />
     : value
@@ -33,7 +34,7 @@ export default function StatCard({ title, value, icon: Icon, trend, color = 'ind
       whileHover={{ y: -6, transition: EASE_GENTLE }}
       className="card group flex items-start justify-between relative overflow-hidden"
     >
-      <div className="absolute inset-0 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-300" style={{ background: GRADIENT_BG[color] }} />
+      <div className="absolute inset-0 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity duration-300" style={{ background: GRADIENT_BG[color] }} />
       <div className="relative">
         <p className="text-sm font-medium" style={{ color: 'var(--color-slate-body)' }}>{title}</p>
         <p className="mt-2 text-xl lg:text-2xl font-extrabold whitespace-nowrap" style={{ color: 'var(--color-slate-heading)' }}>{displayValue}</p>
@@ -58,3 +59,5 @@ export default function StatCard({ title, value, icon: Icon, trend, color = 'ind
     </motion.div>
   )
 }
+
+export default memo(StatCard)

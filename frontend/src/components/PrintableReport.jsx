@@ -18,7 +18,11 @@ function formatRupiahCetak(val) {
   return formatted
 }
 
-function ReportHeader({ user, title, date }) {
+function ReportHeader({ user, title, date, startDate, endDate }) {
+  const dateLabel = startDate && endDate
+    ? `${formatTanggalIndo(startDate)} - ${formatTanggalIndo(endDate)}`
+    : formatTanggalIndo(date)
+
   return (
     <div className="rpt-header">
       <div className="rpt-header-top">
@@ -39,7 +43,7 @@ function ReportHeader({ user, title, date }) {
       <div className="rpt-header-bottom">
         <div>
           <h2 className="rpt-title">{title}</h2>
-          <p className="rpt-subtitle">Per {formatTanggalIndo(date)}</p>
+          <p className="rpt-subtitle">Per {dateLabel}</p>
         </div>
         <div className="rpt-meta">
           <span className="rpt-meta-label">Dicetak</span>

@@ -20,158 +20,158 @@ function rp(val) {
   return formatted
 }
 
+const KICKER = `Laporan Keuangan`
+const BRAND = `Finora`
+
 const CSS = `
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { background: white; }
 body {
-  font-family: -apple-system, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   color: #1e293b;
-  font-size: 10pt;
-  line-height: 1.5;
+  font-size: 9.5pt;
+  line-height: 1.55;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
-@page { size: A4 portrait; margin: 12mm 10mm; }
+@page { size: A4 portrait; margin: 14mm 12mm; }
 
 .page {
   display: flex;
   flex-direction: column;
-  min-height: 273mm;
+  min-height: 268mm;
   padding: 0;
-  page-break-after: always;
 }
-.page:last-child { page-break-after: auto; }
+.cover { page-break-inside: avoid; }
 
 /* ===== COVER PAGE ===== */
-.cover { position: relative; }
-.cover-band {
-  height: 6mm; border-radius: 3mm;
-  background: linear-gradient(90deg, #1D4ED8, #2563EB 40%, #60A5FA 70%, #1D4ED8);
-  background-size: 300% 100%;
+.cover { position: relative; padding: 8mm; }
+.cover-frame {
+  position: absolute; top: 4mm; left: 4mm; right: 4mm; bottom: 4mm;
+  border: 2px solid #1e3a8a; border-radius: 4px; pointer-events: none; z-index: 0;
 }
-.cover-top {
-  display: flex; align-items: center; gap: 16px;
-  margin-top: 14mm;
+.cover-frame::after {
+  content: ''; position: absolute; top: 3px; left: 3px; right: 3px; bottom: 3px;
+  border: 1px solid #bfdbfe; border-radius: 2px;
 }
+.cover > *:not(.cover-frame) { position: relative; z-index: 1; }
+.cover-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 2mm 2mm 8px; border-bottom: 2px solid #1e3a8a;
+}
+.cover-top { display: flex; align-items: center; gap: 14px; }
 .cover-logo {
-  width: 58px; height: 58px; border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.35);
+  width: 50px; height: 50px; border-radius: 12px;
+  overflow: hidden; flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(30, 58, 138, 0.25);
 }
-.cover-logo img { width: 58px; height: 58px; object-fit: cover; }
+.cover-logo img { width: 50px; height: 50px; object-fit: cover; }
 .cover-brand-name {
   font-size: 19pt; font-weight: 800; color: #0f172a;
-  letter-spacing: -0.02em; line-height: 1.1;
+  letter-spacing: 0.04em; line-height: 1.1;
 }
-.cover-brand-tag { font-size: 8.5pt; color: #64748b; font-weight: 500; margin-top: 3px; }
-.cover-center { text-align: center; margin-top: 30mm; }
+.cover-brand-tag { font-size: 8pt; color: #64748b; font-weight: 500; margin-top: 2px; letter-spacing: 0.02em; }
+.cover-stamp {
+  text-align: center; padding: 6px 12px;
+  border: 1.5px solid #1e3a8a; border-radius: 6px; background: #f8fafc;
+}
+.cover-stamp-main { display: block; font-size: 8pt; font-weight: 800; color: #1e3a8a; letter-spacing: 0.14em; }
+.cover-stamp-sub { display: block; font-size: 6.5pt; font-weight: 600; color: #64748b; letter-spacing: 0.08em; margin-top: 2px; }
+.cover-center { text-align: center; margin-top: 22mm; }
 .cover-kicker {
   display: inline-block; font-size: 8pt; font-weight: 800;
-  letter-spacing: 0.35em; color: #2563EB; text-transform: uppercase;
-  margin-bottom: 8px;
+  letter-spacing: 0.34em; color: #1e3a8a; text-transform: uppercase;
+  margin-bottom: 12px;
+  padding: 4px 16px; border: 1px solid #bfdbfe; border-radius: 999px;
+  background: #eff6ff;
 }
 .cover-title {
-  font-size: 34pt; font-weight: 900; color: #0f172a;
-  letter-spacing: -0.03em; margin: 0 0 10px; line-height: 1.05;
+  font-size: 33pt; font-weight: 900; color: #0f172a;
+  letter-spacing: -0.02em; margin: 0 0 10px; line-height: 1.0;
 }
 .cover-sub {
-  font-size: 10pt; color: #64748b; line-height: 1.65;
+  font-size: 9.5pt; color: #64748b; line-height: 1.6;
   max-width: 120mm; margin: 0 auto;
 }
-.cover-divider {
-  width: 46mm; height: 3px; margin: 16px auto 0;
-  background: linear-gradient(90deg, #1D4ED8, #60A5FA);
-  border-radius: 3px;
+.cover-ornament {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin: 16px auto 0; width: 60mm;
 }
-.cover-meta {
-  display: flex; gap: 12px; margin-top: 24mm;
+.cover-ornament::before, .cover-ornament::after {
+  content: ''; flex: 1; height: 1px; background: #1e3a8a;
 }
-.cover-meta-block {
-  flex: 1; border: 1px solid #e2e8f0; border-radius: 12px;
-  padding: 13px 16px; background: #f8fafc;
-}
+.cover-ornament span { color: #1e3a8a; font-size: 9pt; line-height: 1; }
+.cover-meta { margin: 18mm auto 0; max-width: 150mm; border-collapse: collapse; width: 100%; }
+.cover-meta td { padding: 9px 14px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+.cover-meta tr:last-child td { border-bottom: none; }
 .cover-meta-label {
-  display: block; font-size: 6.8pt; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.09em;
-  color: #94a3b8; margin-bottom: 5px;
+  width: 32%; font-size: 7.5pt; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8;
+  border-right: 1px solid #e2e8f0;
 }
-.cover-meta-value { display: block; font-size: 10pt; font-weight: 700; color: #0f172a; line-height: 1.35; }
-.cover-meta-small { display: block; font-size: 8pt; color: #64748b; margin-top: 3px; }
-.cover-toc { margin-top: 26mm; }
+.cover-meta-value { font-size: 10.5pt; font-weight: 700; color: #0f172a; line-height: 1.35; }
+.cover-meta-small { display: block; font-size: 8pt; color: #64748b; margin-top: 2px; font-weight: 500; }
+.cover-toc { margin: 12mm auto 0; max-width: 150mm; }
 .cover-toc-title {
-  font-size: 9pt; font-weight: 800; color: #2563EB;
-  text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 10px;
+  font-size: 9pt; font-weight: 800; color: #1e3a8a;
+  text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
 }
-.cover-toc-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 10px;
-  margin-bottom: 8px; background: white;
-}
+.cover-toc-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, #bfdbfe, transparent); }
+.cover-toc-list { list-style: none; margin: 0; padding: 0; }
+.cover-toc-item { display: flex; align-items: center; gap: 12px; margin-bottom: 7px; }
 .cover-toc-num {
-  width: 27px; height: 27px; border-radius: 7px; flex-shrink: 0;
-  background: linear-gradient(135deg, #1D4ED8, #2563EB); color: white;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10pt; font-weight: 800;
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  background: #1e3a8a; color: white; border: 1.5px solid #1e3a8a;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 9.5pt; font-weight: 800;
 }
-.cover-toc-name { font-size: 10pt; font-weight: 600; color: #334155; }
-.cover-foot { margin-top: auto; }
-.cover-foot-line {
-  height: 2px; margin-bottom: 10px;
-  background: linear-gradient(90deg, #2563EB, #BFDBFE, transparent);
+.cover-toc-line { flex: 1; border-bottom: 1px dotted #cbd5e1; }
+.cover-toc-name { font-size: 10pt; font-weight: 600; color: #334155; white-space: nowrap; padding-right: 10px; }
+.cover-seal {
+  position: absolute; right: 14mm; bottom: 16mm;
+  width: 34mm; height: 34mm; border: 2px solid #1e3a8a; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; color: #1e3a8a; opacity: 0.9;
 }
-.cover-foot span { font-size: 7pt; color: #94a3b8; }
+.cover-seal-monogram { font-size: 16pt; font-weight: 900; line-height: 1; }
+.cover-seal-text { font-size: 5.5pt; font-weight: 700; letter-spacing: 0.1em; margin-top: 4px; text-transform: uppercase; }
+.cover-foot { margin-top: auto; padding-top: 14px; }
+.cover-foot-line { height: 1.5px; background: #1e3a8a; margin-bottom: 8px; }
+.cover-foot-row { display: flex; justify-content: space-between; align-items: center; }
+.cover-foot span { font-size: 7pt; color: #64748b; }
+.cover-pageno {
+  font-size: 7pt; font-weight: 700; color: #1e3a8a; letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 
 /* Header */
-.hdr { margin-bottom: 22px; }
-.hdr-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
-.hdr-left { display: flex; align-items: center; gap: 14px; }
-.hdr-logo {
-  width: 48px; height: 48px;
-  overflow: hidden;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-}
-.hdr-logo img { width: 48px; height: 48px; object-fit: cover; }
-.hdr-company {
-  font-size: 17pt; font-weight: 800; color: #0f172a;
-  letter-spacing: -0.03em; margin: 0; line-height: 1.15;
-}
-.hdr-email { font-size: 8pt; color: #94a3b8; margin: 3px 0 0; }
-.hdr-badge {
-  display: inline-block; padding: 5px 14px;
-  background: linear-gradient(135deg, #2563EB, #60A5FA);
-  color: white; border-radius: 20px;
-  font-size: 7.5pt; font-weight: 700; letter-spacing: 0.06em;
-}
-.hdr-divider {
-  height: 1px;
-  background: linear-gradient(90deg, #e2e8f0, #BFDBFE, transparent);
-  margin-bottom: 14px;
-}
-.hdr-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
+.hdr { margin-bottom: 18px; }
 .hdr-title {
-  font-size: 13pt; font-weight: 700; color: #2563EB;
-  margin: 0 0 3px; text-transform: uppercase; letter-spacing: 0.1em;
+  font-size: 13.5pt; font-weight: 700; color: #1d4ed8;
+  margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.08em;
 }
-.hdr-subtitle { font-size: 9pt; color: #64748b; margin: 0; }
-.hdr-meta { text-align: right; }
-.hdr-meta-label { display: block; font-size: 7pt; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
-.hdr-meta-value { display: block; font-size: 8pt; color: #475569; font-weight: 500; }
+.hdr-subtitle { font-size: 9pt; color: #64748b; margin: 0 0 12px; }
+.hdr-divider { height: 1px; background: #e2e8f0; }
 
 /* Tables */
-.tbl { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 14px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 16px; }
 .tbl thead { display: table-header-group; }
-.tbl thead tr { background: linear-gradient(135deg, #1D4ED8, #2563EB); }
+.tbl thead tr { background: linear-gradient(135deg, #1e40af, #2563eb); }
 .tbl th {
-  padding: 9px 14px; font-weight: 700; font-size: 7.5pt;
-  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 8px 12px; font-weight: 700; font-size: 7.5pt;
+  text-transform: uppercase; letter-spacing: 0.05em;
   color: white; text-align: left; border: none;
 }
-.tbl td { padding: 7px 14px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+.tbl td { padding: 7px 12px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
 .tbl tbody tr { page-break-inside: avoid; }
-.tbl tbody tr:last-child td { border-bottom: 2px solid #cbd5e1; }
+.tbl tbody tr:last-child td { border-bottom: 2px solid #dbe4f0; }
+.tbl tfoot tr td { border: none; }
 .r { text-align: right; }
-.m { font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', monospace; font-size: 8.5pt; color: #334155; }
+.m {
+  font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Roboto Mono', Consolas, monospace;
+  font-size: 8.5pt; color: #334155; font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
 .nm { font-weight: 500; color: #1e293b; }
 
 /* Row striping */
@@ -181,63 +181,59 @@ body {
 /* Kategori badge */
 .kat {
   display: inline-block; padding: 2px 10px;
-  background: #EFF6FF; color: #2563EB; border-radius: 12px;
+  background: #eff6ff; color: #1d4ed8; border-radius: 999px;
   font-size: 7.5pt; font-weight: 600; letter-spacing: 0.02em;
 }
 
 /* Section headers */
 .sec td {
-  padding: 10px 14px 7px !important;
-  font-size: 9.5pt; font-weight: 700; color: #1D4ED8;
-  background: #EFF6FF !important;
-  border-bottom: 2px solid #BFDBFE !important; border-top: none !important;
+  padding: 10px 12px !important;
+  font-size: 9.5pt; font-weight: 700; color: #1e40af;
+  background: #eff6ff !important;
+  border-bottom: 1px solid #bfdbfe !important; border-top: none !important;
 }
 .sec-num {
   display: inline-flex; align-items: center; justify-content: center;
   width: 22px; height: 22px;
-  background: linear-gradient(135deg, #1D4ED8, #2563EB);
+  background: linear-gradient(135deg, #1e40af, #2563eb);
   color: white; border-radius: 6px;
-  font-size: 9px; font-weight: 700; margin-right: 8px; vertical-align: middle;
+  font-size: 9pt; font-weight: 700; margin-right: 8px; vertical-align: middle;
 }
 
 /* Subtotal */
 .sub td {
-  padding: 8px 14px !important;
-  border-top: 1px solid #BFDBFE !important;
-  border-bottom: 1px solid #BFDBFE !important;
-  border-left: 4px solid #60A5FA !important;
-  font-weight: 600; color: #334155; background: #F8FAFC !important;
+  padding: 7px 12px !important;
+  border-top: 1px solid #bfdbfe !important;
+  border-bottom: 1px solid #bfdbfe !important;
+  border-left: 4px solid #60a5fa !important;
+  font-weight: 600; color: #334155; background: #f8fafc !important;
 }
 
 /* Total */
 .tot td {
-  padding: 9px 14px !important;
-  border-top: 2px solid #1D4ED8 !important;
-  border-bottom: 2px solid #1D4ED8 !important;
-  border-left: 4px solid #1D4ED8 !important;
+  padding: 8px 12px !important;
+  border-top: 2px solid #1d4ed8 !important;
+  border-bottom: 2px solid #1d4ed8 !important;
+  border-left: 4px solid #1d4ed8 !important;
   font-weight: 800; font-size: 10pt; color: #0f172a;
-  background: #EFF6FF !important;
+  background: #eff6ff !important;
 }
 
 /* Grand total / Final */
 .grand td, .final td {
-  padding: 11px 14px !important;
-  border-top: 3px double #1D4ED8 !important;
-  border-bottom: 3px double #1D4ED8 !important;
-  border-left: 5px solid #1D4ED8 !important;
-  font-weight: 800; font-size: 11pt; color: white;
-  background: linear-gradient(135deg, #1D4ED8, #2563EB) !important;
-  border-radius: 4px;
+  padding: 10px 12px !important;
+  border-top: 2px solid #1e40af !important;
+  border-bottom: 2px solid #1e40af !important;
+  border-left: 5px solid #1e40af !important;
+  font-weight: 800; font-size: 10.5pt; color: white;
+  background: linear-gradient(135deg, #1e40af, #2563eb) !important;
 }
 
 /* Status */
-.status-line {
-  margin-top: 12px; font-size: 9pt; color: #475569;
-  display: flex; align-items: center; gap: 8px;
-}
+.status-line { margin-top: 12px; font-size: 9pt; color: #475569; display: flex; align-items: center; gap: 8px; }
 .status {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 14px; border-radius: 20px;
+  padding: 4px 14px; border-radius: 999px;
   font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
 }
 .status-ok { background: #ecfdf5; color: #059669; }
@@ -251,21 +247,18 @@ body {
 .sec-title {
   font-size: 10pt; font-weight: 700; color: #0f172a;
   margin: 0 0 10px; padding: 8px 12px;
-  background: #EFF6FF; border-left: 4px solid #2563EB;
+  background: #eff6ff; border-left: 4px solid #2563eb;
   border-radius: 0 6px 6px 0; display: flex; align-items: center;
 }
-.list { margin: 0; padding-left: 22px; font-size: 9pt; line-height: 1.8; color: #475569; }
+.sec-title .sec-num { font-size: 8.5pt; height: 20px; width: 20px; }
+.list { margin: 0; padding-left: 20px; font-size: 9pt; line-height: 1.8; color: #475569; }
 .list li { margin-bottom: 4px; }
 .compact td { padding: 5px 10px; font-size: 8.5pt; }
 .italic { font-style: italic; color: #64748b; font-size: 8.5pt; }
 
 /* Footer */
-.ftr { margin-top: auto; padding-top: 24px; }
-.ftr-line {
-  height: 2px;
-  background: linear-gradient(90deg, #2563EB, #BFDBFE, transparent);
-  margin-bottom: 10px;
-}
+.ftr { margin-top: auto; padding-top: 22px; }
+.ftr-line { height: 2px; background: linear-gradient(90deg, #2563eb, #bfdbfe, transparent); margin-bottom: 10px; }
 .ftr-content { display: flex; justify-content: space-between; align-items: center; }
 .ftr-text { font-size: 7pt; color: #94a3b8; }
 `
@@ -279,79 +272,82 @@ const TOC_ITEMS = [
   'Catatan Atas Laporan Keuangan (CALK)',
 ]
 
-function coverPage(date, user) {
+function coverPage(date, user, startDate, endDate) {
+  const dateLabel = startDate && endDate
+    ? `${formatTanggalIndo(startDate)} - ${formatTanggalIndo(endDate)}`
+    : formatTanggalIndo(date)
+
   const toc = TOC_ITEMS.map((name, i) => `
-    <div class="cover-toc-item">
+    <li class="cover-toc-item">
       <span class="cover-toc-num">${i + 1}</span>
       <span class="cover-toc-name">${name}</span>
-    </div>`).join('')
+      <span class="cover-toc-line"></span>
+    </li>`).join('')
 
   return `
   <div class="page cover">
-    <div class="cover-band"></div>
-    <div class="cover-top">
-      <div class="cover-logo">${LOGO_SVG}</div>
-      <div>
-        <div class="cover-brand-name">Finora</div>
-        <div class="cover-brand-tag">Sistem Akuntansi Cerdas untuk UMKM</div>
+    <div class="cover-frame"></div>
+    <div class="cover-header">
+      <div class="cover-top">
+        <div class="cover-logo">${LOGO_SVG}</div>
+        <div>
+          <div class="cover-brand-name">${BRAND}</div>
+          <div class="cover-brand-tag">Sistem Akuntansi Cerdas untuk UMKM</div>
+        </div>
+      </div>
+      <div class="cover-stamp">
+        <span class="cover-stamp-main">DOKUMEN RESMI</span>
+        <span class="cover-stamp-sub">BERBASIS SAK EMKM</span>
       </div>
     </div>
     <div class="cover-center">
-      <span class="cover-kicker">Laporan Keuangan</span>
+      <span class="cover-kicker">${KICKER}</span>
       <h1 class="cover-title">Laporan Keuangan</h1>
       <p class="cover-sub">Disusun sesuai Standar Akuntansi Keuangan Entitas Mikro, Kecil, dan Menengah (SAK EMKM)</p>
-      <div class="cover-divider"></div>
+      <div class="cover-ornament"><span>&#9670;</span></div>
     </div>
-    <div class="cover-meta">
-      <div class="cover-meta-block">
-        <span class="cover-meta-label">Perusahaan</span>
-        <span class="cover-meta-value">${user?.company_name || 'Nama Perusahaan'}</span>
-        ${user?.email ? `<span class="cover-meta-small">${user.email}</span>` : ''}
-      </div>
-      <div class="cover-meta-block">
-        <span class="cover-meta-label">Periode</span>
-        <span class="cover-meta-value">Per ${formatTanggalIndo(date)}</span>
-      </div>
-      <div class="cover-meta-block">
-        <span class="cover-meta-label">Dicetak</span>
-        <span class="cover-meta-value">${formatTanggalCetak()}</span>
-      </div>
-    </div>
+    <table class="cover-meta">
+      <tr>
+        <td class="cover-meta-label">Perusahaan</td>
+        <td class="cover-meta-value">${user?.company_name || 'Nama Perusahaan'}${user?.email ? `<span class="cover-meta-small">${user.email}</span>` : ''}</td>
+      </tr>
+      <tr>
+        <td class="cover-meta-label">Periode</td>
+        <td class="cover-meta-value">Per ${dateLabel}</td>
+      </tr>
+      <tr>
+        <td class="cover-meta-label">Dicetak</td>
+        <td class="cover-meta-value">${formatTanggalCetak()}</td>
+      </tr>
+    </table>
     <div class="cover-toc">
       <div class="cover-toc-title">Daftar Isi</div>
-      ${toc}
+      <ul class="cover-toc-list">${toc}</ul>
+    </div>
+    <div class="cover-seal">
+      <div class="cover-seal-monogram">${BRAND.charAt(0)}</div>
+      <div class="cover-seal-text">Dokumen Sah</div>
     </div>
     <div class="cover-foot">
       <div class="cover-foot-line"></div>
-      <span>Dokumen ini dihasilkan secara otomatis oleh Finora</span>
+      <div class="cover-foot-row">
+        <span>Dokumen ini dihasilkan secara otomatis oleh ${BRAND}</span>
+        <span class="cover-pageno">Halaman 1</span>
+      </div>
     </div>
   </div>`
 }
 
-function header(title, date, user) {
+function header(title, date, startDate, endDate) {
+  const dateLabel = startDate && endDate
+    ? `${formatTanggalIndo(startDate)} - ${formatTanggalIndo(endDate)}`
+    : formatTanggalIndo(date)
+
   return `
   <div class="hdr">
-    <div class="hdr-top">
-      <div class="hdr-left">
-        <div class="hdr-logo">${LOGO_SVG}</div>
-        <div>
-          <h1 class="hdr-company">${user?.company_name || 'Nama Perusahaan'}</h1>
-          ${user?.email ? `<p class="hdr-email">${user.email}</p>` : ''}
-        </div>
-      </div>
-      <div class="hdr-badge">Finora</div>
-    </div>
+    <h2 class="hdr-title">${title}</h2>
+    <p class="hdr-subtitle">Per ${dateLabel}</p>
     <div class="hdr-divider"></div>
-    <div class="hdr-bottom">
-      <div>
-        <h2 class="hdr-title">${title}</h2>
-        <p class="hdr-subtitle">Per ${formatTanggalIndo(date)}</p>
-      </div>
-      <div class="hdr-meta">
-        <span class="hdr-meta-label">Dicetak</span>
-        <span class="hdr-meta-value">${formatTanggalCetak()}</span>
-      </div>
-    </div>
   </div>`
 }
 
@@ -360,7 +356,7 @@ function footer() {
   <div class="ftr">
     <div class="ftr-line"></div>
     <div class="ftr-content">
-      <span class="ftr-text">Dibuat oleh Finora - Sistem Akuntansi Cerdas</span>
+      <span class="ftr-text">Dibuat oleh ${BRAND} - Sistem Akuntansi Cerdas</span>
       <span class="ftr-text">${formatTanggalCetak()}</span>
     </div>
   </div>`
@@ -373,7 +369,7 @@ function statusBadge(isBalance) {
   return `<div class="status-line">Status: <span class="status ${cls}"><span class="dot ${dotCls}"></span>${text}</span></div>`
 }
 
-function neracaSaldo(data, date, user) {
+function neracaSaldo(data, date, startDate, endDate) {
   const rows = (data.baris || []).map((r, i) => `
     <tr class="${i % 2 === 0 ? 'even' : 'odd'}">
       <td class="m">${r.kode_akun}</td>
@@ -385,7 +381,7 @@ function neracaSaldo(data, date, user) {
 
   return `
   <div class="page">
-    ${header('LAPORAN NERACA SALDO', date, user)}
+    ${header('LAPORAN NERACA SALDO', date, startDate, endDate)}
     <table class="tbl">
       <thead><tr>
         <th style="width:12%">Kode</th>
@@ -425,10 +421,10 @@ function subtotalRow(label, value) {
   return `<tr class="sub"><td colspan="2">${label}</td><td class="r m">${rp(value)}</td></tr>`
 }
 
-function labaRugi(data, date, user) {
+function labaRugi(data, date, startDate, endDate) {
   return `
   <div class="page">
-    ${header('LAPORAN LABA RUGI', date, user)}
+    ${header('LAPORAN LABA RUGI', date, startDate, endDate)}
     <table class="tbl">
       <thead><tr>
         <th style="width:15%">Kode</th>
@@ -457,10 +453,10 @@ function labaRugi(data, date, user) {
   </div>`
 }
 
-function posisiKeuangan(data, date, user) {
+function posisiKeuangan(data, date, startDate, endDate) {
   return `
   <div class="page">
-    ${header('LAPORAN POSISI KEUANGAN', date, user)}
+    ${header('LAPORAN POSISI KEUANGAN', date, startDate, endDate)}
     <table class="tbl">
       <thead><tr>
         <th style="width:15%">Kode</th>
@@ -490,7 +486,7 @@ function posisiKeuangan(data, date, user) {
   </div>`
 }
 
-function calk(data, date, user) {
+function calk(data, date, startDate, endDate) {
   let sections = ''
   let num = 1
 
@@ -549,7 +545,7 @@ function calk(data, date, user) {
 
   return `
   <div class="page">
-    ${header('CATATAN ATAS LAPORAN KEUANGAN (CALK)', date, user)}
+    ${header('CATATAN ATAS LAPORAN KEUANGAN (CALK)', date, startDate, endDate)}
     ${sections}
     ${footer()}
   </div>`
@@ -562,14 +558,14 @@ const BUILDERS = {
   'calk': calk,
 }
 
-export function buildReportHtml(tab, data, date, user) {
+export function buildReportHtml(tab, data, date, _user) {
   const builder = BUILDERS[tab]
   if (!builder || !data) return ''
 
-  return `<style>${CSS}</style>${builder(data, date, user)}`
+  return `<style>${CSS}</style>${builder(data, date)}`
 }
 
-export function buildReportFullHtml(tab, data, date, user) {
+export function buildReportFullHtml(tab, data, date, _user) {
   const builder = BUILDERS[tab]
   if (!builder || !data) return ''
 
@@ -581,12 +577,12 @@ export function buildReportFullHtml(tab, data, date, user) {
   <style>${CSS}</style>
 </head>
 <body>
-  ${builder(data, date, user)}
+  ${builder(data, date)}
 </body>
 </html>`
 }
 
-export function buildAllReportsFullHtml(allData, date, user) {
+export function buildAllReportsFullHtml(allData, date, user, startDate, endDate) {
   if (!allData) return ''
 
   const pages = []
@@ -594,7 +590,7 @@ export function buildAllReportsFullHtml(allData, date, user) {
     const builder = BUILDERS[tab]
     const data = allData[tab]
     if (builder && data) {
-      pages.push(builder(data, date, user))
+      pages.push(builder(data, date, startDate, endDate))
     }
   }
 
@@ -608,7 +604,7 @@ export function buildAllReportsFullHtml(allData, date, user) {
   <style>${CSS}</style>
 </head>
 <body>
-  ${coverPage(date, user)}
+  ${coverPage(date, user, startDate, endDate)}
   ${pages.join('\n')}
 </body>
 </html>`

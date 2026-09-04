@@ -43,6 +43,19 @@ engine = create_engine(
     **_engine_kwargs,
 )
 
+if settings.is_sqlite:
+    # WAL mode: reader tidak pernah terblokir writer (dan sebaliknya). Krusial
+    # saat upload/ingest jutaan baris berjalan — dashboard tetap merespons.
+    from sqlalchemy import event
+
+    @event.listens_for(engine, "connect")
+    def _enable_sqlite_wal(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        try:
+            cursor.execute("PRAGMA journal_mode=WAL")
+        finally:
+            cursor.close()
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

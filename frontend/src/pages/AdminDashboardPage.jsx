@@ -18,7 +18,7 @@ const PLAN_BADGE = {
 
 const ROLE_BADGE = {
   ADMIN: { label: 'Admin', bg: 'rgba(139, 92, 246, 0.14)', fg: '#C4B5FD', border: 'rgba(139, 92, 246, 0.35)' },
-  OWNER: { label: 'Owner', bg: 'rgba(59, 130, 246, 0.12)', fg: '#93C5FD', border: 'rgba(59, 130, 246, 0.3)' },
+  OWNER: { label: 'Owner', bg: 'rgba(59, 130, 246, 0.12)', fg: 'var(--color-accent-blue)', border: 'rgba(59, 130, 246, 0.3)' },
   STAFF: { label: 'Staff', bg: 'rgba(245, 158, 11, 0.12)', fg: '#FCD34D', border: 'rgba(245, 158, 11, 0.3)' },
 }
 
@@ -245,10 +245,10 @@ function HealthCard() {
     <div className="card">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Database size={16} style={{ color: '#60A5FA' }} />
+          <Database size={16} style={{ color: 'var(--color-brand-soft)' }} />
           <h3 className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Kesehatan Sistem</h3>
         </div>
-        <button onClick={() => load()} disabled={loading} title="Periksa ulang" className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-xl transition-all hover:bg-white/5 disabled:opacity-50" style={{ color: '#60A5FA', background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)' }}>
+        <button onClick={() => load()} disabled={loading} title="Periksa ulang" className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-xl transition-all hover:bg-white/5 disabled:opacity-50" style={{ color: 'var(--color-brand-soft)', background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)' }}>
           <RefreshCw size={12} className={loading ? 'animate-spin' : ''} /> Cek
         </button>
       </div>
@@ -381,7 +381,7 @@ export default function AdminDashboardPage() {
         <button
           onClick={() => setManageTarget({ ...u, isSelf: u.id === user.id })}
           className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-blue-500/10"
-          style={{ color: '#60A5FA', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(96,165,250,0.25)' }}
+          style={{ color: 'var(--color-brand-soft)', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(96,165,250,0.25)' }}
         >
           Kelola
         </button>
@@ -403,7 +403,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={refresh} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-200 hover:bg-blue-500/10" style={{ color: '#60A5FA', background: 'var(--color-surface-card)', border: '1px solid rgba(148,163,184,0.14)' }}>
+          <button onClick={refresh} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-200 hover:bg-blue-500/10" style={{ color: 'var(--color-brand-soft)', background: 'var(--color-surface-card)', border: '1px solid rgba(148,163,184,0.14)' }}>
             <RefreshCw size={13} /> Segarkan
           </button>
           <button onClick={() => setCreateOpen(true)} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200 hover:shadow-lg" style={{ background: 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)', color: '#fff', boxShadow: '0 4px 12px rgba(59,130,246,0.35)' }}>

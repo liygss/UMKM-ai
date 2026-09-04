@@ -81,6 +81,7 @@ def ask(
     session = _get_or_create_session(db, user_id, session_id)
     histori = _ambil_histori(db, session)
 
+
     # 1. Retrieve (knowledge base dari Qdrant)
     retrieved = retrieve(pertanyaan, top_k=RETRIEVAL_TOP_K)
 

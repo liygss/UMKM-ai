@@ -20,6 +20,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     JSON,
     Numeric,
     String,
@@ -154,6 +155,8 @@ class JurnalUmum(Base):
     """Header transaksi jurnal. Satu jurnal punya >= 2 baris JurnalDetail."""
 
     __tablename__ = "jurnal_umum"
+    # index komposit: dashboard & laporan hampir selalu memfilter (created_by_id, tanggal)
+    __table_args__ = (Index("ix_jurnal_umum_created_tanggal", "created_by_id", "tanggal"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     no_bukti: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
@@ -193,6 +196,10 @@ class JurnalDetail(Base):
     """Baris debit/kredit pada satu jurnal. Tepat satu dari debit/kredit yang > 0."""
 
     __tablename__ = "jurnal_detail"
+    __table_args__ = (
+        Index("ix_jurnal_detail_jurnal_id", "jurnal_id"),
+        Index("ix_jurnal_detail_akun_id", "akun_id"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     jurnal_id: Mapped[str] = mapped_column(

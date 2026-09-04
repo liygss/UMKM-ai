@@ -116,8 +116,8 @@ export default function Layout() {
 
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <header className="relative z-40 flex h-18 items-center gap-4 px-4 lg:px-6" style={{ background: 'var(--color-glass-bg)', backdropFilter: 'blur(20px) saturate(160%)', borderBottom: '1px solid rgba(148, 163, 184, 0.12)' }}>
-          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2.5 rounded-xl transition-all duration-300 hover:bg-[#EFF6FF]/10" style={{ color: 'var(--color-slate-body)' }}>
+        <header className="relative z-40 flex h-18 items-center gap-4 px-4 lg:px-6" style={{ background: 'var(--color-header-bg)', backdropFilter: 'blur(20px) saturate(180%)', borderBottom: '1px solid rgba(148, 163, 184, 0.14)' }}>
+          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2.5 rounded-xl transition-all duration-300 hover:bg-white/5" style={{ color: 'var(--color-slate-body)' }}>
             <Menu size={20} />
           </button>
 
@@ -173,8 +173,8 @@ export default function Layout() {
             <ThemeToggle />
 
             {/* Brand badge */}
-            <div className="hidden sm:flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#93C5FD', border: '1px solid rgba(59, 130, 246, 0.25)' }}>
-              <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: '#60A5FA' }} />
+            <div className="hidden sm:flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold" style={{ background: 'rgba(59, 130, 246, 0.14)', color: 'var(--color-accent-blue)', border: '1px solid rgba(96, 165, 250, 0.28)' }}>
+              <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: 'var(--color-brand-soft)' }} />
               Finora
             </div>
           </div>

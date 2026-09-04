@@ -1,4 +1,5 @@
 import { motion } from 'motion/react'
+import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import { HandCoins, ArrowRight } from 'lucide-react'
 import { formatRupiah } from '../utils/formatters'
@@ -13,7 +14,7 @@ function Row({ label, value, color }) {
   )
 }
 
-export default function RingkasanPiutangUtang({ data = null }) {
+function RingkasanPiutangUtang({ data = null }) {
   const hasData = Boolean(data)
   const selisih = hasData ? data.selisih : 0
   const selisihPositif = selisih >= 0
@@ -36,7 +37,7 @@ export default function RingkasanPiutangUtang({ data = null }) {
       {hasData ? (
         <>
           <div className="grid grid-cols-2 gap-2.5 flex-1">
-            <Row label="Piutang Usaha" value={formatRupiah(data.piutang_usaha)} color="#60A5FA" />
+            <Row label="Piutang Usaha" value={formatRupiah(data.piutang_usaha)} color="var(--color-brand-soft)" />
             <Row label="Utang Usaha" value={formatRupiah(data.utang_usaha)} color="#FBBF24" />
             <Row label="Utang Pajak" value={formatRupiah(data.utang_pajak)} color="#F87171" />
             <Row label="Utang Bank" value={formatRupiah(data.utang_bank)} color="#94A3B8" />
@@ -59,7 +60,7 @@ export default function RingkasanPiutangUtang({ data = null }) {
           <Link
             to="/laporan?t=posisi-keuangan"
             className="mt-3 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200 hover:brightness-125"
-            style={{ background: 'rgba(37, 99, 235, 0.1)', border: '1px solid rgba(37, 99, 235, 0.25)', color: '#60A5FA' }}
+            style={{ background: 'rgba(37, 99, 235, 0.1)', border: '1px solid rgba(37, 99, 235, 0.25)', color: 'var(--color-brand-soft)' }}
           >
             Lihat Laporan
             <ArrowRight size={13} />
@@ -73,3 +74,5 @@ export default function RingkasanPiutangUtang({ data = null }) {
     </motion.div>
   )
 }
+
+export default memo(RingkasanPiutangUtang)

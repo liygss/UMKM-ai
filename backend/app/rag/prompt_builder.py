@@ -15,6 +15,15 @@ ACCOUNTING_KEYWORDS = [
     "jurnal", "neraca", "laba rugi", "buku besar", "akun", "penyusutan",
     "pembukuan", "modal", "arus kas", "debit", "kredit",
 ]
+FINANCE_KEYWORDS = [
+    "keuangan", "uang", "kas", "piutang", "utang", "beban", "pendapatan",
+    "penjualan", "belanja", "biaya", "laba", " rugi", "aset", "barang",
+    "inventaris", "stok", "persediaan", "gaji", "upah", " THR",
+    "omset", " revenue", "profit", "cashflow", "laporan", "report",
+    "transaksi", "bayar", "tagihan", "invoice", "bon", "kwitansi",
+    "budget", "anggaran", "forecast", "proyeksi",
+]
+ALL_TOPIC_KEYWORDS = TAX_KEYWORDS + ACCOUNTING_KEYWORDS + FINANCE_KEYWORDS
 
 
 def detect_domain(pertanyaan: str) -> str:
@@ -25,6 +34,14 @@ def detect_domain(pertanyaan: str) -> str:
     if any(k in lowered for k in ACCOUNTING_KEYWORDS):
         return "accounting"
     return ""
+
+
+def is_out_of_topic(pertanyaan: str) -> bool:
+    """Cek apakah pertanyaan di luar topik akuntansi/keuangan/pajak."""
+    lowered = pertanyaan.lower().strip()
+    if not lowered:
+        return False
+    return not any(k in lowered for k in ALL_TOPIC_KEYWORDS)
 
 
 def _pilih_prompt_addon(pertanyaan: str) -> str:
@@ -82,9 +99,11 @@ def build_messages(
     else:
         system_prompt += (
             "\n\nTidak ada dokumen pengetahuan spesifik yang ditemukan untuk "
-            "pertanyaan ini. Jawablah dengan pengetahuan umummu secara "
-            "langsung dan membantu. Bila pertanyaan menyangkut keuangan/pajak "
-            "pengguna, gunakan data keuangan yang tersedia bila ada."
+            "pertanyaan ini. Bila pertanyaan menyangkut keuangan/pajak "
+            "pengguna, gunakan data keuangan yang tersedia bila ada. "
+            "Jika pertanyaan di luar topik akuntansi/keuangan/pajak, "
+            "tolak dengan sopan dan arahkan pengguna untuk bertanya "
+            "seputar pembukuan, laporan keuangan, atau perpajakan UMKM."
         )
 
     messages = [{"role": "system", "content": system_prompt}]

@@ -23,7 +23,7 @@ export function renderMarkdown(text) {
     if (line.startsWith('```')) {
       if (inCodeBlock) {
         result.push(
-          <pre key={`code-${i}`} className="my-2 rounded-xl p-3 text-xs overflow-x-auto" style={{ background: '#0F172A', color: '#E2E8F0', border: '1px solid var(--color-border-subtle)' }}>
+          <pre key={`code-${i}`} className="my-2 rounded-xl p-3 text-xs overflow-x-auto" style={{ background: '#070E1C', color: '#D7E3F4', border: '1px solid var(--color-border-subtle)' }}>
             <code>{codeLines.join('\n')}</code>
           </pre>
         )
@@ -166,7 +166,7 @@ export function TypingIndicator() {
       <div className="rounded-2xl rounded-bl-md px-5 py-4" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)', boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)' }}>
         <div className="flex items-center gap-1.5">
           <div className="h-2 w-2 rounded-full typing-dot" style={{ background: '#2563EB' }} />
-          <div className="h-2 w-2 rounded-full typing-dot" style={{ background: '#60A5FA' }} />
+          <div className="h-2 w-2 rounded-full typing-dot" style={{ background: 'var(--color-brand-soft)' }} />
           <div className="h-2 w-2 rounded-full typing-dot" style={{ background: '#1D4ED8' }} />
         </div>
       </div>

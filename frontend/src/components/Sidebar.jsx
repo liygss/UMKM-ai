@@ -66,7 +66,7 @@ export default function Sidebar({ open, onClose }) {
       {open && (
         <div
           className="fixed inset-0 z-40 backdrop-blur-sm lg:hidden"
-          style={{ background: 'rgba(3, 7, 18, 0.6)' }}
+          style={{ background: 'rgba(2, 6, 12, 0.72)' }}
           onClick={onClose}
         />
       )}
@@ -74,9 +74,9 @@ export default function Sidebar({ open, onClose }) {
       <aside
         className={`fixed inset-y-0 left-0 z-50 ${width} transition-all duration-300 lg:static lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'} flex flex-col`}
         style={{
-          background: 'var(--color-glass-bg)',
-          backdropFilter: 'blur(24px) saturate(160%)',
-          borderRight: '1px solid rgba(148, 163, 184, 0.12)',
+          background: 'var(--color-sidebar-bg)',
+          backdropFilter: 'blur(24px) saturate(180%)',
+          borderRight: '1px solid rgba(148, 163, 184, 0.14)',
         }}
       >
         <div className="flex h-full flex-col">
@@ -91,7 +91,7 @@ export default function Sidebar({ open, onClose }) {
             {!collapsed && (
               <div className="animate-fade-in">
                 <div className="text-sm font-bold tracking-wide" style={{ color: 'var(--color-slate-heading)' }}>Finora</div>
-                <div className="text-xs font-medium" style={{ color: '#93C5FD' }}>Asisten Cerdas</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--color-accent-blue)' }}>Asisten Cerdas</div>
               </div>
             )}
             <button onClick={onClose} className="ml-auto lg:hidden p-1.5 rounded-xl transition-all duration-300 hover:bg-white/5" style={{ color: 'var(--color-slate-body)' }}>
@@ -120,7 +120,7 @@ export default function Sidebar({ open, onClose }) {
                           collapsed ? 'justify-center px-2 py-3' : 'px-4 py-3'
                         } ${
                           isActive
-                            ? 'bg-gradient-to-r from-blue-500/15 to-blue-400/5 font-semibold text-[#93C5FD] shadow-sm ring-1 ring-blue-500/20'
+                            ? 'bg-gradient-to-r from-blue-500/20 via-blue-500/10 to-transparent font-semibold text-[var(--color-accent-blue)] shadow-sm ring-1 ring-blue-400/25'
                             : 'text-[var(--color-slate-body)] hover:bg-white/[0.04] hover:text-[var(--color-slate-text)]'
                         }`
                       }
@@ -130,10 +130,10 @@ export default function Sidebar({ open, onClose }) {
                           {isActive && (
                             <span
                               className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full"
-                              style={{ background: 'linear-gradient(180deg, #3B82F6, #60A5FA)', boxShadow: '0 0 12px rgba(59, 130, 246, 0.8)' }}
+                              style={{ background: 'linear-gradient(180deg, #3B82F6, #7DB4FF)', boxShadow: '0 0 12px rgba(59, 130, 246, 0.8)' }}
                             />
                           )}
-                          <item.icon size={18} className={`shrink-0 transition-colors duration-300 ${isActive ? 'text-[#60A5FA] drop-shadow-[0_0_6px_rgba(96,165,250,0.6)]' : ''}`} />
+                          <item.icon size={18} className={`shrink-0 transition-colors duration-300 ${isActive ? 'text-[var(--color-brand-soft)] drop-shadow-[0_0_6px_rgba(125,180,255,0.6)]' : ''}`} />
                           {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
                         </>
                       )}
@@ -148,7 +148,7 @@ export default function Sidebar({ open, onClose }) {
           <div className="hidden lg:flex p-2" style={{ borderTop: '1px solid rgba(148, 163, 184, 0.12)' }}>
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium transition-all duration-300 hover:bg-white/5 hover:text-[#93C5FD]"
+              className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium transition-all duration-300 hover:bg-white/5 hover:text-[var(--color-accent-blue)]"
               style={{ color: 'var(--color-slate-muted)' }}
             >
               {collapsed ? <ChevronsRight size={16} /> : <><ChevronsLeft size={16} /> <span>Tutup Sidebar</span></>}

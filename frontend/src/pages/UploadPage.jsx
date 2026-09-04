@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import client from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { formatRupiah, formatDateTime } from '../utils/formatters'
+import { notifyDataChanged } from '../utils/dashboardStore'
 import toast from 'react-hot-toast'
 import { extractError } from '../api/extractError'
 import { Upload, FileText, CheckCircle, XCircle, Clock, UploadCloud, Trash2, LayoutDashboard, TrendingUp, TrendingDown, Banknote, BarChart3, Sparkles } from 'lucide-react'
@@ -64,7 +65,7 @@ function SummaryCard({ summary }) {
       <div className="relative">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--color-slate-heading)' }}>
-            <BarChart3 size={16} style={{ color: '#60A5FA' }} />
+            <BarChart3 size={16} style={{ color: 'var(--color-brand-soft)' }} />
             Ringkasan Laba/Rugi
           </h3>
           <span className="text-xs px-2 py-1 rounded-xl" style={{ color: 'var(--color-slate-body)', background: 'var(--color-surface-card)' }}>
@@ -86,10 +87,10 @@ function SummaryCard({ summary }) {
             <p className="mt-1.5 text-xl font-extrabold tabular-nums" style={{ color: '#F87171' }}>{formatRupiah(summary.total_beban_tahun_berjalan)}</p>
           </div>
           <div className="rounded-2xl p-4" style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)' }}>
-            <div className="flex items-center gap-2 text-xs font-medium" style={{ color: '#93C5FD' }}>
+            <div className="flex items-center gap-2 text-xs font-medium" style={{ color: 'var(--color-accent-blue)' }}>
               <Banknote size={13} /> Laba/Rugi Tahun Berjalan
             </div>
-            <p className="mt-1.5 text-xl font-extrabold tabular-nums" style={{ color: labaTahun >= 0 ? '#60A5FA' : '#F87171' }}>{formatRupiah(labaTahun)}</p>
+            <p className="mt-1.5 text-xl font-extrabold tabular-nums" style={{ color: labaTahun >= 0 ? 'var(--color-brand-soft)' : '#F87171' }}>{formatRupiah(labaTahun)}</p>
           </div>
           <div className="rounded-2xl p-4" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
             <div className="flex items-center gap-2 text-xs font-medium" style={{ color: '#FCD34D' }}>
@@ -109,7 +110,7 @@ function SummaryCard({ summary }) {
               <FileText size={13} /> {summary.jumlah_transaksi_bulan_ini} transaksi bulan ini &middot; Saldo kas &amp; bank {formatRupiah(summary.total_kas_dan_bank)}
             </span>
           )}
-          <Link to="/" className="ml-auto flex items-center gap-1 font-semibold whitespace-nowrap" style={{ color: '#60A5FA' }}>
+          <Link to="/" className="ml-auto flex items-center gap-1 font-semibold whitespace-nowrap" style={{ color: 'var(--color-brand-soft)' }}>
             <LayoutDashboard size={13} /> Lihat Dashboard
           </Link>
         </div>
@@ -162,7 +163,7 @@ export default function UploadPage() {
           setFiles(prev => prev.map(x => (x.id === data.id ? data : x)))
           if (DONE_STATUS.includes(data.status)) {
             toast.success(`${data.original_filename} berhasil diproses`)
-            window.dispatchEvent(new Event('data-changed'))
+            notifyDataChanged()
             fetchSummary()
           } else if (data.status === 'FAILED') {
             toast.error(`${data.original_filename} gagal diproses: ${data.error_message || 'periksa kembali file Anda'}`)
@@ -181,7 +182,7 @@ export default function UploadPage() {
     try {
       await client.delete(`/upload/${id}`)
       toast.success(`${filename} dihapus`)
-      window.dispatchEvent(new Event('data-changed'))
+      notifyDataChanged()
       fetchSummary()
       load()
     } catch {
@@ -196,7 +197,7 @@ export default function UploadPage() {
     try {
       await client.post('/upload/file', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       toast.success(`${file.name} terupload, sedang diproses otomatis...`)
-      window.dispatchEvent(new Event('data-changed'))
+      notifyDataChanged()
       load()
     } catch (err) {
       toast.error(extractError(err, `Gagal upload ${file.name}`))
@@ -210,7 +211,7 @@ export default function UploadPage() {
     try {
       await client.delete('/upload/reset')
       toast.success('Semua data berhasil dihapus')
-      window.dispatchEvent(new Event('data-changed'))
+      notifyDataChanged()
       fetchSummary()
       load()
     } catch {
@@ -262,11 +263,11 @@ export default function UploadPage() {
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         className="card border-2 border-dashed cursor-pointer transition-all"
-        style={{ borderColor: dragging ? '#60A5FA' : 'rgba(148, 163, 184, 0.2)', background: dragging ? 'rgba(37, 99, 235, 0.08)' : 'var(--color-surface-faint)' }}
+        style={{ borderColor: dragging ? 'var(--color-brand-soft)' : 'rgba(148, 163, 184, 0.2)', background: dragging ? 'rgba(37, 99, 235, 0.08)' : 'var(--color-surface-faint)' }}
       >
         <label className="flex flex-col items-center gap-3 cursor-pointer">
           <div className="rounded-2xl p-4 transition-transform duration-300" style={{ background: dragging ? 'rgba(37, 99, 235, 0.15)' : 'rgba(59, 130, 246, 0.12)' }}>
-            <UploadCloud size={32} style={{ color: dragging ? '#60A5FA' : '#60A5FA' }} />
+            <UploadCloud size={32} style={{ color: dragging ? 'var(--color-brand-soft)' : 'var(--color-brand-soft)' }} />
           </div>
           <div className="text-center">
             <p className="text-sm font-medium" style={{ color: 'var(--color-slate-text)' }}>{uploading ? 'Mengupload...' : 'Seret & lepas file di sini'}</p>
@@ -299,7 +300,14 @@ export default function UploadPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--color-slate-text)' }}>{f.original_filename}</p>
                   <p className="text-xs" style={{ color: 'var(--color-slate-muted)' }}>{f.file_type} &middot; {formatSize(f.file_size_bytes)} &middot; {formatDateTime(f.created_at)}</p>
-                  {f.error_message && <p className="text-xs mt-0.5" style={{ color: '#F87171' }}>{f.error_message}</p>}
+                  {f.error_message && (
+                    <p
+                      className="text-xs mt-0.5"
+                      style={{ color: DONE_STATUS.includes(f.status) ? '#FBBF24' : '#F87171' }}
+                    >
+                      {f.error_message}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-medium shrink-0">
                   {STATUS_ICON[f.status]}

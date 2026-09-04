@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import client from '../api/client'
 import DataTable from '../components/DataTable'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { formatRupiah, formatDate } from '../utils/formatters'
+import { formatRupiah, formatDate, localDateStr } from '../utils/formatters'
+import DateRangeField from '../components/DateRangeField'
+import { notifyDataChanged } from '../utils/dashboardStore'
 import toast from 'react-hot-toast'
 import { extractError } from '../api/extractError'
 import { Plus, Trash2, Send } from 'lucide-react'
@@ -12,17 +14,41 @@ export default function JurnalPage() {
   const [akunList, setAkunList] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ no_bukti: '', tanggal: new Date().toISOString().split('T')[0], deskripsi: '', detail: [{ kode_akun: '', debit: 0, kredit: 0, keterangan: '' }] })
+  const [form, setForm] = useState({ no_bukti: '', tanggal: localDateStr(new Date()), deskripsi: '', detail: [{ kode_akun: '', debit: 0, kredit: 0, keterangan: '' }] })
 
-  const load = () => {
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [debouncedStart, setDebouncedStart] = useState('')
+  const [debouncedEnd, setDebouncedEnd] = useState('')
+  const debounceRef = useRef(null)
+
+  const handleStartDateChange = (v) => {
+    setStartDate(v)
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => setDebouncedStart(v), 300)
+  }
+
+  const handleEndDateChange = (v) => {
+    setEndDate(v)
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => setDebouncedEnd(v), 300)
+  }
+
+  const load = useCallback(() => {
     setLoading(true)
-    Promise.all([client.get('/accounting/jurnal'), client.get('/accounting/akun')])
+    const params = {}
+    if (debouncedStart) params.tanggal_mulai = debouncedStart
+    if (debouncedEnd) params.tanggal_akhir = debouncedEnd
+    Promise.all([
+      client.get('/accounting/jurnal', { params }),
+      client.get('/accounting/akun'),
+    ])
       .then(([j, a]) => { setJurnal(j.data); setAkunList(a.data) })
       .catch(() => toast.error('Gagal memuat data'))
       .finally(() => setLoading(false))
-  }
+  }, [debouncedStart, debouncedEnd])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [load])
 
   const addRow = () => setForm({ ...form, detail: [...form.detail, { kode_akun: '', debit: 0, kredit: 0, keterangan: '' }] })
   const removeRow = (i) => setForm({ ...form, detail: form.detail.filter((_, j) => j !== i) })
@@ -43,7 +69,8 @@ export default function JurnalPage() {
       await client.post('/accounting/jurnal', form)
       toast.success('Jurnal berhasil dibuat')
       setShowForm(false)
-      setForm({ no_bukti: '', tanggal: new Date().toISOString().split('T')[0], deskripsi: '', detail: [{ kode_akun: '', debit: 0, kredit: 0, keterangan: '' }] })
+      setForm({ no_bukti: '', tanggal: localDateStr(new Date()), deskripsi: '', detail: [{ kode_akun: '', debit: 0, kredit: 0, keterangan: '' }] })
+      notifyDataChanged()
       load()
     } catch (err) {
       toast.error(extractError(err, 'Gagal membuat jurnal'))
@@ -77,6 +104,25 @@ export default function JurnalPage() {
         <button onClick={() => setShowForm(true)} className="btn-primary"><Plus size={16} /> Buat Jurnal</button>
       </div>
 
+      <div className="card !p-4">
+        <div className="flex items-end gap-3 flex-wrap">
+          <DateRangeField
+            startDate={startDate}
+            endDate={endDate}
+            onStartChange={handleStartDateChange}
+            onEndChange={handleEndDateChange}
+            className="flex-1 min-w-[280px]"
+          />
+          <button
+            onClick={() => { setStartDate(''); setEndDate(''); setDebouncedStart(''); setDebouncedEnd('') }}
+            className="text-xs font-medium px-3 py-2.5 rounded-lg transition-all duration-200 mb-0.5"
+            style={{ color: 'var(--color-brand-soft)', background: 'rgba(59, 130, 246, 0.12)' }}
+          >
+            Semua
+          </button>
+        </div>
+      </div>
+
       {loading ? <LoadingSpinner className="mt-10" /> : (
         <DataTable columns={columns} data={jurnal} emptyMessage="Belum ada jurnal" />
       )}
@@ -92,8 +138,12 @@ export default function JurnalPage() {
                   <input required value={form.no_bukti} onChange={e => setForm({...form, no_bukti: e.target.value})} className="input-field" placeholder="JV-001" />
                 </div>
                 <div>
-                  <label className="label">Tanggal</label>
-                  <input type="date" required value={form.tanggal} onChange={e => setForm({...form, tanggal: e.target.value})} className="input-field" />
+                  <DatePickerField
+                    label="Tanggal"
+                    value={form.tanggal}
+                    onChange={v => setForm({...form, tanggal: v})}
+                    required
+                  />
                 </div>
                 <div>
                   <label className="label">Deskripsi</label>
@@ -127,7 +177,7 @@ export default function JurnalPage() {
                     </div>
                   ))}
                 </div>
-                <button type="button" onClick={addRow} className="mt-2 text-xs font-medium transition hover:opacity-80" style={{ color: '#60A5FA' }}>+ Tambah Baris</button>
+                <button type="button" onClick={addRow} className="mt-2 text-xs font-medium transition hover:opacity-80" style={{ color: 'var(--color-brand-soft)' }}>+ Tambah Baris</button>
               </div>
 
               <div className="flex items-center justify-between rounded-xl p-3 text-sm" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)' }}>

@@ -62,6 +62,8 @@ class BarisLaporanResponse(ORMCompatibleModel):
 
 class LaporanLabaRugiResponse(BaseModel):
     tanggal_per: date | None
+    tanggal_mulai: date | None = None
+    tanggal_akhir: date | None = None
     pendapatan: list[BarisLaporanResponse]
     hpp: list[BarisLaporanResponse]
     beban_operasional: list[BarisLaporanResponse]
@@ -139,6 +141,12 @@ class KategoriBreakdown(ORMCompatibleModel):
     nilai: float
 
 
+class StatistikProdukItem(BaseModel):
+    produk: str
+    nilai: float
+    jumlah: int
+
+
 class DashboardInsightResponse(BaseModel):
     insight: str
     generated_at: date
@@ -174,6 +182,15 @@ class ProyeksiBulan(BaseModel):
 class ProyeksiResponse(BaseModel):
     tanggal_per: date
     proyeksi: list[ProyeksiBulan]
+
+
+class DashboardOverviewResponse(BaseModel):
+    summary: DashboardSummaryResponse
+    monthly: list[MonthlyTrendResponse]
+    alerts: list[AlertItem]
+    piutang_utang: PiutangUtangResponse
+    kategori: list[KategoriBreakdown]
+    produk: list[StatistikProdukItem] = []
 
 
 # ---------------------------------------------------------------------------

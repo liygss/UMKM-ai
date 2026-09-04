@@ -60,8 +60,13 @@ def get_laporan_laba_rugi(
     db: Session,
     tanggal_per: date | None = None,
     user_id: str | None = None,
+    tanggal_mulai: date | None = None,
+    tanggal_akhir: date | None = None,
 ) -> LaporanLabaRugi:
-    neraca_saldo = get_neraca_saldo(db, tanggal_per, user_id=user_id)
+    neraca_saldo = get_neraca_saldo(
+        db, tanggal_per, user_id=user_id,
+        tanggal_mulai=tanggal_mulai, tanggal_akhir=tanggal_akhir,
+    )
     laporan = LaporanLabaRugi(tanggal_per=tanggal_per)
 
     for baris in neraca_saldo.baris:
