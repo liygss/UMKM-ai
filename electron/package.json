@@ -1,7 +1,7 @@
 {
-  "name": "ai-accounting-rag-desktop",
+  "name": "finora-desktop",
   "version": "1.0.0",
-  "description": "AI Accounting RAG — Aplikasi Desktop (Electron + FastAPI)",
+  "description": "Finora — Aplikasi Desktop (Electron + FastAPI)",
   "main": "main.js",
   "private": true,
   "scripts": {
@@ -23,7 +23,7 @@
   },
   "build": {
     "appId": "com.aiumkm.accounting",
-    "productName": "AI Accounting RAG",
+    "productName": "Finora",
     "icon": "icon.icns",
     "files": [
       "main.js",

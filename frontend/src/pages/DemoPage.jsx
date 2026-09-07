@@ -483,7 +483,7 @@ export default function DemoPage() {
           </Link>
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl" style={{ boxShadow: '0 4px 14px rgba(59,130,246,0.4)' }}>
-              <img src="/finora-logo.jpg" alt="Finora" className="h-full w-full object-cover" />
+              <img src="/finora_logo.jpeg" alt="Finora" className="h-full w-full object-cover" />
             </div>
             <span className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Finora <span className="hidden sm:inline font-medium" style={{ color: 'var(--color-slate-muted)' }}>/ Demo</span></span>
           </div>

@@ -25,7 +25,7 @@ def list_downloads() -> List[str]:
 
 @router.get("/{filename}")
 def download_file(filename: str) -> FileResponse:
-    """Sajikan file installer dari folder DOWNLOADS_DIR (mis. AI Accounting RAG-1.0.0-arm64.dmg)."""
+    """Sajikan file installer dari folder DOWNLOADS_DIR (mis. Finora-1.0.0-arm64.dmg)."""
     base_dir = Path(settings.DOWNLOADS_DIR).resolve()
     safe_name = Path(filename).name
 

@@ -19,7 +19,7 @@ services:
       - ./backend/.env
     environment:
       # Simpan data ke volume agar tetap ada walau container dihapus
-      SQLITE_PATH: /app/data/ai_accounting.db
+      SQLITE_PATH: /app/data/finora.db
       QDRANT_LOCAL_PATH: /app/data/qdrant
       LOG_DIR: /app/data/logs
     ports:

@@ -70,7 +70,7 @@ function KategoriPengeluaran({ debouncedDate, items: externalItems }) {
         </div>
       ) : rows.length === 0 ? (
         <div className="flex flex-1 items-center justify-center text-sm" style={{ color: 'var(--color-slate-muted)' }}>
-          Belum ada pengeluaran bulan ini
+          Belum ada pengeluaran pada periode ini
         </div>
       ) : (
         <motion.div variants={staggerContainer(0.08, 0.12)} initial="hidden" animate="visible" className="space-y-3 flex-1">

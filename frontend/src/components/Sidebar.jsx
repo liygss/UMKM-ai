@@ -86,7 +86,7 @@ export default function Sidebar({ open, onClose }) {
               className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden"
               style={{ borderRadius: '0.75rem', boxShadow: '0 4px 18px rgba(59, 130, 246, 0.45)' }}
             >
-              <img src="/finora-logo.jpg" alt="Finora" className="h-full w-full object-cover" />
+              <img src="/finora_logo.jpeg" alt="Finora" className="h-full w-full object-cover" />
             </div>
             {!collapsed && (
               <div className="animate-fade-in">

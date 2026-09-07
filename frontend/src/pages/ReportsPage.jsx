@@ -195,6 +195,8 @@ export default function ReportsPage() {
           <DatePickerField
             value={date}
             onChange={v => handleDateChange(v)}
+            label="Tanggal Laporan"
+            placeholder="Pilih tanggal laporan"
             compact
             className="w-auto"
           />
@@ -204,6 +206,7 @@ export default function ReportsPage() {
               endDate={endDate}
               onStartChange={handleStartDateChange}
               onEndChange={handleEndDateChange}
+              label="Periode"
               className="w-auto"
             />
           )}

@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PyInstaller spec untuk backend AI Accounting RAG (aplikasi desktop).
+PyInstaller spec untuk backend Finora (aplikasi desktop).
 
 Hasil build: backend/dist/backend/  (mode onedir — lebih cepat start &
 lebih tahan terhadap false-positive antivirus daripada onefile).

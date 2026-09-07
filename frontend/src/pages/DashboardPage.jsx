@@ -8,7 +8,6 @@ import StatCard from '../components/StatCard'
 import { MotionBarShape, MotionActiveBar, MotionTooltip } from '../components/MotionChartShapes'
 import { formatRupiah, formatRupiahCompact, formatDate } from '../utils/formatters'
 import DatePickerField from '../components/DatePickerField'
-import DateRangeField from '../components/DateRangeField'
 import { getDashboardState, setDashboardState, clearDashboard } from '../utils/dashboardStore'
 import { fadeUp, fadeIn, staggerContainer, itemStagger, EASE_GENTLE } from '../utils/motionPresets'
 import { Banknote, TrendingUp, TrendingDown, Wallet, MessageSquare, Upload, Plus, ArrowRight, Activity, Calendar, RefreshCw } from 'lucide-react'
@@ -74,22 +73,39 @@ function formatCompact(value) {
 }
 
 function BarValueLabel(props) {
-  const { x, y, width, height, value, isLight } = props
-  if (!value || !height || height < 14) return null
+  const { x, y, width, height, value, index, dataKey, isLight, allData } = props
+  if (!value || !height || height < 4 || width < 12) return null
+  const text = formatCompact(value)
+  // Estimasi lebar teks ~7px/karakter utk fontSize 10.5 bold.
+  const textW = text.length * 7
+  // Label selalu tampil. Saat dua label dalam satu bulan "mepet" (lebarnya
+  // melebihi slot bar + gap), label bar yang lebih pendek dinaikkan ke atas
+  // (stagger) supaya dua-duanya kebaca & berjajar rapi di atas bar tertinggi.
+  const siblingKey = dataKey === 'Pendapatan' ? 'Beban' : 'Pendapatan'
+  const siblingValue = allData?.[index]?.[siblingKey] ?? null
+  const siblingW = siblingValue != null ? formatCompact(siblingValue).length * 7 : 0
+  const spacing = width + 8
+  let dy = 5
+  if (siblingValue != null && textW + siblingW > spacing) {
+    const myValue = Number(value)
+    const sibValue = Number(siblingValue)
+    const keepLow = myValue > sibValue || (myValue === sibValue && dataKey === 'Pendapatan')
+    if (!keepLow) dy = 23
+  }
   return (
     <text
       x={x + width / 2}
-      y={y - 6}
+      y={y - dy}
       textAnchor="middle"
-      fontSize={11}
+      fontSize={10.5}
       fontWeight={700}
       fill={isLight ? '#0F172A' : '#F4F8FD'}
-      stroke={isLight ? 'none' : '#050A14'}
-      strokeWidth={3}
+      stroke={isLight ? 'rgba(255, 255, 255, 0.9)' : '#050A14'}
+      strokeWidth={2.5}
       paintOrder="stroke"
       strokeLinejoin="round"
     >
-      {formatCompact(value)}
+      {text}
     </text>
   )
 }
@@ -183,7 +199,7 @@ function BarTrendCardInner({ monthly, monthLabel, isLight, barAnimDone }) {
             ))}
           </div>
           <ResponsiveContainer width="100%" height={370}>
-            <BarChart data={barData} barCategoryGap="18%" barGap={8} margin={{ top: 28, right: 12, left: 0, bottom: 0 }}>
+            <BarChart data={barData} barCategoryGap="18%" barGap={8} margin={{ top: 42, right: 12, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.15)" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--color-slate-body)' }} axisLine={{ stroke: 'rgba(148, 163, 184, 0.2)' }} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: 'var(--color-slate-body)' }} tickFormatter={(v) => formatCompact(v)} axisLine={false} tickLine={false} width={52} />
@@ -193,7 +209,7 @@ function BarTrendCardInner({ monthly, monthLabel, isLight, barAnimDone }) {
                 fill="url(#gradEmerald)"
                 radius={[8, 8, 0, 0]}
                 maxBarSize={52}
-                label={(p) => <BarValueLabel {...p} isLight={isLight} />}
+                label={(p) => <BarValueLabel {...p} isLight={isLight} allData={barData} />}
                 isAnimationActive={false}
                 shape={<MotionBarShape animate={!barAnimDone} glowColor={isLight ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.35)'} />}
                 activeBar={<MotionActiveBar glowColor={isLight ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.55)'} />}
@@ -203,7 +219,7 @@ function BarTrendCardInner({ monthly, monthLabel, isLight, barAnimDone }) {
                 fill="url(#gradRose)"
                 radius={[8, 8, 0, 0]}
                 maxBarSize={52}
-                label={(p) => <BarValueLabel {...p} isLight={isLight} />}
+                label={(p) => <BarValueLabel {...p} isLight={isLight} allData={barData} />}
                 isAnimationActive={false}
                 shape={<MotionBarShape animate={!barAnimDone} glowColor={isLight ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.35)'} />}
                 activeBar={<MotionActiveBar glowColor={isLight ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.55)'} />}
@@ -480,9 +496,6 @@ export default function DashboardPage() {
   // Date range state untuk custom period view
   const [rangeStartDate, setRangeStartDate] = useState('')
   const [rangeEndDate, setRangeEndDate] = useState('')
-  const [debouncedRangeStart, setDebouncedRangeStart] = useState('')
-  const [debouncedRangeEnd, setDebouncedRangeEnd] = useState('')
-  const rangeDebounceRef = useRef(null)
 
   const handleDateChange = (newMonth) => {
     monthNavRef.current = true
@@ -491,8 +504,6 @@ export default function DashboardPage() {
     setSelectedMonth(newMonth)
     setRangeStartDate('')
     setRangeEndDate('')
-    setDebouncedRangeStart('')
-    setDebouncedRangeEnd('')
     clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => setDebouncedMonth(newMonth), 300)
   }
@@ -504,8 +515,6 @@ export default function DashboardPage() {
     setSelectedMonth('')
     setRangeStartDate('')
     setRangeEndDate('')
-    setDebouncedRangeStart('')
-    setDebouncedRangeEnd('')
     clearTimeout(debounceRef.current)
     setDebouncedMonth(null)
   }
@@ -518,31 +527,24 @@ export default function DashboardPage() {
     setSelectedMonth(ym)
     setRangeStartDate('')
     setRangeEndDate('')
-    setDebouncedRangeStart('')
-    setDebouncedRangeEnd('')
     setDebouncedMonth(ym)
   }
 
   const handleRangeStartChange = (v) => {
-    monthNavRef.current = true
-    autoRef.current = false
-    setIsAuto(false)
-    setSelectedMonth('')
-    setDebouncedMonth(null)
     setRangeStartDate(v)
-    clearTimeout(rangeDebounceRef.current)
-    rangeDebounceRef.current = setTimeout(() => setDebouncedRangeStart(v), 300)
   }
 
   const handleRangeEndChange = (v) => {
-    monthNavRef.current = true
+    setRangeEndDate(v)
+  }
+
+  const handleApplyRange = () => {
+    if (!rangeStartDate || !rangeEndDate) return toast.error('Pilih tanggal mulai dan akhir')
     autoRef.current = false
     setIsAuto(false)
     setSelectedMonth('')
     setDebouncedMonth(null)
-    setRangeEndDate(v)
-    clearTimeout(rangeDebounceRef.current)
-    rangeDebounceRef.current = setTimeout(() => setDebouncedRangeEnd(v), 300)
+    fetchData()
   }
 
   const openChatbot = () => window.dispatchEvent(new Event('open-chatbot'))
@@ -550,8 +552,8 @@ export default function DashboardPage() {
   const fetchData = useCallback((silent = false) => {
     if (!silent) setLoading(true)
     let params = {}
-    if (debouncedRangeStart && debouncedRangeEnd) {
-      params = { tanggal_mulai: debouncedRangeStart, tanggal_per: debouncedRangeEnd }
+    if (rangeStartDate && rangeEndDate) {
+      params = { tanggal_mulai: rangeStartDate, tanggal_per: rangeEndDate }
     } else if (debouncedMonth) {
       params = { tanggal_per: monthEnd(debouncedMonth) }
     }
@@ -576,7 +578,7 @@ export default function DashboardPage() {
       })
       .catch(() => setConnecting(true))
       .finally(() => { if (!silent) setLoading(false) })
-  }, [debouncedMonth])
+  }, [debouncedMonth, rangeStartDate, rangeEndDate])
 
   // Mount sekali: kalau cache periode tersedia (balik dari halaman lain),
   // jangan fetch ulang sama sekali. Fetch hanya saat belum ada cache
@@ -652,9 +654,12 @@ export default function DashboardPage() {
   const monthLabel = formatMonthLabel(periodMonth)
   // Tanggal penuh yang dikirim ke backend (akhir bulan saat manual).
   const periodDateKey = debouncedMonth ? monthEnd(debouncedMonth) : null
+  const isRangeActive = !!(rangeStartDate && rangeEndDate)
   const periodCaption = isAuto
     ? `Periode otomatis · ringkasan s/d ${data ? formatDate(data.tanggal_per) : '…'}`
-    : `Periode: ${monthLabel}`
+    : isRangeActive
+      ? `Periode: ${formatDate(rangeStartDate)} - ${formatDate(rangeEndDate)}`
+      : `Periode: ${monthLabel}`
 
   // Perbandingan bulan ini vs bulan lalu (%), dari data monthly yang sudah di-fetch.
   const { deltaPendapatan, deltaBeban, deltaLaba } = useMemo(() => {
@@ -724,32 +729,50 @@ export default function DashboardPage() {
           <p className="text-sm mt-1" style={{ color: 'var(--color-slate-body)' }}>Berikut ringkasan keuangan UMKM Anda</p>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-xl px-3 py-2 shadow-sm" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.16)', backdropFilter: 'blur(12px)' }}>
-              <Calendar size={14} style={{ color: 'var(--color-brand-soft)' }} />
-              <DateRangeField
-                startDate={rangeStartDate}
-                endDate={rangeEndDate}
-                onStartChange={handleRangeStartChange}
-                onEndChange={handleRangeEndChange}
+          <div className="flex items-center gap-2">
+            <div className="flex items-end gap-2 rounded-xl px-3 py-2 shadow-sm" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.16)', backdropFilter: 'blur(12px)' }}>
+              <Calendar size={14} className="mb-2.5 shrink-0" style={{ color: 'var(--color-brand-soft)' }} />
+              <DatePickerField
+                value={rangeStartDate}
+                onChange={handleRangeStartChange}
+                label="Dari"
+                placeholder="Pilih tanggal mulai"
+                compact
+                maxDate={rangeEndDate || undefined}
+              />
+              <span className="text-sm font-medium shrink-0 mb-2.5" style={{ color: 'var(--color-slate-muted)' }}>&#8212;</span>
+              <DatePickerField
+                value={rangeEndDate}
+                onChange={handleRangeEndChange}
+                label="Sampai"
+                placeholder="Pilih tanggal akhir"
+                compact
+                minDate={rangeStartDate || undefined}
               />
               <button
-                onClick={handleAuto}
-                className="text-xs font-medium px-2 py-1 rounded-lg transition-all duration-200"
-                style={isAuto
-                  ? { color: 'var(--color-brand-soft)', background: 'rgba(59, 130, 246, 0.16)', border: '1px solid rgba(125, 180, 255, 0.4)' }
-                  : { color: 'var(--color-slate-body)', background: 'transparent' }}
+                onClick={handleApplyRange}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all duration-200 hover:scale-105"
+                style={{ color: '#fff', background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)' }}
               >
-                Otomatis
-              </button>
-              <button
-                onClick={handleToday}
-                className="text-xs font-medium px-2 py-1 rounded-lg transition-all duration-200"
-                style={{ color: 'var(--color-brand-soft)', background: 'rgba(59, 130, 246, 0.14)' }}
-              >
-                Bulan Ini
+                Oke
               </button>
             </div>
+            <button
+              onClick={handleAuto}
+              className="text-xs font-medium px-2 py-1 rounded-lg transition-all duration-200"
+              style={isAuto
+                ? { color: 'var(--color-brand-soft)', background: 'rgba(59, 130, 246, 0.16)', border: '1px solid rgba(125, 180, 255, 0.4)' }
+                : { color: 'var(--color-slate-body)', background: 'transparent' }}
+            >
+              Otomatis
+            </button>
+            <button
+              onClick={handleToday}
+              className="text-xs font-medium px-2 py-1 rounded-lg transition-all duration-200"
+              style={{ color: 'var(--color-brand-soft)', background: 'rgba(59, 130, 246, 0.14)' }}
+            >
+              Bulan Ini
+            </button>
             <button
               onClick={() => fetchData()}
               title="Segarkan data"

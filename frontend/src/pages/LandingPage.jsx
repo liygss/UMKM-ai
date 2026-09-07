@@ -32,9 +32,9 @@ const GITHUB_REPO = 'liygss/UMKM-ai'
 const GITHUB_RELEASES_API = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`
 
 const PLATFORMS = [
-  { icon: Apple,       os: 'macOS',   note: 'Apple Silicon & Intel',    file: 'AI.Accounting.RAG-1.0.0-arm64.dmg',  ext: '.dmg'      },
-  { icon: MonitorDown, os: 'Windows', note: 'Windows 10 / 11 (x64)',    file: 'AI.Accounting.RAG.Setup.1.0.0.exe',   ext: '.exe'      },
-  { icon: Laptop,      os: 'Linux',   note: 'AppImage (x64)',            file: 'AI.Accounting.RAG-1.0.0.AppImage',   ext: '.AppImage' },
+  { icon: Apple,       os: 'macOS',   note: 'Apple Silicon & Intel',    file: 'Finora-1.0.0-arm64.dmg',  ext: '.dmg'      },
+  { icon: MonitorDown, os: 'Windows', note: 'Windows 10 / 11 (x64)',    file: 'Finora-Setup-1.0.0.exe',   ext: '.exe'      },
+  { icon: Laptop,      os: 'Linux',   note: 'AppImage (x64)',            file: 'Finora-1.0.0.AppImage',   ext: '.AppImage' },
 ]
 
 const STATS = [
@@ -246,7 +246,7 @@ export default function LandingPage() {
                 className="relative flex h-11 w-11 items-center justify-center overflow-hidden"
                 style={{ borderRadius: '1rem', boxShadow: '0 8px 24px rgba(59,130,246,0.4)' }}
               >
-                <img src="/finora-logo.jpg" alt="Finora" className="h-full w-full object-cover relative z-10" />
+                <img src="/finora_logo.jpeg" alt="Finora" className="h-full w-full object-cover relative z-10" />
                 <div className="absolute inset-0 rounded-2xl opacity-50 animate-pulse" style={{ background: 'linear-gradient(135deg, #2563EB, #7DB4FF)', filter: 'blur(12px)' }} />
               </div>
               <div className="leading-tight">
@@ -1111,7 +1111,7 @@ export default function LandingPage() {
                   className="flex h-10 w-10 items-center justify-center overflow-hidden"
                   style={{ borderRadius: '0.75rem', boxShadow: '0 4px 16px rgba(59,130,246,0.4)' }}
                 >
-                  <img src="/finora-logo.jpg" alt="Finora" className="h-full w-full object-cover" />
+                  <img src="/finora_logo.jpeg" alt="Finora" className="h-full w-full object-cover" />
                 </div>
                 <span className="text-lg font-extrabold" style={{ color: 'var(--color-slate-heading)' }}>Finora</span>
               </div>

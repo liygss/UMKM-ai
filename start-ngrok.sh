@@ -23,7 +23,7 @@ trap cleanup SIGINT SIGTERM
 
 echo ""
 echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════╗${NC}"
-echo -e "${BOLD}${CYAN}║  AI Accounting RAG - Cloudflare Tunnel ║${NC}"
+echo -e "${BOLD}${CYAN}║  Finora - Cloudflare Tunnel             ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 

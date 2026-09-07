@@ -19,17 +19,20 @@ from app.llm.embedding_service import embedding_dimensions
 logger = get_logger(__name__)
 
 
-def _ensure_category_index(client) -> None:
-    """Buat payload index keyword untuk field 'category' supaya query filter kategori (mis. tax) cepat/jelas."""
-    try:
-        client.create_payload_index(
-            collection_name=settings.QDRANT_COLLECTION_NAME,
-            field_name="category",
-            field_schema={"type": "keyword"},
-        )
-        logger.info("Payload index 'category' dibuat.")
-    except Exception as exc:  # noqa: BLE001 - index sudah ada / jenis tidak didukung
-        logger.info("Payload index 'category' (dibuat atau sudah ada): %s", exc)
+def _ensure_payload_indexes(client) -> None:
+    """Buat payload index supaya query/filter field payload cepat dan valid:
+    'category' (filter kategori/mis. tax) dan 'source_file_id' (dipakai
+    delete_by_source_file saat file dihapus/di-reupload)."""
+    for field_name in ("category", "source_file_id"):
+        try:
+            client.create_payload_index(
+                collection_name=settings.QDRANT_COLLECTION_NAME,
+                field_name=field_name,
+                field_schema={"type": "keyword"},
+            )
+            logger.info("Payload index '%s' dibuat.", field_name)
+        except Exception as exc:  # noqa: BLE001 - index sudah ada / jenis tidak didukung
+            logger.info("Payload index '%s' (dibuat atau sudah ada): %s", field_name, exc)
 
 
 def ensure_collection() -> None:
@@ -42,7 +45,7 @@ def ensure_collection() -> None:
             vectors_config=VectorParams(size=dims, distance=Distance.COSINE),
         )
         logger.info("Collection Qdrant '%s' dibuat (dimensi %d).", settings.QDRANT_COLLECTION_NAME, dims)
-    _ensure_category_index(client)
+    _ensure_payload_indexes(client)
 
 
 def upsert_chunks(

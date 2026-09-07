@@ -133,18 +133,24 @@ def get_pendapatan_beban_bulanan(
     tanggal_per: date | None = None,
     user_id: str | None = None,
     jumlah_bulan: int = 6,
+    tanggal_mulai: date | None = None,
 ) -> list[BarisPendapatanBebanBulanan]:
     """
     Pendapatan & beban per bulan untuk N bulan terakhir (default 6) sampai bulan
     tanggal_per, supaya chart "Pendapatan vs Beban" di dashboard menampilkan
-    tren dan kedua serinya terlihat jelas.
+    tren dan kedua serinya terlihat jelas. Saat tanggal_mulai diberikan (custom
+    date range), bar chart hanya menampilkan bulan-bulan di dalam rentang tsb —
+    bukan lagi 6 bulan terakhir.
 
     Konsisten dengan neraca saldo: pendapatan = saldo kredit akun PENDAPATAN,
     beban = saldo debit akun BEBAN (net dari debit/kredit per akun).
     """
     tanggal_per = tanggal_per or date.today()
     bulan_terakhir = tanggal_per.replace(day=1)
-    bulan_awal = _geser_bulan(bulan_terakhir, -(jumlah_bulan - 1))
+    if tanggal_mulai:
+        bulan_awal = tanggal_mulai.replace(day=1)
+    else:
+        bulan_awal = _geser_bulan(bulan_terakhir, -(jumlah_bulan - 1))
 
     # date_trunc hanya ada di PostgreSQL; SQLite pakai strftime.
     if settings.is_sqlite:
@@ -164,10 +170,13 @@ def get_pendapatan_beban_bulanan(
         .filter(Akun.is_active.is_(True))
         .filter(
             Akun.kategori.in_([KategoriAkun.PENDAPATAN, KategoriAkun.BEBAN]),
-            JurnalUmum.tanggal >= bulan_awal,
             JurnalUmum.tanggal <= tanggal_per,
         )
     )
+    if tanggal_mulai:
+        query = query.filter(JurnalUmum.tanggal >= tanggal_mulai)
+    else:
+        query = query.filter(JurnalUmum.tanggal >= bulan_awal)
     if user_id:
         query = query.filter(JurnalUmum.created_by_id == user_id)
     rows = query.group_by("bulan", Akun.kategori).all()

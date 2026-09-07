@@ -93,7 +93,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <p className="mt-6 text-center flex items-center justify-center gap-1.5 text-xs" style={{ color: 'var(--color-slate-muted)' }}>
-          <Landmark size={13} /> AI Accounting RAG
+          <Landmark size={13} /> Finora
         </p>
       </div>
     </div>

@@ -8,7 +8,7 @@ BOLD='\033[1m'
 
 echo ""
 echo -e "${BOLD}${RED}╔══════════════════════════════════════════╗${NC}"
-echo -e "${BOLD}${RED}║    AI Accounting RAG - Stopping...       ║${NC}"
+echo -e "${BOLD}${RED}║    Finora - Stopping...                  ║${NC}"
 echo -e "${BOLD}${RED}╚══════════════════════════════════════════╝${NC}"
 echo ""
 

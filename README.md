@@ -1,4 +1,4 @@
-# AI Accounting RAG — Aplikasi Desktop
+# Finora — Aplikasi Desktop
 
 Aplikasi pembukuan & konsultasi pajak UMKM (SAK EMKM) berbasis RAG, dikemas sebagai aplikasi desktop (Electron).
 
@@ -20,10 +20,10 @@ Aplikasi pembukuan & konsultasi pajak UMKM (SAK EMKM) berbasis RAG, dikemas seba
 ```
 
 ### Alur data di perangkat user
-Data tersimpan di folder app-data (mis. macOS: `~/Library/Application Support/AI Accounting RAG/`):
+Data tersimpan di folder app-data (mis. macOS: `~/Library/Application Support/Finora/`):
 
 ```
-data/ai_accounting.db   ← SQLite
+data/finora.db          ← SQLite
 data/qdrant/            ← Qdrant embedded (kalau tanpa cloud key)
 data/uploads, markdown, chunks, embeddings
 logs/
@@ -83,15 +83,15 @@ PyInstaller **tidak bisa cross-compile**: binary backend Windows hanya bisa dibu
 1. Inisialisasi git & push proyek ke GitHub:
    ```bash
    git init && git add -A && git commit -m "init"
-   git remote add origin https://github.com/username/ai-accounting-rag.git
+   git remote add origin https://github.com/username/finora.git
    git push -u origin main
    ```
 2. Set secret `OLLAMA_API_KEY` di GitHub: **Settings → Secrets and variables → Actions** (nilai key kamu — dipakai untuk di-bundle ke installer).
 3. Buka tab **Actions → Build Desktop Installers → Run workflow** (build manual), atau push tag `git tag v1.0.0 && git push origin v1.0.0` (build otomatis + publish ke Releases).
 4. Unduh installer dari artifact Actions atau halaman Releases:
-   - macOS: `AI Accounting RAG-*.dmg`
-   - Windows: `AI Accounting RAG Setup-*.exe`
-   - Linux: `AI Accounting RAG-*.AppImage`
+   - macOS: `Finora-*.dmg`
+   - Windows: `Finora Setup-*.exe`
+   - Linux: `Finora-*.AppImage`
 
 Config lengkap ada di `.github/workflows/release.yml` (target mac/win/linux sudah di `electron/package.json`).
 
@@ -111,10 +111,10 @@ Prioritas: kalau file ada lokal, tombol mengunduh dari backend (lebih cepat). Ka
    ```
    (Skrip ini menyalin dari `electron/release/` — DMG lokal, atau EXE/AppImage hasil unduhan dari GitHub Actions — dengan nama kanonik.)
 2. Nama file harus persis sama dengan `PLATFORMS` di `frontend/src/pages/LandingPage.jsx`:
-   - macOS: `AI Accounting RAG-1.0.0-arm64.dmg`
-   - Windows: `AI Accounting RAG Setup 1.0.0.exe`
-   - Linux: `AI Accounting RAG-1.0.0.AppImage`
-3. Jalankan backend (web dev): `cd backend && source venv/bin/activate && uvicorn app.main:app --reload --port 8000` → cek `http://localhost:8000/downloads/AI%20Accounting%20RAG-1.0.0-arm64.dmg`.
+   - macOS: `Finora-1.0.0-arm64.dmg`
+   - Windows: `Finora Setup 1.0.0.exe`
+   - Linux: `Finora-1.0.0.AppImage`
+3. Jalankan backend (web dev): `cd backend && source venv/bin/activate && uvicorn app.main:app --reload --port 8000` → cek `http://localhost:8000/downloads/Finora-1.0.0-arm64.dmg`.
 
 ### Menyiapkan Windows/Linux lewat GitHub Releases (otomatis)
 Karena PyInstaller tidak bisa cross-compile, installer Windows & Linux dibangun lewat GitHub Actions lalu di-publish ke Releases — tanpa perlu menyalin binari besar manual:

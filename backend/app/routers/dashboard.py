@@ -88,6 +88,7 @@ def summary(
 @router.get("/monthly", response_model=list[MonthlyTrendResponse])
 def monthly(
     tanggal_per: date | None = None,
+    tanggal_mulai: date | None = None,
     jumlah_bulan: int = 6,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_active_user),
@@ -96,7 +97,7 @@ def monthly(
     if tanggal_per is None:
         tanggal_per = _latest_data_date(db, current_user.id)
     hasil = get_pendapatan_beban_bulanan(
-        db, tanggal_per, user_id=current_user.id, jumlah_bulan=jumlah_bulan
+        db, tanggal_per, user_id=current_user.id, jumlah_bulan=jumlah_bulan, tanggal_mulai=tanggal_mulai
     )
     return [
         MonthlyTrendResponse(
@@ -115,22 +116,27 @@ def _beban_per_akun_bulan_ini(
     tanggal_per: date,
     user_id: str,
     limit: int = 10,
+    tanggal_mulai: date | None = None,
 ) -> list[KategoriBreakdown]:
-    """Beban bulan ini per akun = kumulatif s/d sekarang - kumulatif s/d akhir
-    bulan lalu (pola yang sama dengan /summary biar konsisten)."""
-    awal_bulan = tanggal_per.replace(day=1)
-    akhir_bulan_lalu = awal_bulan - timedelta(days=1)
+    """Beban periode per akun = kumulatif s/d tanggal_per dikurangi kumulatif
+    s/d sehari sebelum awal periode. Tanpa tanggal_mulai, awal periode = tanggal 1
+    bulan berjalan (pola yang sama dengan /summary biar konsisten). Dengan
+    tanggal_mulai (custom range), hasil mengikuti rentang yang dipilih."""
+    if tanggal_mulai:
+        akhir_sebelum_awal = tanggal_mulai - timedelta(days=1)
+    else:
+        akhir_sebelum_awal = tanggal_per.replace(day=1) - timedelta(days=1)
 
     def _map(lr):
         return {b.kode_akun: (b.nama_akun, b.nilai) for b in (lr.hpp + lr.beban_operasional)}
 
     sekarang = _map(get_laporan_laba_rugi(db, tanggal_per, user_id=user_id))
-    bulan_lalu = _map(get_laporan_laba_rugi(db, akhir_bulan_lalu, user_id=user_id))
+    sebelum_periode = _map(get_laporan_laba_rugi(db, akhir_sebelum_awal, user_id=user_id))
 
     hasil = []
     for kode, (nama_akun, nilai) in sekarang.items():
-        nilai_bulan_lalu = bulan_lalu.get(kode, (None, 0.0))[1]
-        diff = round(nilai - nilai_bulan_lalu, 2)
+        nilai_sebelum = sebelum_periode.get(kode, (None, 0.0))[1]
+        diff = round(nilai - nilai_sebelum, 2)
         if diff > 0:
             hasil.append(KategoriBreakdown(kode_akun=kode, nama_akun=nama_akun, nilai=diff))
     hasil.sort(key=lambda b: b.nilai, reverse=True)
@@ -140,13 +146,15 @@ def _beban_per_akun_bulan_ini(
 @router.get("/kategori", response_model=list[KategoriBreakdown])
 def kategori(
     tanggal_per: date | None = None,
+    tanggal_mulai: date | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_active_user),
 ) -> list[KategoriBreakdown]:
-    """Top pengeluaran bulan ini per akun (HPP + beban operasional)."""
+    """Top pengeluaran periode per akun (HPP + beban operasional), mengikuti
+    rentang tanggal_mulai s/d tanggal_per bila diberikan."""
     if tanggal_per is None:
         tanggal_per = _latest_data_date(db, current_user.id)
-    return _beban_per_akun_bulan_ini(db, tanggal_per, current_user.id)
+    return _beban_per_akun_bulan_ini(db, tanggal_per, current_user.id, tanggal_mulai=tanggal_mulai)
 
 
 def _fmt_rp(value: float) -> str:
@@ -549,7 +557,7 @@ def overview(
 
     summary = get_dashboard_summary(db, tanggal_per, user_id=current_user.id, tanggal_mulai=tanggal_mulai)
     tren = get_pendapatan_beban_bulanan(
-        db, tanggal_per, user_id=current_user.id, jumlah_bulan=jumlah_bulan
+        db, tanggal_per, user_id=current_user.id, jumlah_bulan=jumlah_bulan, tanggal_mulai=tanggal_mulai
     )
 
     return DashboardOverviewResponse(
@@ -578,7 +586,7 @@ def overview(
         ],
         alerts=_build_alerts(db, summary, current_user.id),
         piutang_utang=_hitung_piutang_utang(db, tanggal_per, current_user.id),
-        kategori=_beban_per_akun_bulan_ini(db, tanggal_per, current_user.id),
+        kategori=_beban_per_akun_bulan_ini(db, tanggal_per, current_user.id, tanggal_mulai=tanggal_mulai),
         produk=[
             StatistikProdukItem(produk=p.produk, nilai=p.nilai, jumlah=p.jumlah)
             for p in get_statistik_produk(db, tanggal_per, current_user.id)

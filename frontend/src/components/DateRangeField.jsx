@@ -16,7 +16,7 @@ export default function DateRangeField({
         <DatePickerField
           value={startDate}
           onChange={onStartChange}
-          placeholder="Dari tanggal"
+          placeholder="Pilih tanggal mulai"
           compact
           maxDate={maxDate || endDate || undefined}
           className="flex-1 min-w-0"
@@ -25,7 +25,7 @@ export default function DateRangeField({
         <DatePickerField
           value={endDate}
           onChange={onEndChange}
-          placeholder="Sampai tanggal"
+          placeholder="Pilih tanggal akhir"
           compact
           minDate={startDate || undefined}
           maxDate={maxDate}

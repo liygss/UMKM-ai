@@ -27,7 +27,7 @@ def send_verification_email(to_email: str, verification_token: str, full_name: s
     try:
         # Buat email
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Verifikasi Email - AI Accounting RAG"
+        msg["Subject"] = "Verifikasi Email - Finora"
         msg["From"] = settings.SMTP_FROM
         msg["To"] = to_email
 
@@ -37,7 +37,7 @@ def send_verification_email(to_email: str, verification_token: str, full_name: s
         <html>
         <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #1e1b4b, #312e81); padding: 20px; text-align: center;">
-                <h1 style="color: white; margin: 0;">AI Accounting RAG</h1>
+                <h1 style="color: white; margin: 0;">Finora</h1>
             </div>
             <div style="padding: 20px; background: #f8fafc;">
                 <h2 style="color: #1e293b;">Selamat Datang, {full_name}!</h2>
@@ -61,7 +61,7 @@ def send_verification_email(to_email: str, verification_token: str, full_name: s
         text_content = f"""
 Selamat Datang, {full_name}!
 
-Terima kasih telah mendaftar di AI Accounting RAG.
+Terima kasih telah mendaftar di Finora.
 Silakan kunjungi link berikut untuk memverifikasi email Anda:
 
 {verify_url}
@@ -100,7 +100,7 @@ def send_password_reset_email(to_email: str, reset_token: str, full_name: str) -
     <html>
     <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #1e1b4b, #312e81); padding: 20px; text-align: center;">
-            <h1 style="color: white; margin: 0;">AI Accounting RAG</h1>
+            <h1 style="color: white; margin: 0;">Finora</h1>
         </div>
         <div style="padding: 20px; background: #f8fafc;">
             <h2 style="color: #1e293b;">Atur Ulang Kata Sandi</h2>
@@ -134,7 +134,7 @@ Jika Anda tidak meminta reset kata sandi, abaikan email ini.
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Reset Kata Sandi - AI Accounting RAG"
+        msg["Subject"] = "Reset Kata Sandi - Finora"
         msg["From"] = settings.SMTP_FROM
         msg["To"] = to_email
         msg.attach(MIMEText(text_content, "plain"))

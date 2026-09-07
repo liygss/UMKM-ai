@@ -87,7 +87,7 @@ def _seed_knowledge_background() -> None:
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Backend AI Accounting RAG untuk pembukuan & konsultasi pajak UMKM (SAK EMKM).",
+    description="Backend Finora untuk pembukuan & konsultasi pajak UMKM (SAK EMKM).",
     lifespan=lifespan,
 )
 

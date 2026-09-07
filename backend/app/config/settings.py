@@ -13,7 +13,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # ---------- General ----------
-    APP_NAME: str = "AI Accounting RAG"
+    APP_NAME: str = "Finora"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
     ENV: str = Field(default="development")  # development | staging | production
@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     DATABASE_URL_OVERRIDE: str | None = None
     # Path SQLite relatif terhadap folder kerja (di aplikasi desktop diarahkan
     # ke folder data milik Electron lewat env DATA_DIR).
-    SQLITE_PATH: str = "data/ai_accounting.db"
+    SQLITE_PATH: str = "data/finora.db"
 
     # Folder basis untuk semua penyimpanan file aplikasi (database, qdrant,
     # upload, log, dll). Di desktop di-set ke userData/.. oleh Electron.
@@ -146,7 +146,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
-    SMTP_FROM: str = "noreply@aiaccounting.local"
+    SMTP_FROM: str = "noreply@finora.local"
     SMTP_USE_TLS: bool = True
 
     # URL aplikasi frontend, dipakai untuk membangun link reset password di email.

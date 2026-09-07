@@ -21,6 +21,7 @@ export default function DatePickerField({
   const [isOpen, setIsOpen] = useState(false)
   const wrapperRef = useRef(null)
   const triggerRef = useRef(null)
+  const portalRef = useRef(null)
   const [pos, setPos] = useState({ top: 0, left: 0 })
 
   const selectedDate = value ? new Date(value + 'T00:00:00') : null
@@ -40,7 +41,7 @@ export default function DatePickerField({
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target) && !portalRef.current?.contains(e.target)) {
         setIsOpen(false)
       }
     }
@@ -63,6 +64,7 @@ export default function DatePickerField({
 
   const calendarPopup = isOpen ? createPortal(
     <div
+      ref={portalRef}
       style={{
         position: 'fixed',
         top: pos.top,
@@ -88,6 +90,10 @@ export default function DatePickerField({
           maxDate={maxDate}
           minDate={minDate}
           required={required}
+          showYearDropdown
+          showMonthDropdown
+          yearDropdownItemNumber={50}
+          dropdownMode="select"
         />
       </div>
     </div>,

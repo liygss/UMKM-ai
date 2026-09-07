@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import { extractError } from '../api/extractError'
-import { Landmark, Eye, EyeOff, ArrowRight, ArrowLeft, Sparkles, Shield, Zap, CheckCircle2 } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, ArrowLeft, Sparkles, Shield, Zap, CheckCircle2 } from 'lucide-react'
 import ThemeToggle from '../components/ThemeToggle'
 
 export default function LoginPage() {
@@ -66,17 +66,17 @@ export default function LoginPage() {
 
           <div className="relative z-10 flex flex-col justify-center px-16 text-white">
             <div className="flex items-center gap-3 mb-10">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl" style={{ background: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)' }}>
-                <Landmark size={24} />
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl" style={{ background: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)' }}>
+                <img src="/finora_logo.jpeg" alt="Finora" className="h-full w-full object-cover" />
               </div>
               <div className="leading-tight">
-                <div className="text-xl font-[900] tracking-tight">AI <span className="gradient-text">UMKM</span></div>
+                <div className="text-xl font-[900] tracking-tight">Finora</div>
                 <div className="text-[10px] font-medium tracking-widest uppercase opacity-60">Smart Accounting</div>
               </div>
             </div>
 
             <h1 className="text-4xl font-[900] leading-tight mb-6 animate-slide-in-left" style={{ letterSpacing: '-0.02em' }}>
-              Pembukuan UMKM<br />
+              Pembukuan Finora<br />
               <span className="gradient-text">Lebih Cerdas</span><br />
               dengan AI
             </h1>
@@ -115,7 +115,7 @@ export default function LoginPage() {
                 className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl"
                 style={{ boxShadow: '0 4px 16px rgba(37, 99, 235, 0.3)' }}
               >
-                <img src="/finora-logo.jpg" alt="Finora" className="h-full w-full object-cover" />
+                <img src="/finora_logo.jpeg" alt="Finora" className="h-full w-full object-cover" />
               </div>
               <span className="text-lg font-bold" style={{ color: 'var(--color-slate-heading)' }}>Finora</span>
             </div>

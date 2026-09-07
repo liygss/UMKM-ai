@@ -105,12 +105,14 @@ def login(
     access_token = create_access_token(subject=user.id)
 
     # Set httpOnly cookie (bukan body response)
-    is_production = settings.ENV.lower() == "production"
+    # Cookie secure hanya aktif jika benar-benar HTTPS (bukan localhost).
+    host = request.headers.get("host", "")
+    is_secure = settings.ENV.lower() == "production" and not host.startswith("127.0.0.1") and not host.startswith("localhost")
     response.set_cookie(
         key=COOKIE_NAME,
         value=access_token,
         httponly=True,
-        secure=is_production,
+        secure=is_secure,
         samesite="lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",

@@ -242,7 +242,7 @@ export default function UploadPage() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--color-slate-heading)' }}>Upload File</h1>
-        <p className="text-sm" style={{ color: 'var(--color-slate-body)' }}>Upload CSV transaksi atau PDF aturan untuk diproses ke knowledge base</p>
+        <p className="text-sm" style={{ color: 'var(--color-slate-body)' }}>Upload CSV/XLSX transaksi untuk dibuatkan jurnal otomatis. PDF yang berisi data transaksi juga langsung masuk jurnal &amp; dashboard; PDF aturan masuk ke knowledge base chatbot.</p>
         <div className="mt-3 flex items-center gap-2">
           <Link to="/" className="btn-primary text-xs !py-2">
             <LayoutDashboard size={14} /> Lihat Dashboard

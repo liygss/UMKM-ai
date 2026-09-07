@@ -28,7 +28,7 @@ function ReportHeader({ user, title, date, startDate, endDate }) {
       <div className="rpt-header-top">
         <div className="rpt-header-left">
           <div className="rpt-logo">
-            <img src="/finora-logo.jpg" alt="Finora" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover' }} />
+            <img src="/finora_logo.jpeg" alt="Finora" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover' }} />
           </div>
           <div>
             <h1 className="rpt-company">{user?.company_name || 'Nama Perusahaan'}</h1>

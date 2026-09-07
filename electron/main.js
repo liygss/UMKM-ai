@@ -175,7 +175,7 @@ function backendEnv(cfg) {
   return {
     ...process.env,
     DATA_DIR: dataDir,
-    SQLITE_PATH: path.join(dataDir, 'ai_accounting.db'),
+    SQLITE_PATH: path.join(dataDir, 'finora.db'),
     QDRANT_LOCAL_PATH: path.join(dataDir, 'qdrant'),
     UPLOAD_DIR: path.join(dataDir, 'uploads'),
     MARKDOWN_DIR: path.join(dataDir, 'markdown'),
@@ -224,7 +224,9 @@ async function startBackend(cfg) {
   })
 
   // Tunggu sampai backend siap (health check)
-  for (let i = 0; i < 60; i++) {
+  // Binary frozen bisa butuh ~50 detik untuk start (load DB besar +
+  // fastembed/onnxruntime), jadi beri jeda maksimal 90 detik.
+  for (let i = 0; i < 180; i++) {
     if (backendProc === null || backendProc.exitCode !== null) {
       throw new Error('Backend gagal dijalankan.')
     }
@@ -251,7 +253,7 @@ function createWindow(url) {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    title: 'AI Accounting RAG',
+    title: 'Finora',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

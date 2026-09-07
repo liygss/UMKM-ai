@@ -30,6 +30,7 @@ from app.services.ingestion.file_loader import load_file
 from app.services.ingestion.markdown_generator import generate_markdown
 from app.services.ingestion.metadata_generator import build_chunk_metadata
 from app.services.ingestion.normalizer import normalize_document
+from app.services.ingestion.pdf_transactions import extract_transaction_dataframe
 
 logger = get_logger(__name__)
 
@@ -149,7 +150,8 @@ def process_uploaded_file(db: Session, uploaded_file: UploadedFile) -> UploadedF
     """
     Pipeline upload:
     - CSV/XLSX: auto-jurnal dulu (cepat, batch insert), RAG di background thread.
-    - PDF: RAG pipeline saja.
+    - PDF berisi data transaksi (baris CSV): auto-jurnal dulu, RAG di background thread.
+    - PDF aturan/prosa/scan: RAG pipeline saja.
     """
     try:
         _update_status(db, uploaded_file, StatusUpload.PROCESSING)
@@ -194,7 +196,53 @@ def process_uploaded_file(db: Session, uploaded_file: UploadedFile) -> UploadedF
 
             logger.warning("CSV/XLSX '%s' tidak punya kolom transaksi, masuk RAG pipeline.", uploaded_file.original_filename)
 
+        # --- PDF: cek dulu apakah berisi data transaksi ---
+        # PDF yang dibuat dari CSV/XLSX transaksi (baris-baris CSV sebagai teks)
+        # harus dibuatkan jurnal otomatis sama seperti CSV/XLSX supaya datanya
+        # masuk dashboard. PDF aturan/prosa/scan jatuh ke RAG pipeline di bawah.
+        if uploaded_file.file_type == "pdf":
+            trans_df = extract_transaction_dataframe(doc)
+            if trans_df is not None and not trans_df.empty:
+                jumlah_jurnal, warnings = auto_journal_from_dataframe(
+                    db=db,
+                    dataframe=trans_df,
+                    uploaded_file_id=uploaded_file.id,
+                    user_id=uploaded_file.uploaded_by_id,
+                    filename_stem=judul,
+                )
+                error_msg = None
+                if warnings:
+                    shown = warnings[:8]
+                    error_msg = "Diproses dengan catatan; " + "; ".join(shown)
+                    if len(warnings) > len(shown):
+                        error_msg += f" (+{len(warnings) - len(shown)} baris lagi)"
+                _update_status(db, uploaded_file, StatusUpload.POSTED, error=error_msg)
+                logger.info(
+                    "Auto-jurnal dari PDF selesai untuk '%s': %d jurnal dibuat.",
+                    uploaded_file.original_filename,
+                    jumlah_jurnal,
+                )
+
+                # RAG di background thread supaya chatbot tetap bisa menjawab
+                # pertanyaan dari isi PDF ini (sama seperti jalur CSV/XLSX).
+                t = threading.Thread(
+                    target=_rag_background,
+                    args=(uploaded_file.id, uploaded_file.stored_path, uploaded_file.file_type, judul),
+                    daemon=True,
+                )
+                t.start()
+
+                return uploaded_file
+
+            logger.info("PDF '%s' bukan data transaksi, masuk RAG pipeline.", uploaded_file.original_filename)
+
         # --- PDF / fallback: RAG pipeline ---
+        if uploaded_file.file_type == "pdf" and not "".join(doc.raw_text_pages).strip():
+            raise IngestionError(
+                "PDF tidak punya teks yang bisa dibaca (kemungkinan hasil scan/foto). "
+                "Untuk data transaksi, upload CSV/XLSX atau PDF yang berisi teks."
+            )
+
         doc = normalize_document(doc)
         markdown_text = generate_markdown(doc, judul)
 
