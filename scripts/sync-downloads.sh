@@ -28,7 +28,7 @@ copy_file() {
 }
 
 copy_file "$SRC/Finora-1.0.0-arm64.dmg"       "Finora-1.0.0-arm64.dmg"
-copy_file "$SRC/Finora Setup 1.0.0.exe"        "Finora-Setup-1.0.0.exe"
+copy_file "$SRC/Finora Setup 1.0.0.exe"        "Finora.Setup.1.0.0.exe"
 copy_file "$SRC/Finora-1.0.0.AppImage"         "Finora-1.0.0.AppImage"
 
 echo

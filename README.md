@@ -90,7 +90,7 @@ PyInstaller **tidak bisa cross-compile**: binary backend Windows hanya bisa dibu
 3. Buka tab **Actions → Build Desktop Installers → Run workflow** (build manual), atau push tag `git tag v1.0.0 && git push origin v1.0.0` (build otomatis + publish ke Releases).
 4. Unduh installer dari artifact Actions atau halaman Releases:
    - macOS: `Finora-*.dmg`
-   - Windows: `Finora Setup-*.exe`
+   - Windows: `Finora.Setup.*.exe`
    - Linux: `Finora-*.AppImage`
 
 Config lengkap ada di `.github/workflows/release.yml` (target mac/win/linux sudah di `electron/package.json`).
@@ -112,7 +112,7 @@ Prioritas: kalau file ada lokal, tombol mengunduh dari backend (lebih cepat). Ka
    (Skrip ini menyalin dari `electron/release/` — DMG lokal, atau EXE/AppImage hasil unduhan dari GitHub Actions — dengan nama kanonik.)
 2. Nama file harus persis sama dengan `PLATFORMS` di `frontend/src/pages/LandingPage.jsx`:
    - macOS: `Finora-1.0.0-arm64.dmg`
-   - Windows: `Finora Setup 1.0.0.exe`
+   - Windows: `Finora.Setup.1.0.0.exe`
    - Linux: `Finora-1.0.0.AppImage`
 3. Jalankan backend (web dev): `cd backend && source venv/bin/activate && uvicorn app.main:app --reload --port 8000` → cek `http://localhost:8000/downloads/Finora-1.0.0-arm64.dmg`.
 

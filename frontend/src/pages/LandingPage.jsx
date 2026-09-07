@@ -33,7 +33,7 @@ const GITHUB_RELEASES_API = `https://api.github.com/repos/${GITHUB_REPO}/release
 
 const PLATFORMS = [
   { icon: Apple,       os: 'macOS',   note: 'Apple Silicon & Intel',    file: 'Finora-1.0.0-arm64.dmg',  ext: '.dmg'      },
-  { icon: MonitorDown, os: 'Windows', note: 'Windows 10 / 11 (x64)',    file: 'Finora-Setup-1.0.0.exe',   ext: '.exe'      },
+  { icon: MonitorDown, os: 'Windows', note: 'Windows 10 / 11 (x64)',    file: 'Finora.Setup.1.0.0.exe',   ext: '.exe'      },
   { icon: Laptop,      os: 'Linux',   note: 'AppImage (x64)',            file: 'Finora-1.0.0.AppImage',   ext: '.AppImage' },
 ]
 
