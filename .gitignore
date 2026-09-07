@@ -31,7 +31,8 @@ electron/release/
 # Installer aplikasi desktop (disajikan langsung via /downloads)
 downloads/
 
-# Local data / reports
-data/
+# Local data / reports (hanya di root proyek — bukan frontend/src/data/)
+/data/
+backend/data/
 bug_report*.html
 bug_fix_report.html
