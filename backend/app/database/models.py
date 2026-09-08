@@ -21,6 +21,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Index,
+    Integer,
     JSON,
     Numeric,
     String,
@@ -120,6 +121,12 @@ class User(Base):
     spt_records: Mapped[list["SptTahunan"]] = relationship(back_populates="user")
     notifications: Mapped[list["Notification"]] = relationship(
         back_populates="user", foreign_keys="Notification.user_id"
+    )
+    feedbacks: Mapped[list["Feedback"]] = relationship(
+        back_populates="user", foreign_keys="Feedback.user_id"
+    )
+    exit_feedbacks: Mapped[list["ExitFeedback"]] = relationship(
+        back_populates="user", foreign_keys="ExitFeedback.user_id"
     )
 
 
@@ -329,6 +336,19 @@ class ChatMessage(Base):
 # Notifikasi (dikirim admin ke user spesifik, atau dihasilkan otomatis oleh
 # sistem — misalnya Ringkasan Bulanan).
 # ---------------------------------------------------------------------------
+class FeedbackCategory(str, enum.Enum):
+    COMPLAINT = "COMPLAINT"
+    QUESTION = "QUESTION"
+    SUGGESTION = "SUGGESTION"
+    OTHER = "OTHER"
+
+
+class FeedbackStatus(str, enum.Enum):
+    OPEN = "OPEN"
+    REPLIED = "REPLIED"
+    CLOSED = "CLOSED"
+
+
 class NotificationType(str, enum.Enum):
     ADMIN = "ADMIN"          # dibuat manual oleh admin
     MONTHLY = "MONTHLY"      # ringkasan bulanan (sistem)
@@ -357,3 +377,49 @@ class Notification(Base):
     user: Mapped["User"] = relationship(
         back_populates="notifications", foreign_keys=[user_id]
     )
+
+
+# ---------------------------------------------------------------------------
+# Feedback / CS (komplain / pertanyaan user -> admin)
+# ---------------------------------------------------------------------------
+class Feedback(Base):
+    __tablename__ = "feedback"
+    __table_args__ = (Index("ix_feedback_user_status", "user_id", "status"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
+    category: Mapped[FeedbackCategory] = mapped_column(
+        Enum(FeedbackCategory), default=FeedbackCategory.COMPLAINT
+    )
+    subject: Mapped[str] = mapped_column(String(200), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[FeedbackStatus] = mapped_column(
+        Enum(FeedbackStatus), default=FeedbackStatus.OPEN, index=True
+    )
+    admin_reply: Mapped[str | None] = mapped_column(Text, nullable=True)
+    replied_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    replied_by_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now
+    )
+
+    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    replied_by: Mapped["User | None"] = relationship(foreign_keys=[replied_by_id])
+
+
+# ---------------------------------------------------------------------------
+# Exit Feedback (rating singkat saat user logout)
+# ---------------------------------------------------------------------------
+class ExitFeedback(Base):
+    __tablename__ = "exit_feedback"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+    user: Mapped["User"] = relationship(foreign_keys=[user_id])

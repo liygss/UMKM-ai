@@ -23,7 +23,7 @@ from app.config.settings import settings
 from app.database.database import check_db_connection, check_qdrant_connection
 from app.middleware.auth import require_admin
 from app.middleware.cors import setup_cors
-from app.routers import accounting, admin, authentication, chatbot, dashboard, downloads, notifications, spt, upload
+from app.routers import accounting, admin, authentication, chatbot, dashboard, downloads, feedback, notifications, spt, upload
 
 setup_logging()
 logger = get_logger(__name__)
@@ -109,6 +109,7 @@ app.include_router(dashboard.router)
 app.include_router(chatbot.router)
 app.include_router(downloads.router)
 app.include_router(notifications.router)
+app.include_router(feedback.router)
 
 
 @app.get("/", tags=["Root"])

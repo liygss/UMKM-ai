@@ -17,6 +17,8 @@ import SptPage from './pages/SptPage'
 import KnowledgePage from './pages/KnowledgePage'
 import NotifAdminPage from './pages/NotifAdminPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
+import FeedbackPage from './pages/FeedbackPage'
+import AdminFeedbackPage from './pages/AdminFeedbackPage'
 import DemoPage from './pages/DemoPage'
 
 function ProtectedRoute({ children }) {
@@ -54,6 +56,8 @@ export default function App() {
         <Route path="/knowledge" element={<KnowledgePage />} />
         <Route path="/notif-admin" element={<NotifAdminPage />} />
         <Route path="/admin" element={<AdminDashboardPage />} />
+        <Route path="/feedback" element={<FeedbackPage />} />
+        <Route path="/admin/feedback" element={<AdminFeedbackPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import LogoutFeedbackModal from './LogoutFeedbackModal'
 import {
   LayoutDashboard, BookOpen, FileText,
   BarChart3, Upload, Calculator, LogOut, X,
-  ChevronsLeft, ChevronsRight, Database, PlayCircle, FileSpreadsheet, Send, ShieldCheck, MessageSquare
+  ChevronsLeft, ChevronsRight, Database, PlayCircle, FileSpreadsheet, Send, ShieldCheck, MessageSquare,
+  MessageSquareWarning,
 } from 'lucide-react'
 
 export default function Sidebar({ open, onClose }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
+  const [showLogoutFeedback, setShowLogoutFeedback] = useState(false)
 
   const isAdmin = user?.role === 'ADMIN'
 
@@ -50,11 +53,16 @@ export default function Sidebar({ open, onClose }) {
         { to: '/admin', label: 'Dashboard Admin', icon: ShieldCheck },
         { to: '/knowledge', label: 'Knowledge Base', icon: Database },
         { to: '/notif-admin', label: 'Kirim Notifikasi', icon: Send },
+        { to: '/admin/feedback', label: 'Kelola Feedback', icon: MessageSquareWarning },
       ]
     }] : []),
   ]
 
   const handleLogout = () => {
+    setShowLogoutFeedback(true)
+  }
+
+  const handleActualLogout = () => {
     logout()
     navigate('/login')
   }
@@ -189,6 +197,13 @@ export default function Sidebar({ open, onClose }) {
           </div>
         </div>
       </aside>
+
+      {showLogoutFeedback && (
+        <LogoutFeedbackModal
+          onClose={() => setShowLogoutFeedback(false)}
+          onSkip={handleActualLogout}
+        />
+      )}
     </>
   )
 }

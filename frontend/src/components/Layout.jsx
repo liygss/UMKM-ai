@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import FloatingChatbot from './FloatingChatbot'
 import DemoWelcomeModal from './DemoWelcomeModal'
+import ComplaintModal from './ComplaintModal'
 import NotificationsDropdown from './NotificationsDropdown'
 import ThemeToggle from './ThemeToggle'
 import GuidedTour from './GuidedTour'
@@ -10,7 +11,7 @@ import CommandPalette from './CommandPalette'
 import client from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { TOUR_STORAGE_PREFIX } from '../data/tourSteps'
-import { Menu, Search, Download, CircleHelp } from 'lucide-react'
+import { Menu, Search, Download, CircleHelp, MessageSquareWarning, Headphones } from 'lucide-react'
 
 const PAGE_TITLES = {
   '/dashboard': 'Dashboard',
@@ -23,6 +24,8 @@ const PAGE_TITLES = {
   '/spt': 'SPT Tahunan PPh OP',
   '/notif-admin': 'Kirim Notifikasi',
   '/admin': 'Dashboard Admin',
+  '/feedback': 'Feedback',
+  '/admin/feedback': 'Kelola Feedback',
 }
 
 export default function Layout() {
@@ -34,6 +37,7 @@ export default function Layout() {
   const [downloadFile, setDownloadFile] = useState('')
   const [tourOpen, setTourOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [complaintOpen, setComplaintOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const title = PAGE_TITLES[location.pathname] || 'Dashboard'
@@ -155,6 +159,28 @@ export default function Layout() {
               </a>
             )}
 
+            {/* Feedback / CS */}
+            <button
+              onClick={() => navigate(user?.role === 'ADMIN' ? '/admin/feedback' : '/feedback')}
+              title="Feedback & Komplain"
+              aria-label="Feedback"
+              className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:scale-105"
+              style={{ background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-soft)', color: 'var(--color-slate-body)' }}
+            >
+              <MessageSquareWarning size={18} />
+            </button>
+
+            {/* Hubungi Admin / CS */}
+            <button
+              onClick={() => setComplaintOpen(true)}
+              title="Hubungi Admin / CS"
+              aria-label="Komplain"
+              className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:scale-105"
+              style={{ background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-soft)', color: 'var(--color-slate-body)' }}
+            >
+              <Headphones size={18} />
+            </button>
+
             {/* Notification bell */}
             <NotificationsDropdown />
 
@@ -189,6 +215,7 @@ export default function Layout() {
       </div>
 
       {showWelcome && <DemoWelcomeModal onClose={() => closeWelcome(false)} onLaunch={() => closeWelcome(true)} />}
+      {complaintOpen && <ComplaintModal onClose={() => setComplaintOpen(false)} />}
       <FloatingChatbot />
       <GuidedTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
