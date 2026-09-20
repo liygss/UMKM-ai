@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import AskFinoraPanel from './AskFinoraPanel'
@@ -9,6 +9,7 @@ import GuidedTour from './GuidedTour'
 import CommandPalette from './CommandPalette'
 import client from '../api/client'
 import { useAuth } from '../context/AuthContext'
+import ChatPanelContext from '../context/ChatPanelContext'
 import { TOUR_STORAGE_PREFIX, BUDDY_STORAGE_PREFIX } from '../data/tourSteps'
 import { Menu, Search, Download, CircleHelp, Headphones, ShieldCheck } from 'lucide-react'
 
@@ -21,6 +22,10 @@ export default function Layout() {
   const [tourOpen, setTourOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [complaintOpen, setComplaintOpen] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(() => {
+    const saved = localStorage.getItem('ask_finora_collapsed')
+    return saved !== null ? saved !== 'true' : true
+  })
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -73,14 +78,25 @@ export default function Layout() {
     setTourOpen(true)
   }
 
+  const togglePanel = useCallback(() => {
+    setPanelOpen(p => !p)
+  }, [])
+
+  // Listen for open-chatbot events from anywhere (e.g. Quick Actions)
+  useEffect(() => {
+    const onOpen = () => setPanelOpen(true)
+    window.addEventListener('open-chatbot', onOpen)
+    return () => window.removeEventListener('open-chatbot', onOpen)
+  }, [])
+
   useEffect(() => {
     const platform = navigator.platform.toLowerCase()
     const isMac = platform.includes('mac')
     const isWin = platform.includes('win')
     const ext = isMac ? '.dmg' : isWin ? '.exe' : '.AppImage'
-    const name = isMac ? 'AI.Accounting.RAG-1.0.0-arm64.dmg'
-      : isWin ? 'AI.Accounting.RAG.Setup.1.0.0.exe'
-      : 'AI.Accounting.RAG-1.0.0.AppImage'
+    const name = isMac ? 'Finora-1.1.0-arm64.dmg'
+      : isWin ? 'Finora.Setup.1.1.0.exe'
+      : 'Finora-1.1.0.AppImage'
 
     client.get('/downloads')
       .then(r => {
@@ -94,6 +110,7 @@ export default function Layout() {
   }, [])
 
   return (
+    <ChatPanelContext.Provider value={{ panelOpen, togglePanel }}>
     <div className="app-bg flex h-screen overflow-hidden min-w-0">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
@@ -199,11 +216,12 @@ export default function Layout() {
         </main>
       </div>
 
-      {!isChatbot && <AskFinoraPanel />}
+      {!isChatbot && <AskFinoraPanel collapsed={!panelOpen} onToggle={togglePanel} />}
 
       {complaintOpen && <ComplaintModal onClose={() => setComplaintOpen(false)} />}
       <GuidedTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
+    </ChatPanelContext.Provider>
   )
 }

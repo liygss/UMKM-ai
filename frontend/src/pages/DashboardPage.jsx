@@ -4,6 +4,7 @@ import { motion } from 'motion/react'
 import client from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { useChatPanel } from '../context/ChatPanelContext'
 import StatCard from '../components/StatCard'
 import { MotionBarShape, MotionActiveBar, MotionTooltip } from '../components/MotionChartShapes'
 import { formatRupiah, formatRupiahCompact, formatDate } from '../utils/formatters'
@@ -450,6 +451,7 @@ const KasBankPieCard = memo(KasBankPieCardInner)
 export default function DashboardPage() {
   const { user } = useAuth()
   const { mode } = useTheme()
+  const { panelOpen } = useChatPanel()
   const isLight = mode === 'light'
   // Satu response /dashboard/overview berisi summary + monthly + alerts +
   // piutang/utang + kategori → 1 request saja (yang dulu 5 paralel).
@@ -649,13 +651,6 @@ export default function DashboardPage() {
     return () => window.removeEventListener('data-changed', onDataChanged)
   }, [fetchData])
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      window.dispatchEvent(new Event('open-chatbot'))
-    }, 500)
-    return () => clearTimeout(timer)
-  }, [])
-
   // Bulan periode terpilih: manual ("YYYY-MM") atau bulan dari data otomatis.
   const periodMonth = debouncedMonth || (data?.tanggal_per ? data.tanggal_per.slice(0, 7) : todayStr().slice(0, 7))
   const monthLabel = formatMonthLabel(periodMonth)
@@ -721,7 +716,7 @@ export default function DashboardPage() {
   const isEmpty = data.jumlah_transaksi_bulan_ini === 0 && data.total_kas_dan_bank === 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* Welcome Section */}
       <motion.div
         variants={fadeUp}
@@ -846,7 +841,7 @@ export default function DashboardPage() {
         variants={staggerContainer(0.08, 0.1)}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4"
+        className={`grid grid-cols-2 sm:grid-cols-3 ${panelOpen ? 'md:grid-cols-3' : 'md:grid-cols-5'} gap-3 sm:gap-4`}
       >
         <StatCard title="Saldo Kas" value={data.saldo_kas} format={formatRupiahCompact} icon={Wallet} color="indigo" />
         <StatCard
@@ -890,7 +885,7 @@ export default function DashboardPage() {
         variants={staggerContainer(0.1, 0.05)}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        className={`grid grid-cols-1 md:grid-cols-2 ${panelOpen ? '' : 'lg:grid-cols-3'} gap-4`}
       >
         <BarTrendCard monthly={monthly} monthLabel={monthLabel} isLight={isLight} barAnimDone={barAnimDone} />
         <KasBankPieCard data={data} monthLabel={monthLabel} isLight={isLight} />
@@ -901,7 +896,7 @@ export default function DashboardPage() {
         variants={staggerContainer(0.1, 0.15)}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        className={`grid grid-cols-1 md:grid-cols-2 ${panelOpen ? '' : 'lg:grid-cols-3'} gap-4`}
       >
         <RingkasanPiutangUtang data={piutangUtang} />
         <KategoriPengeluaran debouncedDate={periodDateKey} items={kategori} />
@@ -913,7 +908,7 @@ export default function DashboardPage() {
         variants={staggerContainer(0.1, 0.15)}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        className={`grid grid-cols-1 md:grid-cols-2 ${panelOpen ? '' : 'lg:grid-cols-3'} gap-4`}
       >
         <TemuanPenting alerts={alerts} />
         <InsightCard debouncedDate={periodDateKey} />

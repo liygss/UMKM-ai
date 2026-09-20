@@ -5,7 +5,6 @@ import { useChatbotShared } from '../context/ChatbotContext'
 import AssistantChat from './AssistantChat'
 
 const WIDTH_KEY = 'ask_finora_width'
-const COLLAPSED_KEY = 'ask_finora_collapsed'
 const MIN_WIDTH = 300
 const MAX_WIDTH = 420
 const DEFAULT_WIDTH = 340
@@ -17,44 +16,35 @@ function clamp(v, min, max) {
 /**
  * Panel "Ask Finora" — bisa di-collapse/expand.
  *
- * - Default: collapsed (hanya ikon floating di pojok kanan bawah).
- * - Klik ikon → expand panel penuh di sisi kanan.
+ * - State (collapsed) diangkat ke Layout.jsx, di-share via ChatPanelContext.
+ * - Props: collapsed (bool), onToggle (fn).
  * - Bisa di-resize, width tersimpan di localStorage.
- * - Sembunyi di layar kecil (< md) secara default.
- * - Event `open-chatbot` (dari "Tanya AI" di Dashboard) mem-expand + fokus input.
+ * - Sembunyi di layar kecil (< md).
  */
-export default function AskFinoraPanel() {
+export default function AskFinoraPanel({ collapsed, onToggle }) {
   const [width, setWidth] = useState(() => {
     const saved = parseFloat(localStorage.getItem(WIDTH_KEY))
     return Number.isFinite(saved) ? clamp(saved, MIN_WIDTH, MAX_WIDTH) : DEFAULT_WIDTH
-  })
-  const [collapsed, setCollapsed] = useState(() => {
-    const saved = localStorage.getItem(COLLAPSED_KEY)
-    // Default: terbuka (false). User bisa tutup manual.
-    return saved !== null ? saved === 'true' : false
   })
   const [dragging, setDragging] = useState(false)
   const [focusSignal, setFocusSignal] = useState(0)
   const { messages, input, setInput, loading, send, sendFollowUp, uploadAndParse, createDataset, confirmTransaction, rejectTransaction, reset, followUpSuggestions, pendingFile, setPendingFile, removePendingFile } = useChatbotShared()
 
-  // Persist collapsed state
+  // Persist collapsed state to localStorage
   useEffect(() => {
-    try { localStorage.setItem(COLLAPSED_KEY, String(collapsed)) } catch { /* ignore */ }
+    try { localStorage.setItem('ask_finora_collapsed', String(collapsed)) } catch { /* ignore */ }
   }, [collapsed])
 
-  // Buka/fokus dari mana saja (Quick Action "Tanya AI" di dashboard).
+  // Focus input when panel opens via external event
   useEffect(() => {
-    const onFocus = () => {
-      setCollapsed(false)
-      setFocusSignal(n => n + 1)
-    }
+    const onFocus = () => setFocusSignal(n => n + 1)
     window.addEventListener('open-chatbot', onFocus)
     return () => window.removeEventListener('open-chatbot', onFocus)
   }, [])
 
   const togglePanel = useCallback(() => {
-    setCollapsed(c => !c)
-  }, [])
+    onToggle?.()
+  }, [onToggle])
 
   const onSubmit = (e) => {
     e.preventDefault()
