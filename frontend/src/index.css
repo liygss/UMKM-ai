@@ -225,6 +225,7 @@ html.light {
     background: var(--color-surface-card);
     border: 1px solid var(--color-border-subtle);
     box-shadow: 0 8px 24px -4px var(--color-shadow), inset 0 1px 0 rgba(148, 163, 184, 0.06);
+    min-width: 0;
   }
   .card:hover {
     border-color: var(--color-border-soft);
@@ -503,6 +504,26 @@ html.light {
 .animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
 .animate-shimmer { animation: shimmer 1.5s ease-in-out infinite; }
 .animate-rotate-slow { animation: rotate-slow 20s linear infinite; }
+
+/* Buddy onboarding animations */
+@keyframes buddy-talk {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-6px) rotate(-2deg); }
+  75% { transform: translateY(-3px) rotate(2deg); }
+}
+@keyframes buddy-pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes bubble-in {
+  0% { transform: translateY(10px) scale(0.95); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.animate-buddy-talk { animation: buddy-talk 0.8s ease-in-out infinite; }
+.animate-buddy-pop { animation: buddy-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-bubble-in { animation: bubble-in 0.35s ease-out forwards; }
 
 .typing-dot { animation: typing-dot 1.4s ease-in-out infinite; }
 .typing-dot:nth-child(2) { animation-delay: 0.2s; }
@@ -879,4 +900,47 @@ html.light {
 .rpt-footer-text {
   font-size: 7pt;
   color: #94a3b8;
+}
+
+/* ── Chat full-page canvas background ── */
+.chat-canvas-bg {
+  position: relative;
+  background:
+    radial-gradient(900px 500px at 50% 0%, rgba(59, 130, 246, 0.1), transparent 55%),
+    radial-gradient(600px 400px at 20% 80%, rgba(30, 58, 138, 0.12), transparent 50%),
+    radial-gradient(500px 400px at 80% 60%, rgba(96, 165, 250, 0.06), transparent 50%),
+    var(--color-surface-0);
+}
+html.dark .chat-canvas-bg {
+  background:
+    radial-gradient(900px 500px at 50% 0%, rgba(59, 130, 246, 0.16), transparent 55%),
+    radial-gradient(600px 400px at 20% 80%, rgba(30, 58, 138, 0.2), transparent 50%),
+    radial-gradient(500px 400px at 80% 60%, rgba(96, 165, 250, 0.1), transparent 50%),
+    var(--color-surface-0);
+}
+.chat-canvas-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+}
+html.dark .chat-canvas-bg::after {
+  background-image: radial-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+}
+
+/* ── Full-page composer glow ── */
+.chat-composer-full {
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.chat-composer-full:focus-within {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+/* ── Message area fade masks ── */
+.chat-scroll-mask {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 32px, black calc(100% - 32px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 32px, black calc(100% - 32px), transparent 100%);
 }

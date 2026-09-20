@@ -23,7 +23,7 @@ from app.config.settings import settings
 from app.database.database import check_db_connection, check_qdrant_connection
 from app.middleware.auth import require_admin
 from app.middleware.cors import setup_cors
-from app.routers import accounting, admin, authentication, chatbot, dashboard, downloads, feedback, notifications, spt, upload
+from app.routers import accounting, admin, authentication, chatbot, dashboard, downloads, feedback, notifications, setup, spt, upload
 
 setup_logging()
 logger = get_logger(__name__)
@@ -102,6 +102,7 @@ setup_cors(app)
 # ---------------------------------------------------------------------------
 app.include_router(authentication.router)
 app.include_router(admin.router)
+app.include_router(setup.router)
 app.include_router(accounting.router)
 app.include_router(spt.router)
 app.include_router(upload.router)

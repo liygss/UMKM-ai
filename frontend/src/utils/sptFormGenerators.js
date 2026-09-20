@@ -754,7 +754,7 @@ function lampSection(bagian, titleId, titleEn, lang) {
 }
 
 function lampColHeader(cols) {
-  return `<tr>${cols.map(c => `<th style="font-size:7pt;${c.w ? 'width:' + c.w : ''}">${esc(c.label)}</th>`).join('')}</tr>`
+  return `<tr>${cols.map(c => `<th style="font-size:7pt;${c.w ? 'width:' + c.w : ''}">${c.label}</th>`).join('')}</tr>`
 }
 
 function lampRow(num, cells, opts = {}) {

@@ -17,10 +17,21 @@ from sqlalchemy.orm import Session
 from app.config.logging import get_logger
 from app.config.settings import settings
 from app.database.database import SessionLocal, get_db
-from app.database.models import DocumentChunk, JurnalDetail, JurnalUmum, RoleUser, UploadedFile, User
+from app.database.models import (
+    DocumentChunk,
+    JurnalDetail,
+    JurnalUmum,
+    RoleUser,
+    StatusUpload,
+    UploadedFile,
+    User,
+)
 from app.middleware.auth import require_active_user, require_admin
-from app.schemas.upload_schema import KnowledgeInput, KnowledgeResponse, UploadedFileResponse
-from app.services.ingestion.ingestion_pipeline import ingest_static_markdown, process_uploaded_file
+from app.schemas.upload_schema import CommitResponse, KnowledgeInput, KnowledgeResponse, UploadedFileResponse
+from app.services.ingestion.ingestion_pipeline import (
+    ingest_static_markdown,
+    process_uploaded_file,
+)
 from app.services.ingestion.qdrant_service import delete_by_source_file
 from app.services.ingestion.validator import validate_upload
 
@@ -78,13 +89,13 @@ async def upload_file(
         file_type=validation.file_type,
         file_size_bytes=len(content),
         uploaded_by_id=current_user.id,
+        status=StatusUpload.STAGED,
     )
     db.add(uploaded_file)
     db.commit()
     db.refresh(uploaded_file)
 
-    background_tasks.add_task(_run_ingestion_in_background, uploaded_file.id)
-    logger.info("File '%s' diterima, ingestion dijalankan di background.", file.filename)
+    logger.info("File '%s' diterima, status STAGED (menunggu konfirmasi user).", file.filename)
 
     return uploaded_file
 
@@ -326,3 +337,43 @@ def delete_upload(
     db.query(DocumentChunk).filter(DocumentChunk.source_file_id == uploaded_file.id).delete()
     db.delete(uploaded_file)
     db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Commit — konfirmasi upload STAGED → jurnal
+# ---------------------------------------------------------------------------
+@router.post("/{upload_id}/commit", response_model=CommitResponse)
+def commit_upload(
+    upload_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_active_user),
+) -> dict:
+    """Konfirmasi upload STAGED → jalankan auto-jurnal → POSTED."""
+    _validate_uuid(upload_id, "upload_id")
+    uploaded_file = (
+        db.query(UploadedFile)
+        .filter(UploadedFile.id == upload_id, UploadedFile.uploaded_by_id == current_user.id)
+        .first()
+    )
+    if uploaded_file is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Upload tidak ditemukan")
+
+    if uploaded_file.status != StatusUpload.STAGED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File sudah diproses (status: {uploaded_file.status.value}). Hanya file STAGED yang bisa di-commit.",
+        )
+
+    try:
+        uploaded_file = process_uploaded_file(db, uploaded_file)
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Gagal memproses file: {exc}")
+
+    jurnal_count = db.query(JurnalUmum).filter(JurnalUmum.sumber_upload_id == uploaded_file.id).count()
+    logger.info("Commit upload '%s': %d jurnal dibuat.", uploaded_file.original_filename, jurnal_count)
+
+    return {
+        "status": uploaded_file.status.value,
+        "journal_count": jurnal_count,
+        "upload_id": uploaded_file.id,
+    }

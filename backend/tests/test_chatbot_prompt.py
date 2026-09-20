@@ -27,8 +27,9 @@ def _chunk(pid: str) -> RetrievedChunk:
 def test_system_prompt_membatasi_topik_akuntansi():
     prompt = get_system_prompt().lower()
     assert "asisten finora" in prompt
-    # hanya membantu pertanyaan akuntansi/keuangan/pajak
-    assert "hanya" in prompt and "membantu pertanyaan" in prompt
+    # membantu pertanyaan akuntansi/keuangan/pajak DAN aplikasi finora
+    assert "membantu pertanyaan" in prompt
+    assert "aplikasi finora" in prompt
     # menolak pertanyaan di luar topik
     assert "tolak dengan sopan" in prompt
 
@@ -48,9 +49,10 @@ def test_build_messages_tanpa_page_tidak_menambah_lokasi():
 
 def test_build_messages_tanpa_konteks_mengarahkan_tolak_topik_lain():
     messages = build_messages("jelaskan apa itu inflasi", _empty_context())
-    system = messages[0]["content"]
+    system = messages[0]["content"].lower()
     assert "tolak dengan sopan" in system
     assert "di luar topik akuntansi" in system
+    assert "aplikasi finora" in system
 
 
 def test_chat_request_menerima_page():
@@ -74,6 +76,14 @@ def test_detect_domain_umum():
     assert detect_domain("jelaskan apa itu inflasi") == ""
 
 
+def test_detect_domain_aplikasi():
+    assert detect_domain("cara upload data transaksi") == "app"
+    assert detect_domain("fitur apa saja di finora") == "app"
+    assert detect_domain("apa itu aplikasi finora") == "app"
+    assert detect_domain("halaman dashboard") == "app"
+    assert detect_domain("fitur chatbot") == "app"
+
+
 def test_merge_chunks_dedupe():
     gabungan = merge_chunks([_chunk("a"), _chunk("b")], [_chunk("b"), _chunk("c")])
     ids = [c.qdrant_point_id for c in gabungan]
@@ -93,3 +103,12 @@ def test_is_out_of_topic_menerima_topik_akuntansi():
     assert is_out_of_topic("laporan laba rugi") is False
     assert is_out_of_topic("neraca saldo") is False
     assert is_out_of_topic("cara pembukuan") is False
+
+
+def test_is_out_of_topic_menerima_topik_aplikasi():
+    assert is_out_of_topic("cara upload data") is False
+    assert is_out_of_topic("fitur apa saja di finora") is False
+    assert is_out_of_topic("apa itu aplikasi finora") is False
+    assert is_out_of_topic("cara membuat jurnal") is False
+    assert is_out_of_topic("bagaimana cara mengisi SPT") is False
+    assert is_out_of_topic("halaman dashboard") is False

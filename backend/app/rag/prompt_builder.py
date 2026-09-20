@@ -7,6 +7,8 @@ from app.llm.prompt_template import (
 )
 from app.rag.context_builder import BuiltContext
 
+MAX_FINANCIAL_CONTEXT_CHARS = 80_000  # batasi agar total prompt tidak melebihi context window model (131K tokens ~524K chars)
+
 TAX_KEYWORDS = [
     "pajak", "pph", "ppn", "npwp", "faktur", "spt", "umkm final", "tarif",
     "formulir", "lapor", "billing", "ntpn", "pph21", "pph23", "ppn12", "ppn 12",
@@ -23,16 +25,42 @@ FINANCE_KEYWORDS = [
     "transaksi", "bayar", "tagihan", "invoice", "bon", "kwitansi",
     "budget", "anggaran", "forecast", "proyeksi",
 ]
-ALL_TOPIC_KEYWORDS = TAX_KEYWORDS + ACCOUNTING_KEYWORDS + FINANCE_KEYWORDS
+ANALYSIS_KEYWORDS = [
+    "jelaskan", "analisis", "ringkas", "summary", "dataset", "data ini",
+    "data saya", "file ini", "file saya", "penjualan", "pembelian",
+    "meningkatkan", "menaikkan", "omset", "laba", "strategi", "saran",
+    "rekomendasi", "insight", "pola", "tren", "trend", "perbandingan",
+    "kategori", "terbanyak", "tertinggi", "terendah", "total",
+    "berapa", "berapa banyak", "berapa total", "berapa banyak",
+]
+APP_KEYWORDS = [
+    "finora", "aplikasi", "fitur", "cara pakai", "cara gunakan",
+    "cara menggunakan", "cara pakai", "fungsi", "halaman", "menu",
+    "navigasi", "sidebar", "registrasi", "login", "daftar akun",
+    "profil", "electron", "unduh", "download", "install", "versi",
+    "dashboard", "upload", "jurnal umum", "laporan", "pajak",
+    "spt", "chatbot", "asisten", "knowledge", "feedback",
+    "kalkulator", "kalkulasi", "formulir", "export", "eksport",
+    "cetak", "pdf", "excel", "csv", "draft", "simpan",
+    "apa itu finora", "tentang finora", "tentang aplikasi",
+    "fitur finora", "fitur aplikasi", "guna", "kegunaan",
+    "langkah", "tutorial", "panduan", "cara membuat",
+    "cara melihat", "cara menghitung", "cara mengisi",
+    "cara mengelola", "cara mengirim", "cara menghapus",
+]
+ALL_TOPIC_KEYWORDS = TAX_KEYWORDS + ACCOUNTING_KEYWORDS + FINANCE_KEYWORDS + APP_KEYWORDS + ANALYSIS_KEYWORDS
 
 
 def detect_domain(pertanyaan: str) -> str:
-    """Deteksi topik pertanyaan: "tax", "accounting", atau "" (umum)."""
+    """Deteksi topik pertanyaan: "tax", "accounting", "app", atau "" (umum)."""
     lowered = pertanyaan.lower()
+    # Prioritaskan domain spesifik (tax/accounting) sebelum umum (app)
     if any(k in lowered for k in TAX_KEYWORDS):
         return "tax"
     if any(k in lowered for k in ACCOUNTING_KEYWORDS):
         return "accounting"
+    if any(k in lowered for k in APP_KEYWORDS):
+        return "app"
     return ""
 
 
@@ -81,29 +109,60 @@ def build_messages(
 
     # Tambahkan financial context (data keuangan user) jika ada
     if financial_context:
+        # Batasi panjang financial context agar prompt tidak overflow
+        if len(financial_context) > MAX_FINANCIAL_CONTEXT_CHARS:
+            financial_context = (
+                financial_context[:MAX_FINANCIAL_CONTEXT_CHARS]
+                + f"\n\n... (dipotong, data asli {len(financial_context):,} karakter, "
+                f"dibatasi {MAX_FINANCIAL_CONTEXT_CHARS:,} karakter agar sesuai context window LLM)"
+            )
+        # Deteksi apakah ini konteks analisis upload
+        is_upload_analysis = "Analisis File:" in financial_context
+        context_label = (
+            "## Data File Upload Pengguna:\n\n"
+            if is_upload_analysis
+            else "## Data Keuangan Pengguna yang Tersedia:\n\n"
+        )
+        analysis_hint = (
+            "\n\nKamu sedang menganalisis file upload pengguna. Berikan analisis yang "
+            "mendalam, jelaskan pola data, berikan insight bisnis, dan saran/actionable "
+            "recommendations. Gunakan tabel markdown untuk menampilkan data dengan rapi. "
+            "Jika pengguna bertanya tentang cara meningkatkan penjualan/omset/laba, "
+            "berikan rekomendasi spesifik berdasarkan data yang tersedia."
+            if is_upload_analysis
+            else ""
+        )
         system_prompt += (
-            "\n\n## Data Keuangan Pengguna yang Tersedia:\n\n"
+            f"\n\n{context_label}"
             f"{financial_context}\n\n"
             "Gunakan data di atas untuk menjawab pertanyaan pengguna tentang "
-            " kondisi keuangan usahanya. Sajikan angka dengan format Rupiah yang "
+            "kondisi keuangan usahanya. Sajikan angka dengan format Rupiah yang "
             "jelas. Jika data tidak lengkap untuk menjawab sepenuhnya, "
             "keterangkan bagian mana yang tidak tersedia."
+            f"{analysis_hint}"
         )
 
     # Tambahkan knowledge base context (dari Qdrant/RAG)
     if context.context_text:
+        context_text = context.context_text
+        max_knowledge_chars = 40_000
+        if len(context_text) > max_knowledge_chars:
+            context_text = context_text[:max_knowledge_chars] + "\n\n... (konteks dokumen dipotong agar sesuai context window)"
         system_prompt += (
             "\n\n## Konteks Dokumen Pengetahuan:\n\n"
-            f"{context.context_text}"
+            f"{context_text}"
         )
     else:
         system_prompt += (
             "\n\nTidak ada dokumen pengetahuan spesifik yang ditemukan untuk "
             "pertanyaan ini. Bila pertanyaan menyangkut keuangan/pajak "
             "pengguna, gunakan data keuangan yang tersedia bila ada. "
-            "Jika pertanyaan di luar topik akuntansi/keuangan/pajak, "
+            "Jika pertanyaan menyangkut penggunaan aplikasi Finora, berikan "
+            "penjelasan umum berdasarkan pemahaman kamu tentang aplikasi. "
+            "Jika pertanyaan di luar topik akuntansi/keuangan/pajak/aplikasi, "
             "tolak dengan sopan dan arahkan pengguna untuk bertanya "
-            "seputar pembukuan, laporan keuangan, atau perpajakan UMKM."
+            "seputar pembukuan, laporan keuangan, perpajakan UMKM, atau "
+            "penggunaan aplikasi Finora."
         )
 
     messages = [{"role": "system", "content": system_prompt}]

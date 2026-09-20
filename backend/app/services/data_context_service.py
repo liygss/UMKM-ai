@@ -9,8 +9,10 @@ Pendekatan hybrid:
   - Keduanya digabung di prompt builder
 """
 
+from collections import defaultdict
 from datetime import date, datetime
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.config.logging import get_logger
@@ -86,6 +88,47 @@ def _fmt_rp(value: float) -> str:
     if value == int(value):
         return f"Rp {value:,.0f}".replace(",", ".")
     return f"Rp {value:,.2f}".replace(",", ".")
+
+
+def _analyze_staged_file(uploaded_file) -> str | None:
+    """Analisis file STAGED dari file mentah (belum di-commit ke jurnal)."""
+    try:
+        from app.services.ingestion.file_loader import load_file
+
+        doc = load_file(uploaded_file.stored_path, uploaded_file.file_type)
+        df = doc.get_transaction_dataframe()
+        if df is None or df.empty:
+            return None
+
+        lines = [
+            f"## Analisis File (Data Belum Disimpan): {uploaded_file.original_filename}",
+            f"**Tipe:** {uploaded_file.file_type.upper()} | **Status:** {uploaded_file.status.value} (belum di-commit ke jurnal)",
+            f"**Ukuran:** {uploaded_file.file_size_bytes / 1024:.1f} KB | **Diupload:** {uploaded_file.created_at.strftime('%d %b %Y %H:%M')}",
+            "",
+            "### Info Data",
+            f"- **Jumlah baris:** {len(df)}",
+        ]
+
+        if len(df.columns) > 0:
+            lines.append(f"- **Kolom:** {', '.join(str(c) for c in df.columns[:15])}")
+
+        # Coba deteksi kolom angka
+        numeric_cols = df.select_dtypes(include='number').columns.tolist()
+        if numeric_cols:
+            total = df[numeric_cols].sum().sum()
+            lines.append(f"- **Total nilai (approx):** {_fmt_rp(float(total))}")
+
+        lines.append("")
+        lines.append("**Catatan:** Data ini belum disimpan ke jurnal. Ketik 'simpan' atau 'masukkan ke jurnal' untuk mengonfirmasi.")
+        return "\n".join(lines)
+
+    except Exception as exc:
+        logger.warning("Gagal analisis file STAGED '%s': %s", uploaded_file.original_filename, exc)
+        return None
+
+
+def _analyze_committed_journals(uploaded_file, jurnals, db) -> str | None:
+    """Analisis upload dari jurnal yang sudah ter-commit (original logic)."""
 
 
 def _get_laba_rugi_context(db: Session, tanggal_per: date | None = None, user_id: str | None = None) -> str:
@@ -244,6 +287,118 @@ def _get_upload_summary_context(db: Session, user_id: str) -> str:
     return "\n".join(lines)
 
 
+def get_upload_analysis_context(db: Session, user_id: str, upload_id: str) -> str | None:
+    """
+    Analisis mendalam dari file upload tertentu.
+    Saat status STAGED (belum commit), baca dari file mentah.
+    Saat status POSTED, baca dari jurnal yang sudah ter-commit.
+    """
+    uploaded_file = (
+        db.query(UploadedFile)
+        .filter(UploadedFile.id == upload_id, UploadedFile.uploaded_by_id == user_id)
+        .first()
+    )
+    if not uploaded_file:
+        return None
+
+    jurnals = (
+        db.query(JurnalUmum)
+        .filter(JurnalUmum.sumber_upload_id == upload_id)
+        .order_by(JurnalUmum.tanggal.asc())
+        .all()
+    )
+
+    # --- STAGED: baca dari file mentah ---
+    if not jurnals:
+        return _analyze_staged_file(uploaded_file)
+
+    # --- POSTED: baca dari jurnal yang sudah commit (original logic) ---
+    return _analyze_committed_journals(uploaded_file, jurnals, db)
+
+
+def _analyze_committed_journals(uploaded_file, jurnals, db) -> str | None:
+    """Analisis upload dari jurnal yang sudah ter-commit."""
+    jurnal_ids = [j.id for j in jurnals]
+    all_details = db.query(JurnalDetail).filter(JurnalDetail.jurnal_id.in_(jurnal_ids)).all()
+
+    total_debit = 0.0
+    total_kredit = 0.0
+    akun_summary: dict[str, dict] = defaultdict(lambda: {"debit": 0.0, "kredit": 0.0, "count": 0})
+
+    for d in all_details:
+        val_d = float(d.debit or 0)
+        val_k = float(d.kredit or 0)
+        total_debit += val_d
+        total_kredit += val_k
+        nama = d.akun.nama_akun if d.akun else "Unknown"
+        akun_summary[nama]["debit"] += val_d
+        akun_summary[nama]["kredit"] += val_k
+        akun_summary[nama]["count"] += 1
+
+    lines = [
+        f"## Analisis File: {uploaded_file.original_filename}",
+        f"**Tipe:** {uploaded_file.file_type.upper()} | **Status:** {uploaded_file.status.value}",
+        f"**Ukuran:** {uploaded_file.file_size_bytes / 1024:.1f} KB | **Diupload:** {uploaded_file.created_at.strftime('%d %b %Y %H:%M')}",
+        "",
+        "### Ringkasan Transaksi",
+        f"- **Jumlah Jurnal:** {len(jurnals)}",
+        f"- **Total Transaksi (Detail):** {len(all_details)}",
+        f"- **Total Debit:** {_fmt_rp(total_debit)}",
+        f"- **Total Kredit:** {_fmt_rp(total_kredit)}",
+        "",
+    ]
+
+    if akun_summary:
+        lines.append("### Breakdown per Akun")
+        lines.append("| Nama Akun | Debit | Kredit | Frekuensi |")
+        lines.append("|-----------|-------|--------|-----------|")
+        sorted_akun = sorted(akun_summary.items(), key=lambda x: x[1]["debit"] + x[1]["kredit"], reverse=True)
+        for nama, data in sorted_akun:
+            d = _fmt_rp(data["debit"]) if data["debit"] > 0 else "-"
+            k = _fmt_rp(data["kredit"]) if data["kredit"] > 0 else "-"
+            lines.append(f"| {nama} | {d} | {k} | {data['count']}x |")
+        lines.append("")
+
+    # Sampling pintar: 5 pertama + 5 terakhir + 10 terbesar (dedupe)
+    MAX_SAMPLE = 20
+    first_5 = jurnals[:5]
+    last_5 = jurnals[-5:] if len(jurnals) > 5 else []
+    # Top 10 by total value (debit + kredit dari detail)
+    jurnals_with_value = []
+    j_ids_all = [j.id for j in jurnals]
+    details_all = db.query(JurnalDetail).filter(JurnalDetail.jurnal_id.in_(j_ids_all)).all()
+    jurnal_total_map: dict[str, float] = defaultdict(float)
+    for d in details_all:
+        jurnal_total_map[d.jurnal_id] += float(d.debit or 0) + float(d.kredit or 0)
+    for j in jurnals:
+        jurnals_with_value.append((j, jurnal_total_map.get(j.id, 0)))
+    top_10 = [j for j, _ in sorted(jurnals_with_value, key=lambda x: x[1], reverse=True)[:10]]
+
+    seen_ids = set()
+    sampled = []
+    for j in first_5 + top_10 + last_5:
+        if j.id not in seen_ids:
+            seen_ids.add(j.id)
+            sampled.append(j)
+
+    sample_label = f"{len(jurnals)} total"
+    if len(jurnals) > len(sampled):
+        sample_label += f", menampilkan {len(sampled)} representatif (5 pertama + 10 terbesar + 5 terakhir)"
+    else:
+        sample_label += ", menampilkan semua"
+
+    lines.append(f"\n### Daftar Transaksi ({sample_label})")
+    for j in sampled:
+        lines.append(f"\n**{j.no_bukti}** — {j.tanggal} | {j.deskripsi}")
+        for d in j.detail:
+            side = "Debit" if d.debit > 0 else "Kredit"
+            val = d.debit if d.debit > 0 else d.kredit
+            nama_akun = d.akun.nama_akun if d.akun else "Unknown"
+            lines.append(f"  - {side}: {nama_akun} {_fmt_rp(float(val))}")
+
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
@@ -252,16 +407,28 @@ def get_financial_context(
     db: Session,
     user_id: str,
     question: str,
+    upload_id: str | None = None,
 ) -> str | None:
     """
     Deteksi intent pertanyaan dan kumpulkan data keuangan relevan.
     Mengembalikan string context atau None jika tidak ada data relevan.
+
+    upload_id: jika disertakan, sertakan analisis mendalam file tersebut.
     """
     intents = _detect_intent(question)
-    if not intents:
+    context_parts = []
+
+    if upload_id:
+        try:
+            upload_ctx = get_upload_analysis_context(db, user_id, upload_id)
+            if upload_ctx:
+                context_parts.append(upload_ctx)
+        except Exception as exc:
+            logger.warning("Gagal mengambil analisis upload %s: %s", upload_id, exc)
+
+    if not intents and not context_parts:
         return None
 
-    context_parts = []
     tanggal_per = date.today()
 
     for intent in intents:

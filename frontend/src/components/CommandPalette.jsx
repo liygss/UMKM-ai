@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, MessageSquare, BookOpen, FileText, BarChart3, Upload, Calculator, FileSpreadsheet, PlayCircle, Database, Send, ShieldCheck, Search, CornerDownLeft } from 'lucide-react'
+import { LayoutDashboard, BookOpen, FileText, BarChart3, Upload, Calculator, FileSpreadsheet, PlayCircle, Database, Send, ShieldCheck, Search, CornerDownLeft, Bot } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 const COMMANDS = [
   { key: 'dashboard', label: 'Dashboard', category: 'Menu Utama', to: '/dashboard', icon: LayoutDashboard, keywords: 'ringkasan beranda home overview', adminOnly: false },
-  { key: 'chatbot', label: 'Chatbot', category: 'Menu Utama', to: '/chatbot', icon: MessageSquare, keywords: 'tanya ai asisten assistant chat bot', adminOnly: false },
+  { key: 'chatbot', label: 'Asisten Finora', category: 'Menu Utama', to: '/chatbot', icon: Bot, keywords: 'chatbot tanya ai asisten bantuan', adminOnly: false },
   { key: 'akun', label: 'Akun (COA)', category: 'Akuntansi', to: '/akun', icon: BookOpen, keywords: 'chart of accounts akun kode coa neraca saldo', adminOnly: false },
   { key: 'jurnal', label: 'Jurnal Umum', category: 'Akuntansi', to: '/jurnal', icon: FileText, keywords: 'transaksi debit kredit jurnal umum', adminOnly: false },
   { key: 'laporan', label: 'Laporan Keuangan', category: 'Akuntansi', to: '/laporan', icon: BarChart3, keywords: 'neraca laba rugi arus kas laporan keuangan', adminOnly: false },

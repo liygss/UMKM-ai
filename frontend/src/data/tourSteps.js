@@ -1,4 +1,6 @@
 export const TOUR_STORAGE_PREFIX = 'finora_tour_seen_'
+export const BUDDY_STORAGE_PREFIX = 'finora_buddy_welcomed_'
+export const BUDDY_HINT_STORAGE_PREFIX = 'finora_buddy_hint_'
 
 export const tourSteps = [
   {

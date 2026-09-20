@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import MotionNumber from '../components/MotionNumber'
 import { MotionBarShape, MotionActiveBar } from '../components/MotionChartShapes'
@@ -450,19 +450,31 @@ const SLIDE_MOCKUPS = {
 
 export default function DemoPage() {
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
+  const onboard = searchParams.get('ob') === '1'
   const [index, setIndex] = useState(0)
   const [autoplay, setAutoplay] = useState(true)
   const [paused, setPaused] = useState(false)
+  const [done, setDone] = useState(false)
 
   const slide = SLIDES[index]
   const Mock = SLIDE_MOCKUPS[slide.key]
   const isPaused = paused || !autoplay
 
   useEffect(() => {
-    if (!autoplay || paused) return
-    const id = setInterval(() => setIndex((i) => (i + 1) % SLIDES.length), SLIDE_DURATION)
+    if (!autoplay || paused || done) return
+    const id = setInterval(() => {
+      setIndex((i) => {
+        if (onboard && i === SLIDES.length - 1) {
+          setAutoplay(false)
+          setDone(true)
+          return i
+        }
+        return (i + 1) % SLIDES.length
+      })
+    }, onboard ? 5500 : SLIDE_DURATION)
     return () => clearInterval(id)
-  }, [autoplay, paused])
+  }, [autoplay, paused, done, onboard])
 
   const goTo = (i) => setIndex((i + SLIDES.length) % SLIDES.length)
 
@@ -499,7 +511,7 @@ export default function DemoPage() {
             </button>
             <ThemeToggle compact />
             {user ? (
-              <Link to="/dashboard" className="btn-primary !px-5 !py-2 text-sm">Buka Dashboard</Link>
+              <Link to={onboard ? '/dashboard' : '/dashboard'} className="btn-primary !px-5 !py-2 text-sm">{onboard ? 'Lanjut ke Tutorial' : 'Buka Dashboard'}</Link>
             ) : (
               <>
                 <Link to="/login" className="hidden sm:inline-flex items-center rounded-full px-5 py-2 text-sm font-semibold transition-all duration-300 hover:bg-[var(--color-hover)]" style={{ color: 'var(--color-slate-text)' }}>Masuk</Link>
@@ -560,14 +572,20 @@ export default function DemoPage() {
                   ))}
                 </ul>
                 <div className="mt-8 animate-slide-in-left delay-500">
-                  <span className="inline-flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--color-slate-muted)' }}>
-                    <span className="flex gap-1">
-                      {[0, 1, 2].map((d) => (
-                        <span key={d} className="typing-dot h-1.5 w-1.5 rounded-full" style={{ background: slide.color }} />
-                      ))}
+                  {!done ? (
+                    <span className="inline-flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--color-slate-muted)' }}>
+                      <span className="flex gap-1">
+                        {[0, 1, 2].map((d) => (
+                          <span key={d} className="typing-dot h-1.5 w-1.5 rounded-full" style={{ background: slide.color }} />
+                        ))}
+                      </span>
+                      Demo berjalan otomatis — hover untuk jeda
                     </span>
-                    Demo berjalan otomatis — hover untuk jeda
-                  </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--color-accent-blue)' }}>
+                      <CheckCircle2 size={14} /> Demo selesai — scroll ke bawah untuk lanjut
+                    </span>
+                  )}
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -599,6 +617,26 @@ export default function DemoPage() {
             </AnimatePresence>
           </div>
         </main>
+
+        {/* Onboarding completion overlay */}
+        {onboard && done && (
+          <div className="px-5 lg:px-8 pb-6">
+            <div className="mx-auto max-w-6xl animate-slide-up">
+              <div className="flex items-center gap-5 rounded-3xl px-6 py-6 sm:px-10" style={{ background: 'var(--color-glass-bg)', border: '1px solid rgba(59,130,246,0.25)', backdropFilter: 'blur(16px)', boxShadow: '0 16px 48px rgba(59,130,246,0.15)' }}>
+                <div className="hidden sm:flex shrink-0 h-16 w-16 items-center justify-center rounded-2xl overflow-hidden animate-buddy-pop" style={{ boxShadow: '0 4px 20px rgba(59,130,246,0.4)' }}>
+                  <img src="/assets/buddy/buddy-happy.png" alt="Buddy" className="h-full w-full object-contain" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-base font-bold" style={{ color: 'var(--color-slate-heading)' }}>Mantap! Itu dia fitur inti Finora.</div>
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-slate-muted)' }}>Sekarang kamu sudah tahu gambarannya. Yuk lanjut ke tutorial singkat biar makin jago pakai!</p>
+                </div>
+                <Link to="/dashboard" className="shrink-0 group inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #1D4ED8, #2563EB)', boxShadow: '0 8px 24px rgba(59,130,246,0.4)' }}>
+                  Mulai Tutorial <ArrowRight size={15} className="transition-transform duration-300 group-hover:translate-x-1" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Controls */}
         <div className="px-5 lg:px-8 pb-8">
@@ -643,17 +681,21 @@ export default function DemoPage() {
         <div className="px-5 lg:px-8 pb-10">
           <div className="mx-auto flex max-w-6xl flex-col sm:flex-row items-center justify-between gap-4 rounded-3xl px-6 py-6 sm:px-10" style={{ background: 'var(--color-glass-bg)', border: '1px solid rgba(148,163,184,0.15)', backdropFilter: 'blur(16px)' }}>
             <div className="flex items-center gap-4">
-              <div className="hidden sm:flex h-11 w-11 items-center justify-center rounded-2xl animate-float-gentle" style={{ background: 'linear-gradient(135deg, #1D4ED8, #3B82F6)', boxShadow: '0 4px 20px rgba(59,130,246,0.5)' }}>
-                <Database size={20} className="text-white" />
+              <div className="hidden sm:flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden animate-float-gentle" style={{ boxShadow: '0 4px 20px rgba(59,130,246,0.5)' }}>
+                {onboard ? (
+                  <img src="/assets/buddy/buddy-happy.png" alt="Buddy" className="h-full w-full object-contain" />
+                ) : (
+                  <Database size={20} className="text-white" />
+                )}
               </div>
               <div>
-                <div className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Siap mengelola keuangan UMKM Anda?</div>
-                <div className="text-xs mt-0.5" style={{ color: 'var(--color-slate-muted)' }}>Gabung gratis dan lihat kekuatan AI untuk pembukuan bisnis Anda.</div>
+                <div className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>{onboard && done ? 'Itu dia fitur inti Finora!' : 'Siap mengelola keuangan UMKM Anda?'}</div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--color-slate-muted)' }}>{onboard && done ? 'Mantap! Sekarang lanjut ke tutorial singkat ya.' : 'Gabung gratis dan lihat kekuatan AI untuk pembukuan bisnis Anda.'}</div>
               </div>
             </div>
             {user ? (
               <Link to="/dashboard" className="group inline-flex shrink-0 items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-1" style={{ background: 'linear-gradient(135deg, #1D4ED8, #2563EB)', boxShadow: '0 10px 30px rgba(59,130,246,0.45)' }}>
-                Buka Dashboard <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                {onboard ? 'Mulai Tutorial' : 'Buka Dashboard'} <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             ) : (
               <Link to="/register" className="group inline-flex shrink-0 items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-1" style={{ background: 'linear-gradient(135deg, #1D4ED8, #2563EB)', boxShadow: '0 10px 30px rgba(59,130,246,0.45)' }}>

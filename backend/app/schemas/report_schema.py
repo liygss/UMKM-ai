@@ -243,3 +243,4 @@ class PPNResponse(BaseModel):
     tarif_digunakan: float
     ppn: float
     harga_termasuk_ppn: float
+    catatan: str = ""

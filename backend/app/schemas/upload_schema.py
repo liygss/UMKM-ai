@@ -38,3 +38,9 @@ class KnowledgeResponse(BaseModel):
     created_at: datetime
     processed_at: datetime | None = None
     chunk_count: int = 0
+
+
+class CommitResponse(BaseModel):
+    status: str
+    journal_count: int
+    upload_id: str

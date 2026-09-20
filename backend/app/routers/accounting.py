@@ -333,11 +333,14 @@ def hitung_pph_final_umkm(
     payload: PPhFinalUMKMRequest,
     _: User = Depends(require_active_user),
 ) -> PPhFinalUMKMResponse:
-    hasil = tax_engine.hitung_pph_final_umkm(
-        omzet_bulan_ini=payload.omzet_bulan_ini,
-        omzet_kumulatif_sebelum_bulan_ini=payload.omzet_kumulatif_sebelum_bulan_ini,
-        wp_orang_pribadi=payload.wp_orang_pribadi,
-    )
+    try:
+        hasil = tax_engine.hitung_pph_final_umkm(
+            omzet_bulan_ini=payload.omzet_bulan_ini,
+            omzet_kumulatif_sebelum_bulan_ini=payload.omzet_kumulatif_sebelum_bulan_ini,
+            wp_orang_pribadi=payload.wp_orang_pribadi,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return PPhFinalUMKMResponse(**hasil.__dict__)
 
 
@@ -346,10 +349,13 @@ def hitung_ppn(
     payload: PPNRequest,
     _: User = Depends(require_active_user),
 ) -> PPNResponse:
-    if payload.sudah_termasuk_ppn:
-        hasil = tax_engine.hitung_ppn_dari_harga_termasuk_pajak(payload.nilai, payload.barang_mewah)
-    else:
-        hasil = tax_engine.hitung_ppn(payload.nilai, payload.barang_mewah)
+    try:
+        if payload.sudah_termasuk_ppn:
+            hasil = tax_engine.hitung_ppn_dari_harga_termasuk_pajak(payload.nilai, payload.barang_mewah)
+        else:
+            hasil = tax_engine.hitung_ppn(payload.nilai, payload.barang_mewah)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return PPNResponse(**hasil.__dict__)
 
 

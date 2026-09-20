@@ -65,6 +65,7 @@ class UserResponse(BaseModel):
     role: RoleUser
     company_name: str | None = None
     plan: PlanUser = PlanUser.FREE
+    setup_completed: bool = False
     maintenance_joined_at: datetime | None = None
     last_seen_at: datetime | None = None
     is_active: bool

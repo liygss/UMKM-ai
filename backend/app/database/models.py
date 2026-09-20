@@ -65,6 +65,7 @@ class JenisJurnal(str, enum.Enum):
 
 class StatusUpload(str, enum.Enum):
     UPLOADED = "UPLOADED"
+    STAGED = "STAGED"          # file sudah diupload, belum di-commit ke jurnal
     PROCESSING = "PROCESSING"
     NORMALIZED = "NORMALIZED"
     INGESTED = "INGESTED"        # sudah masuk ke vector store (untuk pdf/aturan)
@@ -102,6 +103,7 @@ class User(Base):
     company_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    setup_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     plan: Mapped[PlanUser] = mapped_column(Enum(PlanUser), default=PlanUser.FREE)
     # Kapan user bergabung paket maintenance (diisi saat plan diubah ke MAINTENANCE).
     maintenance_joined_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

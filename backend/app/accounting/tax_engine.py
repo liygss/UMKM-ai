@@ -25,6 +25,12 @@ BATAS_OMZET_TIDAK_KENA_PAJAK_TAHUNAN = 500_000_000  # Rp500 juta/tahun (khusus W
 BATAS_OMZET_PP_55_TAHUNAN = 4_800_000_000  # Rp4,8 miliar/tahun, batas atas skema PPh Final UMKM
 
 
+def _validasi_omzet(label: str, nilai: float) -> None:
+    """Raised jika nilai omzet bernilai negatif."""
+    if nilai < 0:
+        raise ValueError(f"{label} tidak boleh negatif (nilai: {nilai})")
+
+
 @dataclass
 class HasilPPhFinalUMKM:
     omzet_bulan_ini: float
@@ -51,6 +57,8 @@ def hitung_pph_final_umkm(
     - Skema PPh Final UMKM ini hanya berlaku untuk omzet s/d Rp4,8 miliar/tahun;
       di atas itu wajib pakai skema PPh normal (Pasal 17 UU PPh / PPh Badan).
     """
+    _validasi_omzet("Omzet bulan ini", omzet_bulan_ini)
+    _validasi_omzet("Omzet kumulatif sebelumnya", omzet_kumulatif_sebelum_bulan_ini)
     omzet_kumulatif = omzet_kumulatif_sebelum_bulan_ini + omzet_bulan_ini
 
     if omzet_kumulatif > BATAS_OMZET_PP_55_TAHUNAN:
@@ -121,6 +129,7 @@ class HasilPPN:
     tarif_digunakan: float
     ppn: float
     harga_termasuk_ppn: float
+    catatan: str
 
 
 def hitung_ppn(dasar_pengenaan_pajak: float, barang_mewah: bool = False) -> HasilPPN:
@@ -129,24 +138,35 @@ def hitung_ppn(dasar_pengenaan_pajak: float, barang_mewah: bool = False) -> Hasi
     Set `barang_mewah=True` hanya untuk barang yang termasuk obyek PPnBM
     sesuai PMK 131/2024 (kendaraan mewah, kapal pesiar, hunian sangat mewah, dll).
     """
+    if dasar_pengenaan_pajak < 0:
+        raise ValueError(f"Dasar pengenaan pajak tidak boleh negatif (nilai: {dasar_pengenaan_pajak})")
     tarif = TARIF_PPN_BARANG_MEWAH if barang_mewah else TARIF_PPN_UMUM
     ppn = round(dasar_pengenaan_pajak * tarif, 2)
+    nama_tarif = "12% (barang mewah/PPnBM)" if barang_mewah else "11% (PPN umum, DPP nilai lain)"
     return HasilPPN(
         dasar_pengenaan_pajak=dasar_pengenaan_pajak,
         tarif_digunakan=tarif,
         ppn=ppn,
         harga_termasuk_ppn=round(dasar_pengenaan_pajak + ppn, 2),
+        catatan=f"Tarif {nama_tarif}. Harga sebelum pajak × {tarif*100:.0f}% = PPN.",
     )
 
 
 def hitung_ppn_dari_harga_termasuk_pajak(harga_termasuk_ppn: float, barang_mewah: bool = False) -> HasilPPN:
     """Kebalikan dari hitung_ppn(): dipakai kalau harga yang diketahui sudah termasuk PPN."""
+    if harga_termasuk_ppn < 0:
+        raise ValueError(f"Harga termasuk PPN tidak boleh negatif (nilai: {harga_termasuk_ppn})")
     tarif = TARIF_PPN_BARANG_MEWAH if barang_mewah else TARIF_PPN_UMUM
     dpp = round(harga_termasuk_ppn / (1 + tarif), 2)
     ppn = round(harga_termasuk_ppn - dpp, 2)
+    nama_tarif = "12% (barang mewah/PPnBM)" if barang_mewah else "11% (PPN umum, DPP nilai lain)"
     return HasilPPN(
         dasar_pengenaan_pajak=dpp,
         tarif_digunakan=tarif,
         ppn=ppn,
         harga_termasuk_ppn=harga_termasuk_ppn,
+        catatan=(
+            f"Harga termasuk PPN dibalik menjadi DPP = {dpp:,.0f} + PPN = {ppn:,.0f} "
+            f"(tarif {nama_tarif.split('(')[0].strip()})."
+        ),
     )

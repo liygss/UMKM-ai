@@ -5,8 +5,8 @@ import LogoutFeedbackModal from './LogoutFeedbackModal'
 import {
   LayoutDashboard, BookOpen, FileText,
   BarChart3, Upload, Calculator, LogOut, X,
-  ChevronsLeft, ChevronsRight, Database, PlayCircle, FileSpreadsheet, Send, ShieldCheck, MessageSquare,
-  MessageSquareWarning,
+  ChevronsLeft, ChevronsRight, Database, PlayCircle, FileSpreadsheet, Send, ShieldCheck,
+  MessageSquareWarning, Bot, Headphones,
 } from 'lucide-react'
 
 export default function Sidebar({ open, onClose }) {
@@ -22,7 +22,7 @@ export default function Sidebar({ open, onClose }) {
       label: 'Menu Utama',
       items: [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/chatbot', label: 'Chatbot', icon: MessageSquare },
+        { to: '/chatbot', label: 'Asisten Finora', icon: Bot },
       ]
     },
     {
@@ -45,6 +45,7 @@ export default function Sidebar({ open, onClose }) {
       items: [
         { to: '/demo', label: 'Lihat Demo', icon: PlayCircle },
         { to: '/upload', label: 'Upload File', icon: Upload },
+        { action: 'open-cs', label: 'Chat ke CS', icon: Headphones },
       ]
     },
     ...(isAdmin ? [{
@@ -118,34 +119,48 @@ export default function Sidebar({ open, onClose }) {
                 )}
                 <div className="space-y-1">
                   {section.items.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      onClick={onClose}
-                      title={collapsed ? item.label : undefined}
-                      className={({ isActive }) =>
-                        `relative flex items-center gap-3 rounded-xl transition-all duration-300 ${
+                    item.action ? (
+                      <button
+                        key={item.action}
+                        onClick={() => { window.dispatchEvent(new Event(item.action)); onClose() }}
+                        title={collapsed ? item.label : undefined}
+                        className={`relative flex items-center gap-3 rounded-xl transition-all duration-300 w-full text-left ${
                           collapsed ? 'justify-center px-2 py-3' : 'px-4 py-3'
-                        } ${
-                          isActive
-                            ? 'bg-gradient-to-r from-blue-500/20 via-blue-500/10 to-transparent font-semibold text-[var(--color-accent-blue)] shadow-sm ring-1 ring-blue-400/25'
-                            : 'text-[var(--color-slate-body)] hover:bg-white/[0.04] hover:text-[var(--color-slate-text)]'
-                        }`
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          {isActive && (
-                            <span
-                              className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full"
-                              style={{ background: 'linear-gradient(180deg, #3B82F6, #7DB4FF)', boxShadow: '0 0 12px rgba(59, 130, 246, 0.8)' }}
-                            />
-                          )}
-                          <item.icon size={18} className={`shrink-0 transition-colors duration-300 ${isActive ? 'text-[var(--color-brand-soft)] drop-shadow-[0_0_6px_rgba(125,180,255,0.6)]' : ''}`} />
-                          {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
-                        </>
-                      )}
-                    </NavLink>
+                        } text-[var(--color-slate-body)] hover:bg-white/[0.04] hover:text-[var(--color-slate-text)]`}
+                      >
+                        <item.icon size={18} className="shrink-0 transition-colors duration-300" />
+                        {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
+                      </button>
+                    ) : (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        onClick={onClose}
+                        title={collapsed ? item.label : undefined}
+                        className={({ isActive }) =>
+                          `relative flex items-center gap-3 rounded-xl transition-all duration-300 ${
+                            collapsed ? 'justify-center px-2 py-3' : 'px-4 py-3'
+                          } ${
+                            isActive
+                              ? 'bg-gradient-to-r from-blue-500/20 via-blue-500/10 to-transparent font-semibold text-[var(--color-accent-blue)] shadow-sm ring-1 ring-blue-400/25'
+                              : 'text-[var(--color-slate-body)] hover:bg-white/[0.04] hover:text-[var(--color-slate-text)]'
+                          }`
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            {isActive && (
+                              <span
+                                className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full"
+                                style={{ background: 'linear-gradient(180deg, #3B82F6, #7DB4FF)', boxShadow: '0 0 12px rgba(59, 130, 246, 0.8)' }}
+                              />
+                            )}
+                            <item.icon size={18} className={`shrink-0 transition-colors duration-300 ${isActive ? 'text-[var(--color-brand-soft)] drop-shadow-[0_0_6px_rgba(125,180,255,0.6)]' : ''}`} />
+                            {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
+                          </>
+                        )}
+                      </NavLink>
+                    )
                   ))}
                 </div>
               </div>

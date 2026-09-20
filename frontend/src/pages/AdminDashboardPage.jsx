@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import client from '../api/client'
 import { useAuth } from '../context/AuthContext'
@@ -8,7 +9,7 @@ import { fadeUp, staggerContainer, EASE_GENTLE } from '../utils/motionPresets'
 import { formatDate, formatDateTime } from '../utils/formatters'
 import toast from 'react-hot-toast'
 import { extractError } from '../api/extractError'
-import { Users, Wrench, UserPlus, Search, RefreshCw, Database, CheckCircle2, XCircle, X, Activity, UserCheck } from 'lucide-react'
+import { Users, Wrench, UserPlus, Search, RefreshCw, Database, CheckCircle2, XCircle, X, Activity, UserCheck, MessageSquare, AlertCircle, CheckCircle } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 const PLAN_BADGE = {
@@ -278,6 +279,7 @@ function HealthCard() {
 
 export default function AdminDashboardPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [summary, setSummary] = useState(null)
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -286,6 +288,8 @@ export default function AdminDashboardPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [manageTarget, setManageTarget] = useState(null)
   const [createOpen, setCreateOpen] = useState(false)
+  const [feedbackStats, setFeedbackStats] = useState(null)
+  const [recentFeedback, setRecentFeedback] = useState([])
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300)
@@ -300,6 +304,13 @@ export default function AdminDashboardPage() {
     client.get('/admin/users', { params: { s: debouncedSearch || undefined, plan: planFilter || undefined } })
       .then(r => setUsers(r.data))
       .catch(() => toast.error('Gagal memuat daftar user'))
+    // Fetch feedback stats & recent
+    client.get('/feedback/admin/stats')
+      .then(r => setFeedbackStats(r.data))
+      .catch(() => {})
+    client.get('/feedback/admin/all', { params: { limit: 5 } })
+      .then(r => setRecentFeedback(r.data?.items || []))
+      .catch(() => {})
       .finally(() => { if (!silent) setLoading(false) })
   }, [debouncedSearch, planFilter])
 
@@ -418,6 +429,80 @@ export default function AdminDashboardPage() {
         <StatCard title="Paket Maintenance" value={summary?.maintenance_users ?? '—'} icon={Wrench} color="emerald" animate={false} />
         <StatCard title="User Gratis" value={summary?.free_users ?? '—'} icon={UserCheck} color="blue" animate={false} />
         <StatCard title="User Baru Bulan Ini" value={summary?.new_this_month ?? '—'} icon={Activity} color="amber" animate={false} />
+      </motion.div>
+
+      {/* Feedback Stats & Recent */}
+      <motion.div variants={staggerContainer(0.1)} initial="hidden" animate="visible" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Feedback stat cards */}
+        <motion.div variants={fadeUp} className="space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <MessageSquare size={15} style={{ color: 'var(--color-brand-soft)' }} />
+            <h3 className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Feedback & CS</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="card !p-3">
+              <div className="text-[10px] font-medium" style={{ color: 'var(--color-slate-muted)' }}>Total</div>
+              <div className="text-xl font-extrabold mt-0.5" style={{ color: 'var(--color-slate-heading)' }}>{feedbackStats?.total ?? '—'}</div>
+            </div>
+            <div className="card !p-3">
+              <div className="text-[10px] font-medium" style={{ color: 'var(--color-slate-muted)' }}>Menunggu</div>
+              <div className="text-xl font-extrabold mt-0.5" style={{ color: '#F59E0B' }}>{feedbackStats?.open ?? '—'}</div>
+            </div>
+            <div className="card !p-3">
+              <div className="text-[10px] font-medium" style={{ color: 'var(--color-slate-muted)' }}>Dijawab</div>
+              <div className="text-xl font-extrabold mt-0.5" style={{ color: '#34D399' }}>{feedbackStats?.replied ?? '—'}</div>
+            </div>
+            <div className="card !p-3">
+              <div className="text-[10px] font-medium" style={{ color: 'var(--color-slate-muted)' }}>Selesai</div>
+              <div className="text-xl font-extrabold mt-0.5" style={{ color: 'var(--color-slate-body)' }}>{feedbackStats?.closed ?? '—'}</div>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/admin/feedback')}
+            className="w-full text-xs font-semibold px-3 py-2 rounded-xl transition-all hover:bg-blue-500/10"
+            style={{ color: 'var(--color-brand-soft)', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(96,165,250,0.25)' }}
+          >
+            Lihat Semua →
+          </button>
+        </motion.div>
+
+        {/* Recent feedback list */}
+        <motion.div variants={fadeUp} className="lg:col-span-2 card">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Pesan Terbaru</h3>
+          </div>
+          {recentFeedback.length === 0 ? (
+            <p className="text-xs py-4 text-center" style={{ color: 'var(--color-slate-muted)' }}>Belum ada pesan</p>
+          ) : (
+            <div className="space-y-2 max-h-[280px] overflow-y-auto">
+              {recentFeedback.map((fb) => (
+                <div key={fb.id} className="flex items-start gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/[0.03]" style={{ border: '1px solid rgba(148,163,184,0.1)' }}>
+                  <div className="shrink-0 mt-0.5">
+                    {fb.status === 'OPEN'
+                      ? <AlertCircle size={15} style={{ color: '#F59E0B' }} />
+                      : fb.status === 'REPLIED'
+                        ? <CheckCircle size={15} style={{ color: '#34D399' }} />
+                        : <CheckCircle2 size={15} style={{ color: 'var(--color-slate-muted)' }} />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold truncate" style={{ color: 'var(--color-slate-heading)' }}>{fb.subject}</span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{
+                        background: fb.status === 'OPEN' ? 'rgba(245,158,11,0.12)' : fb.status === 'REPLIED' ? 'rgba(16,185,129,0.12)' : 'rgba(148,163,184,0.1)',
+                        color: fb.status === 'OPEN' ? '#F59E0B' : fb.status === 'REPLIED' ? '#34D399' : 'var(--color-slate-muted)',
+                      }}>
+                        {fb.status === 'OPEN' ? 'Baru' : fb.status === 'REPLIED' ? 'Dijawab' : 'Selesai'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--color-slate-muted)' }}>
+                      {fb.user_name || 'User'} — {fb.message?.slice(0, 60)}{fb.message?.length > 60 ? '...' : ''}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
       </motion.div>
 
       {/* Charts + health */}

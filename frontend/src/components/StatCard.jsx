@@ -37,7 +37,7 @@ function StatCard({ title, value, icon: Icon, trend, color = 'indigo', animate =
       <div className="absolute inset-0 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity duration-300" style={{ background: GRADIENT_BG[color] }} />
       <div className="relative">
         <p className="text-sm font-medium" style={{ color: 'var(--color-slate-body)' }}>{title}</p>
-        <p className="mt-2 text-xl lg:text-2xl font-extrabold whitespace-nowrap" style={{ color: 'var(--color-slate-heading)' }}>{displayValue}</p>
+        <p className="mt-2 text-xl lg:text-2xl font-extrabold truncate min-w-0" style={{ color: 'var(--color-slate-heading)' }}>{displayValue}</p>
         {trend !== undefined && (
           <div className="mt-2 flex items-center gap-1 text-xs font-semibold" style={{ color: trendGood ? '#34D399' : '#F87171' }} title="Dibanding bulan sebelumnya">
             {trend > 0 ? <TrendingUp size={12} /> : trend < 0 ? <TrendingDown size={12} /> : <Minus size={12} />}

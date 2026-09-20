@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
-import FloatingChatbot from './FloatingChatbot'
-import DemoWelcomeModal from './DemoWelcomeModal'
+import AskFinoraPanel from './AskFinoraPanel'
 import ComplaintModal from './ComplaintModal'
 import NotificationsDropdown from './NotificationsDropdown'
 import ThemeToggle from './ThemeToggle'
@@ -10,29 +9,13 @@ import GuidedTour from './GuidedTour'
 import CommandPalette from './CommandPalette'
 import client from '../api/client'
 import { useAuth } from '../context/AuthContext'
-import { TOUR_STORAGE_PREFIX } from '../data/tourSteps'
-import { Menu, Search, Download, CircleHelp, MessageSquareWarning, Headphones } from 'lucide-react'
-
-const PAGE_TITLES = {
-  '/dashboard': 'Dashboard',
-  '/chatbot': 'Chatbot',
-  '/akun': 'Akun (COA)',
-  '/jurnal': 'Jurnal Umum',
-  '/laporan': 'Laporan Keuangan',
-  '/upload': 'Upload File',
-  '/pajak': 'Kalkulator Pajak',
-  '/spt': 'SPT Tahunan PPh OP',
-  '/notif-admin': 'Kirim Notifikasi',
-  '/admin': 'Dashboard Admin',
-  '/feedback': 'Feedback',
-  '/admin/feedback': 'Kelola Feedback',
-}
+import { TOUR_STORAGE_PREFIX, BUDDY_STORAGE_PREFIX } from '../data/tourSteps'
+import { Menu, Search, Download, CircleHelp, Headphones, ShieldCheck } from 'lucide-react'
 
 export default function Layout() {
   const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [key, setKey] = useState(0)
-  const [showWelcome, setShowWelcome] = useState(false)
   const [downloadUrl, setDownloadUrl] = useState(null)
   const [downloadFile, setDownloadFile] = useState('')
   const [tourOpen, setTourOpen] = useState(false)
@@ -40,30 +23,34 @@ export default function Layout() {
   const [complaintOpen, setComplaintOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const title = PAGE_TITLES[location.pathname] || 'Dashboard'
+
+  const isChatbot = location.pathname === '/chatbot'
 
   useEffect(() => {
     setKey(k => k + 1)
   }, [location.pathname])
 
-  useEffect(() => {
-    if (!localStorage.getItem('demo_seen')) setShowWelcome(true)
-  }, [])
-
-  // Tampilkan tutorial singkat pada login pertama (per user, per peramban).
-  // Tunggu hingga modal selamat datang tertutup agar tidak saling bertumpuk.
+  // Auto-open GuidedTour on first dashboard visit after Buddy is dismissed.
   useEffect(() => {
     if (!user?.id) return
-    if (showWelcome) return
+    try {
+      const buddySeen = localStorage.getItem(BUDDY_STORAGE_PREFIX + user.id)
+      if (buddySeen !== 'true') return
+    } catch { /* ignore */ }
     try {
       const seen = localStorage.getItem(TOUR_STORAGE_PREFIX + user.id)
       if (seen === 'true') return
-    } catch {
-      /* ignore */
-    }
-    const t = setTimeout(() => setTourOpen(true), 900)
+    } catch { /* ignore */ }
+    const t = setTimeout(() => setTourOpen(true), 400)
     return () => clearTimeout(t)
-  }, [user?.id, showWelcome])
+  }, [user?.id])
+
+  // Buka ComplaintModal dari sidebar "Chat ke CS"
+  useEffect(() => {
+    const openCS = () => setComplaintOpen(true)
+    window.addEventListener('open-cs', openCS)
+    return () => window.removeEventListener('open-cs', openCS)
+  }, [])
 
   // Pintasan keyboard ⌘K / Ctrl+K untuk membuka pencarian.
   useEffect(() => {
@@ -81,9 +68,7 @@ export default function Layout() {
     if (user?.id) {
       try {
         localStorage.removeItem(TOUR_STORAGE_PREFIX + user.id)
-      } catch {
-        /* ignore */
-      }
+      } catch { /* ignore */ }
     }
     setTourOpen(true)
   }
@@ -108,19 +93,13 @@ export default function Layout() {
       .catch(() => {})
   }, [])
 
-  const closeWelcome = (launch) => {
-    localStorage.setItem('demo_seen', 'true')
-    setShowWelcome(false)
-    if (launch) navigate('/demo')
-  }
-
   return (
-    <div className="app-bg flex h-screen overflow-hidden">
+    <div className="app-bg flex h-screen overflow-hidden min-w-0">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Header */}
-        <header className="relative z-40 flex h-18 items-center gap-4 px-4 lg:px-6" style={{ background: 'var(--color-header-bg)', backdropFilter: 'blur(20px) saturate(180%)', borderBottom: '1px solid rgba(148, 163, 184, 0.14)' }}>
+        <header className="relative z-40 flex h-18 items-center gap-3 sm:gap-4 px-3 sm:px-4 lg:px-6 overflow-hidden" style={{ background: 'var(--color-header-bg)', backdropFilter: 'blur(20px) saturate(180%)', borderBottom: '1px solid rgba(148, 163, 184, 0.14)' }}>
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2.5 rounded-xl transition-all duration-300 hover:bg-white/5" style={{ color: 'var(--color-slate-body)' }}>
             <Menu size={20} />
           </button>
@@ -133,9 +112,9 @@ export default function Layout() {
             <span className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Finora</span>
           </div>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-2 sm:gap-3 min-w-0 flex-wrap justify-end">
             {/* Search */}
-            <button data-tour="header-search" onClick={() => setSearchOpen(true)} className="hidden md:flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm transition-all duration-300 cursor-pointer w-56 hover:shadow-md" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)', color: 'var(--color-slate-muted)' }}>
+            <button data-tour="header-search" onClick={() => setSearchOpen(true)} className="hidden md:flex items-center gap-2.5 rounded-xl px-3 lg:px-4 py-2.5 text-sm transition-all duration-300 cursor-pointer w-44 lg:w-56 hover:shadow-md min-w-0" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.14)', color: 'var(--color-slate-muted)' }}>
               <Search size={14} />
               <span>Cari...</span>
               <kbd className="ml-auto rounded-lg px-2 py-0.5 text-[10px] font-medium" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.18)', color: 'var(--color-slate-muted)' }}>⌘K</kbd>
@@ -159,47 +138,53 @@ export default function Layout() {
               </a>
             )}
 
-            {/* Feedback / CS */}
-            <button
-              onClick={() => navigate(user?.role === 'ADMIN' ? '/admin/feedback' : '/feedback')}
-              title="Feedback & Komplain"
-              aria-label="Feedback"
-              className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:scale-105"
-              style={{ background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-soft)', color: 'var(--color-slate-body)' }}
-            >
-              <MessageSquareWarning size={18} />
-            </button>
+            {/* Admin: Kelola Feedback */}
+            {user?.role === 'ADMIN' && (
+              <button
+                onClick={() => navigate('/admin/feedback')}
+                title="Kelola Feedback"
+                aria-label="Kelola Feedback"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 shrink-0 items-center justify-center rounded-full transition-all duration-300 hover:scale-105"
+                style={{ background: 'rgba(139, 92, 246, 0.12)', border: '1px solid rgba(139, 92, 246, 0.25)', color: '#C4B5FD' }}
+              >
+                <ShieldCheck size={16} />
+              </button>
+            )}
 
-            {/* Hubungi Admin / CS */}
+            {/* Chat ke CS — semua user */}
             <button
               onClick={() => setComplaintOpen(true)}
-              title="Hubungi Admin / CS"
-              aria-label="Komplain"
-              className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:scale-105"
+              title="Chat ke CS"
+              aria-label="Chat ke CS"
+              className="flex h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 shrink-0 items-center justify-center rounded-full transition-all duration-300 hover:scale-105"
               style={{ background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-soft)', color: 'var(--color-slate-body)' }}
             >
-              <Headphones size={18} />
+              <Headphones size={16} />
             </button>
 
             {/* Notification bell */}
-            <NotificationsDropdown />
+            <div className="shrink-0">
+              <NotificationsDropdown />
+            </div>
 
             {/* Tutorial / Bantuan */}
             <button
               onClick={startTour}
               title="Tutorial penggunaan"
               aria-label="Buka tutorial"
-              className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:scale-105"
+              className="hidden sm:flex h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 shrink-0 items-center justify-center rounded-full transition-all duration-300 hover:scale-105"
               style={{ background: 'var(--color-surface-faint)', border: '1px solid var(--color-border-soft)', color: 'var(--color-slate-body)' }}
             >
-              <CircleHelp size={18} />
+              <CircleHelp size={16} />
             </button>
 
             {/* Theme toggle */}
-            <ThemeToggle />
+            <div className="shrink-0">
+              <ThemeToggle />
+            </div>
 
             {/* Brand badge */}
-            <div className="hidden sm:flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold" style={{ background: 'rgba(59, 130, 246, 0.14)', color: 'var(--color-accent-blue)', border: '1px solid rgba(96, 165, 250, 0.28)' }}>
+            <div className="hidden lg:flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold shrink-0" style={{ background: 'rgba(59, 130, 246, 0.14)', color: 'var(--color-accent-blue)', border: '1px solid rgba(96, 165, 250, 0.28)' }}>
               <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: 'var(--color-brand-soft)' }} />
               Finora
             </div>
@@ -207,16 +192,16 @@ export default function Layout() {
         </header>
 
         {/* Main content with page transition */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          <div key={key} className="animate-fade-in">
+        <main className={`flex-1 min-w-0 overflow-y-auto overflow-x-hidden ${isChatbot ? '' : 'p-4 lg:p-6'}`}>
+          <div key={key} className={`${isChatbot ? 'h-full' : 'animate-fade-in'} min-w-0`}>
             <Outlet />
           </div>
         </main>
       </div>
 
-      {showWelcome && <DemoWelcomeModal onClose={() => closeWelcome(false)} onLaunch={() => closeWelcome(true)} />}
+      {!isChatbot && <AskFinoraPanel />}
+
       {complaintOpen && <ComplaintModal onClose={() => setComplaintOpen(false)} />}
-      <FloatingChatbot />
       <GuidedTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>

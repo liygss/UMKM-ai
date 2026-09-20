@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import client from '../api/client'
 import { formatRupiah, formatDate } from '../utils/formatters'
 import { buildSptPrintHtml } from '../utils/sptPdfBuilder'
@@ -8,7 +8,7 @@ import { extractError } from '../api/extractError'
 import {
   User, Wallet, Receipt, Home, Users, FileCheck, Calculator,
   Save, Printer, Trash2, Plus, FileSpreadsheet, History, Landmark, Info,
-  Sparkles,
+  Sparkles, X,
 } from 'lucide-react'
 
 const STATUS_KAWIN = [
@@ -331,6 +331,8 @@ export default function SptPage() {
   const [saving, setSaving] = useState(false)
   const [drafts, setDrafts] = useState([])
   const [draftId, setDraftId] = useState(null)
+  const [preview, setPreview] = useState(null)
+  const iframeRef = useRef(null)
 
   const up = (path, value) => setData((d) => setPath(d, path, value))
 
@@ -408,22 +410,21 @@ export default function SptPage() {
         toast.error('Gagal membuat dokumen cetak')
         return
       }
-      const blob = new Blob([html], { type: 'text/html' })
-      const url = URL.createObjectURL(blob)
-      const w = window.open(url, '_blank')
-      if (!w) {
-        toast.error('Blokir popup terdeteksi — izinkan popup untuk mencetak.')
-        URL.revokeObjectURL(url)
-        return
-      }
-      w.addEventListener('load', () => {
-        w.print()
-        setTimeout(() => URL.revokeObjectURL(url), 2000)
-      }, { once: true })
-      setTimeout(() => { try { w.print() } catch {} ; URL.revokeObjectURL(url) }, 1500)
+      setPreview(html)
     } catch (err) {
       console.error('Cetak error:', err)
       toast.error('Gagal mencetak: ' + (err.message || 'Unknown error'))
+    }
+  }
+
+  const cetakDariPreview = () => {
+    try {
+      iframeRef.current?.contentWindow?.focus()
+      iframeRef.current?.contentWindow?.print()
+      toast.success('Dialog print siap! Pilih "Save as PDF" untuk menyimpan.')
+    } catch (err) {
+      console.error('Print error:', err)
+      toast.error('Gagal membuka dialog print')
     }
   }
 
@@ -570,6 +571,52 @@ export default function SptPage() {
           )}
         </div>
       </div>
+
+      {preview && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          onClick={() => setPreview(null)}
+          style={{ background: 'rgba(2, 6, 18, 0.7)', backdropFilter: 'blur(10px)' }}
+        >
+          <div
+            className="relative w-full max-w-5xl h-[90vh] card overflow-hidden flex flex-col animate-bounce-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b" style={{ borderColor: 'var(--color-border-subtle)' }}>
+              <div className="flex items-center gap-3 min-w-0">
+                <Printer size={18} style={{ color: 'var(--color-accent-blue)' }} className="shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-sm font-bold truncate" style={{ color: 'var(--color-slate-heading)' }}>
+                    Pratinjau SPT {formType} — Tahun Pajak {data.identitas?.tahun_pajak}
+                  </div>
+                  <div className="text-[11px]" style={{ color: 'var(--color-slate-muted)' }}>
+                    Preview tampil di sini — tidak pindah ke halaman lain
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button type="button" onClick={cetakDariPreview} className="btn-primary !py-2">
+                  <Printer size={15} /> Cetak / Simpan PDF
+                </button>
+                <button
+                  type="button" onClick={() => setPreview(null)} className="btn-ghost !py-2"
+                  aria-label="Tutup pratinjau"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 min-h-0 overflow-auto bg-slate-200 p-4" style={{ background: '#e2e8f0' }}>
+              <iframe
+                ref={iframeRef}
+                title="Pratinjau SPT"
+                srcDoc={preview + '<style>@media screen{ .sp-page,.sp-gi-page{margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,0.15)} body{padding:24px} }</style>'}
+                className="w-full h-full bg-white rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

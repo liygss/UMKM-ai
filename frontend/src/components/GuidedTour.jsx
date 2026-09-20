@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { X, ChevronRight, Check, ArrowRight, Sparkles } from 'lucide-react'
+import { X, ChevronRight, Check, ArrowRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { tourSteps, TOUR_STORAGE_PREFIX } from '../data/tourSteps'
 
@@ -246,9 +246,9 @@ export default function GuidedTour({ open, onClose }) {
         )}
 
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'rgba(59, 130, 246, 0.15)', color: 'var(--color-accent-blue)' }}>
-            <Sparkles size={14} />
-          </span>
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg overflow-hidden" style={{ background: 'rgba(59, 130, 246, 0.15)' }}>
+            <img src="/assets/buddy/buddy-happy.png" alt="Buddy" className="h-full w-full object-contain" />
+          </div>
           <h3 className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>{step.title}</h3>
           {step.adminOnly && (
             <span className="ml-auto rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--color-accent-amber)' }}>

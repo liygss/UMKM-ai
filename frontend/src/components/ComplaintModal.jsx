@@ -20,11 +20,11 @@ export default function ComplaintModal({ onClose }) {
         subject: form.subject.trim(),
         message: form.message.trim(),
       })
-      toast.success('Komplain terkirim! Admin akan segera merespon.')
+      toast.success('Pesan terkirim! Admin akan segera merespon.')
       setForm({ subject: '', message: '' })
       onClose()
     } catch (err) {
-      toast.error(extractError(err, 'Gagal mengirim komplain'))
+      toast.error(extractError(err, 'Gagal mengirim pesan'))
     } finally {
       setSubmitting(false)
     }
@@ -41,8 +41,8 @@ export default function ComplaintModal({ onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full blur-3xl animate-blob" style={{ background: 'rgba(239,68,68,0.2)' }} />
-          <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full blur-3xl animate-blob" style={{ background: 'rgba(59,130,246,0.15)', animationDelay: '4s' }} />
+          <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full blur-3xl animate-blob" style={{ background: 'rgba(59,130,246,0.15)' }} />
+          <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full blur-3xl animate-blob" style={{ background: 'rgba(16,185,129,0.12)', animationDelay: '4s' }} />
         </div>
 
         <button
@@ -58,16 +58,16 @@ export default function ComplaintModal({ onClose }) {
           <div className="flex items-center gap-3 mb-5">
             <div
               className="flex h-11 w-11 items-center justify-center rounded-2xl"
-              style={{ background: 'linear-gradient(135deg, #EF4444, #F87171)', boxShadow: '0 4px 14px rgba(239,68,68,0.4)' }}
+              style={{ background: 'linear-gradient(135deg, #2563EB, #3B82F6)', boxShadow: '0 4px 14px rgba(59,130,246,0.4)' }}
             >
               <Headphones size={20} className="text-white" />
             </div>
             <div>
               <h2 className="text-lg font-bold" style={{ color: 'var(--color-slate-heading)' }}>
-                Hubungi Admin / CS
+                Chat ke CS
               </h2>
               <p className="text-xs" style={{ color: 'var(--color-slate-muted)' }}>
-                Sampaikan kendala atau komplain Anda
+                Kirim pesan atau pertanyaan ke admin
               </p>
             </div>
           </div>
@@ -80,7 +80,7 @@ export default function ComplaintModal({ onClose }) {
                 value={form.subject}
                 onChange={(e) => setForm({ ...form, subject: e.target.value })}
                 className="input-field"
-                placeholder="cth: Error saat import CSV"
+                placeholder="cth: Pertanyaan tentang laporan keuangan"
                 maxLength={200}
               />
             </div>
@@ -92,12 +92,12 @@ export default function ComplaintModal({ onClose }) {
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
                 className="input-field resize-none"
                 rows={4}
-                placeholder="Jelaskan kendala yang Anda alami..."
+                placeholder="Tulis pesan atau pertanyaan Anda di sini..."
               />
             </div>
 
             <button type="submit" disabled={submitting} className="btn-primary w-full">
-              <Send size={16} /> {submitting ? 'Mengirim...' : 'Kirim Komplain'}
+              <Send size={16} /> {submitting ? 'Mengirim...' : 'Kirim Pesan'}
             </button>
           </form>
         </div>

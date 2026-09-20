@@ -85,10 +85,10 @@ def ask(
     # 1. Retrieve (knowledge base dari Qdrant)
     retrieved = retrieve(pertanyaan, top_k=RETRIEVAL_TOP_K)
 
-    # 1b. Boosting kategori: kalau pertanyaan bernuansa pajak/akuntansi, cari
+    # 1b. Boosting kategori: kalau pertanyaan bernuansa pajak/akuntansi/aplikasi, cari
     #     juga khusus kategori tsb lalu gabungkan (dedupe) dengan hasil umum.
     domain = detect_domain(pertanyaan)
-    if domain in ("tax", "accounting"):
+    if domain in ("tax", "accounting", "app"):
         category_hits = retrieve(pertanyaan, top_k=CATEGORY_BOOST_TOP_K, category=domain)
         retrieved = merge_chunks(retrieved, category_hits)
 

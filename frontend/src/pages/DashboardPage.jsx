@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext'
 import StatCard from '../components/StatCard'
 import { MotionBarShape, MotionActiveBar, MotionTooltip } from '../components/MotionChartShapes'
 import { formatRupiah, formatRupiahCompact, formatDate } from '../utils/formatters'
-import DatePickerField from '../components/DatePickerField'
+import DateRangeField from '../components/DateRangeField'
 import { getDashboardState, setDashboardState, clearDashboard } from '../utils/dashboardStore'
 import { fadeUp, fadeIn, staggerContainer, itemStagger, EASE_GENTLE } from '../utils/motionPresets'
 import { Banknote, TrendingUp, TrendingDown, Wallet, MessageSquare, Upload, Plus, ArrowRight, Activity, Calendar, RefreshCw } from 'lucide-react'
@@ -113,7 +113,7 @@ function BarValueLabel(props) {
 function PieValueLabel(props) {
   const { cx, cy, midAngle, outerRadius, name, value, percent, payload } = props
   const RADIAN = Math.PI / 180
-  const radius = outerRadius + 22
+  const radius = outerRadius + 14
   const x = cx + radius * Math.cos(-midAngle * RADIAN)
   const y = cy + radius * Math.sin(-midAngle * RADIAN)
   const anchor = x > cx ? 'start' : 'end'
@@ -181,7 +181,7 @@ function BarTrendCardInner({ monthly, monthLabel, isLight, barAnimDone }) {
   const totalBebanPeriode = useMemo(() => monthly.reduce((s, m) => s + m.beban, 0), [monthly])
   const totalPendapatanPeriode = useMemo(() => monthly.reduce((s, m) => s + m.pendapatan, 0), [monthly])
   return (
-    <motion.div variants={fadeUp} whileHover={{ y: -4, transition: EASE_GENTLE }} className="card lg:col-span-2">
+    <motion.div variants={fadeUp} whileHover={{ y: -4, transition: EASE_GENTLE }} className="card lg:col-span-2 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold" style={{ color: 'var(--color-slate-heading)' }}>Pendapatan vs Beban</h3>
         <span className="text-xs px-2 py-1 rounded-xl" style={{ color: 'var(--color-slate-body)', background: 'var(--color-surface-card)' }}>
@@ -285,7 +285,7 @@ function KasBankPieCardInner({ data, monthLabel, isLight }) {
       </div>
       {pieData.length > 0 ? (
         <>
-          <div className="relative">
+          <div className="relative overflow-hidden">
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <defs>
@@ -649,6 +649,13 @@ export default function DashboardPage() {
     return () => window.removeEventListener('data-changed', onDataChanged)
   }, [fetchData])
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new Event('open-chatbot'))
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [])
+
   // Bulan periode terpilih: manual ("YYYY-MM") atau bulan dari data otomatis.
   const periodMonth = debouncedMonth || (data?.tanggal_per ? data.tanggal_per.slice(0, 7) : todayStr().slice(0, 7))
   const monthLabel = formatMonthLabel(periodMonth)
@@ -720,38 +727,28 @@ export default function DashboardPage() {
         variants={fadeUp}
         initial="hidden"
         animate="visible"
-        className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
+        className="flex flex-col sm:flex-row sm:items-end justify-between gap-3"
       >
-        <div>
-          <h1 className="text-3xl font-extrabold">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-extrabold">
             <span className="gradient-text">{getGreeting()}, {user?.full_name?.split(' ')[0] || 'User'}</span>
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--color-slate-body)' }}>Berikut ringkasan keuangan UMKM Anda</p>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-2">
-            <div className="flex items-end gap-2 rounded-xl px-3 py-2 shadow-sm" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.16)', backdropFilter: 'blur(12px)' }}>
-              <Calendar size={14} className="mb-2.5 shrink-0" style={{ color: 'var(--color-brand-soft)' }} />
-              <DatePickerField
-                value={rangeStartDate}
-                onChange={handleRangeStartChange}
-                label="Dari"
-                placeholder="Pilih tanggal mulai"
-                compact
-                maxDate={rangeEndDate || undefined}
-              />
-              <span className="text-sm font-medium shrink-0 mb-2.5" style={{ color: 'var(--color-slate-muted)' }}>&#8212;</span>
-              <DatePickerField
-                value={rangeEndDate}
-                onChange={handleRangeEndChange}
-                label="Sampai"
-                placeholder="Pilih tanggal akhir"
-                compact
-                minDate={rangeStartDate || undefined}
+        <div className="flex flex-col items-end gap-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 w-full justify-end">
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2 shadow-sm" style={{ background: 'var(--color-surface-card)', border: '1px solid rgba(148, 163, 184, 0.16)', backdropFilter: 'blur(12px)' }}>
+              <Calendar size={14} className="shrink-0" style={{ color: 'var(--color-brand-soft)' }} />
+              <DateRangeField
+                startDate={rangeStartDate}
+                endDate={rangeEndDate}
+                onStartChange={handleRangeStartChange}
+                onEndChange={handleRangeEndChange}
+                maxDate={undefined}
               />
               <button
                 onClick={handleApplyRange}
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all duration-200 hover:scale-105"
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all duration-200 hover:scale-105 shrink-0"
                 style={{ color: '#fff', background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)' }}
               >
                 Oke
@@ -792,7 +789,7 @@ export default function DashboardPage() {
         variants={staggerContainer(0.09)}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-3 gap-3"
+        className="grid grid-cols-1 sm:grid-cols-3 gap-3"
       >
         {QUICK_ACTIONS.map((action) => {
           const inner = (
@@ -849,7 +846,7 @@ export default function DashboardPage() {
         variants={staggerContainer(0.08, 0.1)}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4"
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4"
       >
         <StatCard title="Saldo Kas" value={data.saldo_kas} format={formatRupiahCompact} icon={Wallet} color="indigo" />
         <StatCard
@@ -893,7 +890,7 @@ export default function DashboardPage() {
         variants={staggerContainer(0.1, 0.05)}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
         <BarTrendCard monthly={monthly} monthLabel={monthLabel} isLight={isLight} barAnimDone={barAnimDone} />
         <KasBankPieCard data={data} monthLabel={monthLabel} isLight={isLight} />
@@ -904,7 +901,7 @@ export default function DashboardPage() {
         variants={staggerContainer(0.1, 0.15)}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
         <RingkasanPiutangUtang data={piutangUtang} />
         <KategoriPengeluaran debouncedDate={periodDateKey} items={kategori} />
@@ -916,7 +913,7 @@ export default function DashboardPage() {
         variants={staggerContainer(0.1, 0.15)}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
         <TemuanPenting alerts={alerts} />
         <InsightCard debouncedDate={periodDateKey} />
