@@ -87,7 +87,7 @@ PyInstaller **tidak bisa cross-compile**: binary backend Windows hanya bisa dibu
    git push -u origin main
    ```
 2. Set secret `OLLAMA_API_KEY` di GitHub: **Settings → Secrets and variables → Actions** (nilai key kamu — dipakai untuk di-bundle ke installer).
-3. Buka tab **Actions → Build Desktop Installers → Run workflow** (build manual), atau push tag `git tag v1.0.0 && git push origin v1.0.0` (build otomatis + publish ke Releases).
+3. Buka tab **Actions → Build Desktop Installers → Run workflow** (build manual), atau push tag `git tag v1.1.0 && git push origin v1.1.0` (build otomatis + publish ke Releases).
 4. Unduh installer dari artifact Actions atau halaman Releases:
    - macOS: `Finora-*.dmg`
    - Windows: `Finora.Setup.*.exe`
@@ -111,16 +111,16 @@ Prioritas: kalau file ada lokal, tombol mengunduh dari backend (lebih cepat). Ka
    ```
    (Skrip ini menyalin dari `electron/release/` — DMG lokal, atau EXE/AppImage hasil unduhan dari GitHub Actions — dengan nama kanonik.)
 2. Nama file harus persis sama dengan `PLATFORMS` di `frontend/src/pages/LandingPage.jsx`:
-   - macOS: `Finora-1.0.0-arm64.dmg`
-   - Windows: `Finora.Setup.1.0.0.exe`
-   - Linux: `Finora-1.0.0.AppImage`
-3. Jalankan backend (web dev): `cd backend && source venv/bin/activate && uvicorn app.main:app --reload --port 8000` → cek `http://localhost:8000/downloads/Finora-1.0.0-arm64.dmg`.
+   - macOS: `Finora-1.1.0-arm64.dmg`
+   - Windows: `Finora.Setup.1.1.0.exe`
+   - Linux: `Finora-1.1.0.AppImage`
+3. Jalankan backend (web dev): `cd backend && source venv/bin/activate && uvicorn app.main:app --reload --port 8000` → cek `http://localhost:8000/downloads/Finora-1.1.0-arm64.dmg`.
 
 ### Menyiapkan Windows/Linux lewat GitHub Releases (otomatis)
 Karena PyInstaller tidak bisa cross-compile, installer Windows & Linux dibangun lewat GitHub Actions lalu di-publish ke Releases — tanpa perlu menyalin binari besar manual:
 
 1. Set secret `OLLAMA_API_KEY` di GitHub: **Settings → Secrets and variables → Actions**.
-2. Jalankan workflow **Actions → Build Desktop Installers → Run workflow** (pilih `windows,linux`), atau push tag `git tag v1.0.0 && git push origin v1.0.0` (build otomatis + publish ke Releases).
+2. Jalankan workflow **Actions → Build Desktop Installers → Run workflow** (pilih `windows,linux`), atau push tag `git tag v1.1.0 && git push origin v1.1.0` (build otomatis + publish ke Releases).
 3. Selesai — landing page otomatis menanyakan `releases/latest` dan tombol Windows/Linux berubah jadi **"Unduh"** yang mengarah langsung ke asset di GitHub Releases.
 
 Repo & endpoint yang dipakai landing page ada di konstanta `GITHUB_REPO` pada `frontend/src/pages/LandingPage.jsx`. Platform yang belum tersedia (lokal maupun Releases) tetap tampil **"Segera hadir"** yang mengarah ke halaman Releases.
