@@ -8,6 +8,7 @@ export default function SetupStepChat({ onNext, onBack }) {
     send, sendFollowUp, uploadAndParse, createDataset,
     confirmTransaction, rejectTransaction, commitUpload,
     lastUploadId, followUpSuggestions, reset,
+    pendingFile, setPendingFile, removePendingFile,
   } = useChatbotShared()
 
   const onSubmit = (e) => {
@@ -89,6 +90,9 @@ export default function SetupStepChat({ onNext, onBack }) {
           onFollowUp={sendFollowUp}
           onConfirmTransaction={confirmTransaction}
           onRejectTransaction={rejectTransaction}
+          pendingFile={pendingFile}
+          onRemovePendingFile={removePendingFile}
+          onFileSelect={setPendingFile}
         />
       </div>
 
